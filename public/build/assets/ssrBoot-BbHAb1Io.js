@@ -1,0 +1,1 @@
+import{s,Q as t,b as a,a as e}from"./main-CK36iqPX.js";const i="/build/assets/avatar-1-CxOKCzdw.png";function u(){const o=s(!1);return t(()=>{window.requestAnimationFrame(()=>{o.value=!0})}),{ssrBootStyles:a(()=>o.value?void 0:{transition:"none !important"}),isBooted:e(o)}}export{i as a,u};
