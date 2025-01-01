@@ -132,7 +132,7 @@ const logout = () => {
           <VDivider class="my-2" />
 
         <!-- 👉 Profile -->
-        <VListItem to="'{{ route('admin.my-profile') }}'">
+        <VListItem to="admin/my-profile">
           <template #prepend>
             <VIcon
               class="me-2"
@@ -143,9 +143,6 @@ const logout = () => {
 
           <VListItemTitle>Profile</VListItemTitle>
         </VListItem>
-
-
-
           <!-- 👉 Settings -->
           <VListItem link>
             <template #prepend>
