@@ -1,6 +1,83 @@
 <script setup>
 import avatar1 from '@images/avatars/avatar-1.png';
+import authV1MaskDark from '@images/pages/auth-v1-mask-dark.png';
+import authV1MaskLight from '@images/pages/auth-v1-mask-light.png';
+
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useTheme } from 'vuetify';
+
+// Form data and state
+const form = ref({
+  email: '',
+  password: '',
+  remember: false,
+});
+
+const vuetifyTheme = useTheme();
+const router = useRouter();
+
+const authThemeMask = computed(() => {
+  return vuetifyTheme.global.name.value === 'light' ? authV1MaskLight : authV1MaskDark;
+});
+
+const isPasswordVisible = ref(false);
+
+// Handle login
+const login = async () => {
+  try {
+    const response = await axios.post('/api/login', form.value);
+    localStorage.setItem('auth_token', response.data.token);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Login Successful',
+      text: 'Redirecting to your dashboard...',
+    });
+
+    setTimeout(() => {
+      router.push('/dashboard');
+    }, 1500);
+  } catch (error) {
+    console.error('Login failed:', error);
+
+    const errorMessage = error.response?.data?.message || 'Login failed. Please check your email and password.';
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Login Failed',
+      text: errorMessage,
+    });
+  }
+};
+
+// Handle logout
+const logout = () => {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: 'You will be logged out.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, logout',
+    cancelButtonText: 'Cancel',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.removeItem('auth_token');
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Logged Out',
+        text: 'You have been logged out successfully.',
+      });
+
+      router.push('/login');
+    }
+  });
+};
 </script>
+
 
 <template>
   <VBadge
@@ -112,7 +189,7 @@ import avatar1 from '@images/avatars/avatar-1.png';
           <VDivider class="my-2" />
 
           <!-- 👉 Logout -->
-          <VListItem to="/login">
+          <VListItem @click="logout">
             <template #prepend>
               <VIcon
                 class="me-2"
@@ -129,3 +206,4 @@ import avatar1 from '@images/avatars/avatar-1.png';
     </VAvatar>
   </VBadge>
 </template>
+

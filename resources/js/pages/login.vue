@@ -4,7 +4,7 @@ import authV1MaskDark from '@images/pages/auth-v1-mask-dark.png';
 import authV1MaskLight from '@images/pages/auth-v1-mask-light.png';
 
 import axios from 'axios';
-import Swal from 'sweetalert2'; // Import SweetAlert2
+import Swal from 'sweetalert2';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTheme } from 'vuetify';
@@ -16,6 +16,7 @@ const form = ref({
   remember: false,
 });
 
+const isLoading = ref(false); // Loader state
 const vuetifyTheme = useTheme();
 const router = useRouter();
 
@@ -27,33 +28,32 @@ const isPasswordVisible = ref(false);
 
 // Handle login
 const login = async () => {
+  isLoading.value = true; // Start loader
   try {
     const response = await axios.post('/api/login', form.value);
     localStorage.setItem('auth_token', response.data.token);
 
-    // Show success message using SweetAlert
     Swal.fire({
       icon: 'success',
       title: 'Login Successful',
       text: 'Redirecting to your dashboard...',
     });
 
-    // Redirect to a default dashboard
     setTimeout(() => {
       router.push('/dashboard');
-    }, 1500); // Delay to show success message before redirecting
+    }, 1500);
   } catch (error) {
     console.error('Login failed:', error);
 
-    // Extract error message from response
     const errorMessage = error.response?.data?.message || 'Login failed. Please check your email and password.';
 
-    // Show error message using SweetAlert
     Swal.fire({
       icon: 'error',
       title: 'Login Failed',
       text: errorMessage,
     });
+  } finally {
+    isLoading.value = false; // Stop loader
   }
 };
 </script>
@@ -69,13 +69,6 @@ const login = async () => {
           </h2>
         </RouterLink>
       </VCardItem>
-
-      <!--VCardText class="pt-2">
-        <h4 class="text-h4 mb-1">Welcome to CRM! 👋🏻</h4>
-        <p class="mb-0">
-          Please sign-in to your account and start the adventure
-        </p>
-      </VCardText-->
 
       <VCardText>
         <VForm @submit.prevent="login">
@@ -110,25 +103,19 @@ const login = async () => {
               </div>
             </VCol>
 
-            <!-- Login button -->
-            <VCol cols="12">
-              <VBtn block type="submit">Login</VBtn>
+            <!-- Loader and Login button -->
+            <VCol cols="12" class="d-flex align-center justify-center my-4">
+              <VProgressCircular
+                v-if="isLoading"
+                indeterminate
+                color="primary"
+              />
             </VCol>
-
-            <!-- Create account link -->
-            <!--VCol cols="12" class="text-center text-base">
-              <span>New on our platform?</span>
-              <RouterLink class="text-primary ms-2" to="/auth/register">
-                Create an account
-              </RouterLink>
-            </VCol-->
-
-            <!-- Divider -->
-            <!--VCol cols="12" class="d-flex align-center">
-              <VDivider />
-              <span class="mx-4">or</span>
-              <VDivider />
-            </VCol-->
+            <VCol cols="12">
+              <VBtn :loading="isLoading" block type="submit" color="primary">
+                Login
+              </VBtn>
+            </VCol>
           </VRow>
         </VForm>
       </VCardText>
