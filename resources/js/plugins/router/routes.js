@@ -71,7 +71,7 @@ export const routes = [
     component: () => import('@/layouts/blank.vue'),
     children: [
       {
-        path: 'login',
+        path: 'auth/login',
         component: () => import('@/pages/login.vue'),
       },
       {

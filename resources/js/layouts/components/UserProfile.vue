@@ -72,7 +72,7 @@ const logout = () => {
         text: 'You have been logged out successfully.',
       });
 
-      router.push('/login');
+      router.push('auth/login');
     }
   });
 };
