@@ -1,5 +1,7 @@
 export const routes = [
+  // Redirect to /dashboard
   { path: '/', redirect: '/dashboard' },
+
   {
     path: '/',
     component: () => import('@/layouts/default.vue'),
@@ -61,17 +63,25 @@ export const routes = [
       },
       {
         path: 'admin/my-profile',
+        name: 'admin-my-profile',  // Added name here
         component: () => import('@/pages/profile/profile.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+      path: 'change-password',
+      name: 'changePassword',
+      component: () =>import('@/pages/profile/change-password.vue'),
+      meta: { requiresAuth: true }
       }
     ],
   },
+
   {
     path: '/',
     component: () => import('@/layouts/blank.vue'),
     children: [
       {
-        path: 'auth/login',
+        path: 'login',
         component: () => import('@/pages/login.vue'),
       },
       {

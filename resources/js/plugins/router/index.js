@@ -18,7 +18,7 @@ router.beforeEach((to, from, next) => {
       next();
     } else {
       // User is not authenticated, redirect to login page
-      next('/auth/login');
+      next('/login');
     }
   } else {
     // Route does not require authentication, allow access

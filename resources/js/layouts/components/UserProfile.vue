@@ -72,10 +72,12 @@ const logout = () => {
         text: 'You have been logged out successfully.',
       });
 
-      router.push('auth/login');
+      router.push('/login');
     }
   });
 };
+
+
 </script>
 
 
@@ -132,7 +134,7 @@ const logout = () => {
           <VDivider class="my-2" />
 
         <!-- 👉 Profile -->
-        <VListItem to="admin/my-profile">
+        <VListItem :to="{ name: 'admin-my-profile' }">
           <template #prepend>
             <VIcon
               class="me-2"
@@ -143,6 +145,7 @@ const logout = () => {
 
           <VListItemTitle>Profile</VListItemTitle>
         </VListItem>
+
           <!-- 👉 Settings -->
           <VListItem link>
             <template #prepend>
@@ -156,8 +159,8 @@ const logout = () => {
             <VListItemTitle>Settings</VListItemTitle>
           </VListItem>
 
-          <!-- 👉 Pricing -->
-          <VListItem link>
+          <!-- 👉 Change passwrod -->
+          <VListItem :to="{ name: 'changePassword' }">
             <template #prepend>
               <VIcon
                 class="me-2"
@@ -166,7 +169,7 @@ const logout = () => {
               />
             </template>
 
-            <VListItemTitle>Pricing</VListItemTitle>
+            <VListItemTitle>Change Password</VListItemTitle>
           </VListItem>
 
           <!-- 👉 FAQ -->

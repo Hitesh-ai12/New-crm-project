@@ -11,4 +11,8 @@ Route::get('/user', function (Request $request) {
 
 Route::post('form-submit', [FormController::class, 'store']);
 
+// In routes/api.php or routes/web.php
+Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('auth:sanctum');
+
+
 Route::post('/login', [AuthController::class, 'login']);

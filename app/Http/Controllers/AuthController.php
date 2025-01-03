@@ -28,13 +28,9 @@ class AuthController extends Controller
             'email' => $validatedData['email'],
             'password' => $validatedData['password'],
         ];
-    
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-    
-            // Generate token
             $token = $user->createToken('auth_token')->plainTextToken;
-    
             return response()->json([
                 'token' => $token,
                 'message' => 'Login successful',
@@ -46,19 +42,42 @@ class AuthController extends Controller
         ], 401);
     }
     
+    public function resetPassword(Request $request)
+    {
+        // Validate the request data
+        $validatedData = $request->validate([
+            'current_password' => 'required|string|min:6',
+            'new_password' => 'required|string|min:6|confirmed', // 'confirmed' ensures it matches the 'new_password_confirmation'
+        ]);
+    
+        $user = Auth::user();
+    
+        // Check if the current password matches the stored password
+        if (!Hash::check($validatedData['current_password'], $user->password)) {
+            return response()->json([
+                'message' => 'Current password is incorrect.',
+            ], 400);
+        }
+    
+        // Update the password
+        $user->password = Hash::make($validatedData['new_password']);
+        $user->save();
+    
+        return response()->json([
+            'message' => 'Password successfully changed.',
+        ], 200);
+    }
+     
     // login
     public function sendOtp(Request $request)
     {
     
         $request->validate(['email' => 'required|email']);
 
-        // Generate a random 6-digit OTP
         $otp = rand(100000, 999999);
 
-        // Cache the OTP with the email as the key, expires in 30 seconds
         Cache::put('otp_' . $request->email, $otp, now()->addSeconds(30));
 
-        // Send the OTP to the user's email
         Mail::to($request->email)->send(new SendOtpMail($otp));
 
         return response()->json(['success' => true, 'message' => 'OTP sent']);
@@ -86,20 +105,15 @@ class AuthController extends Controller
 
     public function sendPassword(Request $request)
     {
-        // Validate the email
         $request->validate(['email' => 'required|email']);
 
-        // Generate a unique, secure password
         $password = Str::random(8) . Str::upper(Str::random(2)) . Str::random(2);
 
-
-        // Create the user if they don't exist, or update the password if they do
         $user = User::updateOrCreate(
             ['email' => $request->email],
             ['password' => bcrypt($password)]
         );
 
-        // Send the password to the user's email
         Mail::to($request->email)->send(new SendPasswordMail($password));
 
         return response()->json(['success' => true, 'message' => 'Password sent']);
