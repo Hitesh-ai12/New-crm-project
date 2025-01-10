@@ -8,9 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class UserDetail extends Model
 {
     use HasFactory;
-
-    protected $fillable = ['user_id', 'email2', 'email3', 'phone2', 'phone3'];
-
+    protected $fillable = ['user_id','email1' ,'email2', 'email3','phone1', 'phone2', 'phone3'];
     public function user()
     {
         return $this->belongsTo(User::class);

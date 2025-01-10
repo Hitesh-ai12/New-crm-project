@@ -29,7 +29,6 @@ class FormController extends Controller
             $user = User::create([
                 'name' => $validatedData['first_name'],
                 'email' => $validatedData['email1'],
-                'phone' => $validatedData['phone1'],
                 'password' => bcrypt($validatedData['password']),
                 'role' => $validatedData['role'],
             ]);
@@ -38,6 +37,7 @@ class FormController extends Controller
             $user->details()->create([
                 'email2' => $validatedData['email2'],
                 'email3' => $validatedData['email3'],
+                'phone1' => $validatedData['phone1'],
                 'phone2' => $validatedData['phone2'],
                 'phone3' => $validatedData['phone3'],
             ]);
@@ -53,6 +53,5 @@ class FormController extends Controller
             ], 500);
         }
     }
-    
 
 }

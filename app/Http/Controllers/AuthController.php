@@ -12,9 +12,11 @@ use Illuminate\Support\Str;
 use App\Mail\SendPasswordMail;
 use App\Mail\SendOtpMail;
 use App\Models\User;
+use App\Models\ApiKey;
 
 class AuthController extends Controller
 {
+
     public function login(Request $request)
     {
         // Validate login data
@@ -28,6 +30,7 @@ class AuthController extends Controller
             'email' => $validatedData['email'],
             'password' => $validatedData['password'],
         ];
+        
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -41,18 +44,29 @@ class AuthController extends Controller
             'message' => 'Invalid credentials',
         ], 401);
     }
-    
+
+    public function getRole()
+    {
+    $user = Auth::user(); 
+    if (!$user) {
+        return response()->json([
+            'message' => 'Unauthenticated.',
+        ], 401);
+    }
+
+    return response()->json([
+        'role' => $user->role,  
+    ], 200); 
+    }
+
     public function resetPassword(Request $request)
     {
-        // Validate the request data
         $validatedData = $request->validate([
             'current_password' => 'required|string|min:6',
-            'new_password' => 'required|string|min:6|confirmed', // 'confirmed' ensures it matches the 'new_password_confirmation'
+            'new_password' => 'required|string|min:6|confirmed', 
         ]);
-    
         $user = Auth::user();
-    
-        // Check if the current password matches the stored password
+
         if (!Hash::check($validatedData['current_password'], $user->password)) {
             return response()->json([
                 'message' => 'Current password is incorrect.',
@@ -67,55 +81,63 @@ class AuthController extends Controller
             'message' => 'Password successfully changed.',
         ], 200);
     }
-     
-    // login
-    public function sendOtp(Request $request)
+
+    public function generateApiKey(Request $request)
     {
+        try {
+            $user = auth()->user();
     
-        $request->validate(['email' => 'required|email']);
+            // Validate permissions
+            $permissions = $request->permissions;
+            if (empty($permissions)) {
+                return response()->json(['error' => 'No permissions selected.'], 400);
+            }
+    
+            // Generate a unique API key (you can use any method to generate the key)
+            $apiKey = Str::random(32);
+    
+            // Construct the endpoint based on selected permissions
+            $endpoints = [];
+            foreach ($permissions as $permission) {
+                switch ($permission) {
+                    case 'create':
+                        $endpoints[] = url('/api/create');
+                        break;
+                    case 'read':
+                        $endpoints[] = url('/api/read');
+                        break;
+                    // Add more cases for 'update', 'delete', etc.
+                }
+            }
+    
+            // Check if an API key already exists for the user
+            $apiKeyRecord = ApiKey::where('user_id', $user->id)->first();
+    
+            if ($apiKeyRecord) {
+                $apiKeyRecord->key = $apiKey;
+                $apiKeyRecord->permissions = json_encode($permissions);
+                $apiKeyRecord->endpoint = implode(',', $endpoints);
+                $apiKeyRecord->save(); 
+            } else {
+                // If no record exists, create a new one
+                $apiKeyRecord = new ApiKey();
+                $apiKeyRecord->user_id = $user->id;
+                $apiKeyRecord->key = $apiKey;
+                $apiKeyRecord->permissions = json_encode($permissions);
+                $apiKeyRecord->endpoint = implode(',', $endpoints);
+                $apiKeyRecord->save(); 
+            }
+    
+            return response()->json([
+                'api_key' => $apiKey,
+                'endpoint' => $apiKeyRecord->endpoint
+            ]);
 
-        $otp = rand(100000, 999999);
+        } catch (\Exception $e) {
 
-        Cache::put('otp_' . $request->email, $otp, now()->addSeconds(30));
-
-        Mail::to($request->email)->send(new SendOtpMail($otp));
-
-        return response()->json(['success' => true, 'message' => 'OTP sent']);
-    }
-
-    public function verifyOtp(Request $request)
-    {
-        // Validate email and OTP fields
-        $request->validate([
-            'email' => 'required|email',
-            'otp' => 'required',
-        ]);
-
-        // Retrieve the cached OTP
-        $cachedOtp = Cache::get('otp_' . $request->email);
-
-        // Verify the OTP
-        if ($cachedOtp && $cachedOtp == $request->otp) {
-            return response()->json(['success' => true, 'message' => 'OTP verified']);
+            Log::error('Failed to generate API key: ' . $e->getMessage());
+    
+            return response()->json(['error' => 'An error occurred while generating the API key.'], 500);
         }
-
-        // Return an error if the OTP is invalid
-        return response()->json(['success' => false, 'message' => 'Invalid or expired OTP'], 400);
-    }
-
-    public function sendPassword(Request $request)
-    {
-        $request->validate(['email' => 'required|email']);
-
-        $password = Str::random(8) . Str::upper(Str::random(2)) . Str::random(2);
-
-        $user = User::updateOrCreate(
-            ['email' => $request->email],
-            ['password' => bcrypt($password)]
-        );
-
-        Mail::to($request->email)->send(new SendPasswordMail($password));
-
-        return response()->json(['success' => true, 'message' => 'Password sent']);
-    }
-}
+    }      
+ }

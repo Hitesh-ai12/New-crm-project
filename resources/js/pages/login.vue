@@ -1,5 +1,5 @@
 <script setup>
-import logo from '@images/logo.svg?raw';
+
 import authV1MaskDark from '@images/pages/auth-v1-mask-dark.png';
 import authV1MaskLight from '@images/pages/auth-v1-mask-light.png';
 
@@ -59,19 +59,20 @@ const login = async () => {
 </script>
 
 <template>
-  <div class="auth-wrapper d-flex align-center justify-center pa-4">
-    <VCard class="auth-card pa-4 pt-7" max-width="448">
-      <VCardItem class="justify-center">
+  <div class="auth-wrapper d-flex align-center justify-center pa-4 user_login_form">
+    <VCard class="auth-card pa-4 pt-7 login_v_card" max-width="448">
+      <VCardItem class="justify-center login_v_item">
         <RouterLink to="/" class="d-flex align-center gap-3">
-          <div class="d-flex" v-html="logo" />
-          <h2 class="font-weight-medium text-2xl text-uppercase">
-            CRM
-          </h2>
+          <a href="/build/" class="d-flex align-center gap-3"><img src="https://jsithub.com/wp-content/uploads/2024/03/Logo-V2-Final.png"></a>
         </RouterLink>
       </VCardItem>
 
       <VCardText>
+   
         <VForm @submit.prevent="login">
+          <div class="title-container">
+        
+          </div>
           <VRow>
             <!-- Email -->
             <VCol cols="12">
@@ -103,19 +104,25 @@ const login = async () => {
               </div>
             </VCol>
 
-            <!-- Loader and Login button -->
+            <!-- Loader and Login button>
             <VCol cols="12" class="d-flex align-center justify-center my-4">
               <VProgressCircular
                 v-if="isLoading"
                 indeterminate
                 color="primary"
               />
-            </VCol>
-            <VCol cols="12">
-              <VBtn :loading="isLoading" block type="submit" color="primary">
+            </VCol -->
+            <VCol cols="12 login_form_btn">
+              <VBtn :loading="isLoading" block type="submit" color="primary" >
                 Login
               </VBtn>
             </VCol>
+
+            <div class="social-container">
+              <a href="https://www.facebook.com/profile.php?id=61558514121185" class="social" target="_blank"><i class="fab fa-facebook-f"></i></a>
+              <a href="https://www.instagram.com/jsithub_private_limited/" class="social" target="_blank"><i class="fab fa-instagram"></i></a>
+              <a href="https://www.linkedin.com/company/103449402/admin/feed/posts/?feedType=following" class="social" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+            </div>
           </VRow>
         </VForm>
       </VCardText>
@@ -125,4 +132,93 @@ const login = async () => {
 
 <style lang="scss">
 @use "@core-scss/template/pages/page-auth";
+
+.auth-card {
+  display: flex !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  border-radius: 10px !important;
+  background-color: #f4f5fa !important;
+  block-size: 575px !important;
+  box-shadow: 0 4px 23px rgba(0, 0, 0, 25%) !important, 0 6px 6px rgb(0 0 0 / 7%) !important;
+  inline-size: 100% !important;
+  max-inline-size: 1080px !important;
+}
+
+.v-card-item {
+  display: flex !important;
+  align-items: center !important;
+  inline-size: 50% !important;
+  text-align: center !important;
+}
+
+.v-card .v-card-text {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 50px !important;
+  inline-size: 50% !important;
+  margin-block-end: 0 !important;
+  text-align: center !important;
+}
+
+.v-col-12:nth-child(3) {
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.v-col-12:nth-child(3) .v-btn--density-default {
+  max-inline-size: 160px !important;
+  min-inline-size: 160px !important;
+}
+
+.v-col-12:nth-child(2) .my-6 {
+  margin-block-end: 0 !important;
+}
+
+.v-card-item__content img {
+  inline-size: 100% !important;
+  margin-block: 0 !important;
+  margin-inline: auto !important;
+  max-inline-size: 250px !important;
+}
+
+.social-container {
+  inline-size: 100% !important;
+  padding-block-start: 25px !important;
+}
+
+.social-container a {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  block-size: 40px !important;
+  box-shadow: 0 0 15px 1px #cbcbcb8c !important;
+  color: #8c57ff !important;
+  font-size: 14px !important;
+  inline-size: 40px !important;
+  margin-block: 0 !important;
+  margin-inline: 5px !important;
+  text-decoration: none !important;
+  transition: 0.4s ease !important;
+}
+
+.title-container h2 {
+  color: #202020 !important;
+  font-size: 40px !important;
+  font-weight: 700 !important;
+  margin-block-end: 10px !important;
+  text-align: center !important;
+}
+
+.title-container p {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  margin-block-end: 0 !important;
+  padding-block: 10px 0 !important;
+  padding-inline: 12px !important;
+  text-align: center !important;
+}
+
 </style>

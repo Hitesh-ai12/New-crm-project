@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -29,11 +30,7 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    
     protected function casts(): array
     {
         return [
@@ -42,7 +39,14 @@ class User extends Authenticatable
         ];
     }
     public function details()
-{
-    return $this->hasOne(UserDetail::class);
-}
+    {
+        return $this->hasOne(UserDetail::class);
+    }
+    // Function to generate API key
+    public function apiKeys()
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+    
+
 }

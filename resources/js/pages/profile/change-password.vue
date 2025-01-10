@@ -37,15 +37,14 @@
 
 <script>
 import axios from 'axios';
-import Swal from 'sweetalert2'; // Import SweetAlert2
-
+import Swal from 'sweetalert2';
 export default {
   data() {
     return {
       form: {
         current_password: '',
         new_password: '',
-        new_password_confirmation: '', // Laravel expects this name
+        new_password_confirmation: '',
       },
     };
   },
@@ -69,11 +68,11 @@ export default {
 
       try {
         // Get the auth token from localStorage or sessionStorage
-        const token = localStorage.getItem('auth_token'); // Update this if you're storing the token elsewhere
+        const token = localStorage.getItem('auth_token'); 
         
         const response = await axios.post('/api/reset-password', this.form, {
           headers: {
-            Authorization: `Bearer ${token}`, // Add token to request header
+            Authorization: `Bearer ${token}`, 
           },
         });
         console.log('Password reset successfully', response.data);
@@ -84,8 +83,6 @@ export default {
           title: 'Password Reset Successful!',
           text: 'Your password has been successfully updated.',
         });
-
-        // Optionally, clear form fields after successful reset
         this.form = {
           current_password: '',
           new_password: '',
@@ -108,7 +105,7 @@ export default {
             text: errorMessage,
           });
         } else {
-          // Handle other errors
+          // Handle errors
           Swal.fire({
             icon: 'error',
             title: 'Error',

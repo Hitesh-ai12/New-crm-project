@@ -1,10 +1,9 @@
 <?php
-
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,14 +12,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
+        // Create a user with a predefined password
+        User::create([
             'name' => 'Super Admin',
             'email' => 'adminjsithub@yopmail.com',
-            'role' => 'superadmin'
+            'role' => 'superadmin',
+            'password' => Hash::make('Jsithub@123'), // Ensure the password is hashed
         ]);
-
-
     }
 }

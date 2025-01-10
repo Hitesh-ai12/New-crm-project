@@ -1,157 +1,186 @@
 <template>
   <div class="leads-container">
-    <div v-if="loading" class="loading">Loading leads...</div>
-    <div v-if="error" class="error">{{ error }}</div>
+    <!--div v-if="loading" class="loading">Loading leads...</div-->
+    <!--div v-if="error" class="error">{{ error }}</div-->
     <div class="leads-header">
-      <div class="leads-section">
-        <ul>
-          <li class="total-leads">All Leads</li>
-          <li class="total-leads">My Leads</li>
-        </ul>
-      </div>
-      <div class="icon-section">
-
-        <ul>
- 
-       <li class="selected-count total-leads">
-        Selected Leads: {{ selectedLeads.length }}
-      </li>
-
-      <li class="total-leads">
-        <i class="fa-solid fa-plus"></i>
-      </li>
-
-  
-      <li
-        class="total-leads"
-        @click="deleteLeads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-      >
-        <span>Delete</span>
-        <i class="fa-solid fa-trash-can-arrow-up"></i>
-      </li>
-
-      <li
-        class="total-leads" @click="openEmailModal"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-      >
-        <span>Email</span>
-        <i class="fa-solid fa-envelope"></i>
-      </li>
-
-      <li
-        class="total-leads" @click="openSmsModal"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-      >
-          <!-- Buttons to open modals -->
-        <span>Smart SMS</span>
-        <i class="fa-solid fa-comment-dots"></i>
-      </li>
-
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-        @click="openTagModal"
-      >
-        <span>Tags</span>
-        <i class="fa-solid fa-tags"></i>
-      </li>
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-        @click="openStageModal"
-      >
-        <span>Stage</span>
-        <i class="fa-solid fa-table-cells"></i>
-      </li>
- 
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-        @click="openModal('listingAlert')"
-      >
-        <span>New Listing Alert</span>
-        <i class="fa-solid fa-bell"></i>
-      </li>
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-        @click="openModal('neighbourhoodAlert')"
-      >
-        <span>Neighbourhood Alert</span>
-        <i class="fa-solid fa-map-location-dot"></i>
-      </li>
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-        @click="openModal('openHouseAlert')"
-      >
-        <span>Open House Alert</span>
-        <i class="fa-solid fa-circle-exclamation"></i>
-      </li>
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-        @click="openModal('actionPlan')"
-      >
-        <span>Action Plan</span>
-        <i class="fa-solid fa-plus"></i>
-      </li>
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-        @click="openModal('marketUpdates')"
-      >
-        <span>Market Updates</span>
-        <i class="fa fa-bar-chart" aria-hidden="true"></i>
-      </li>
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-        @click="openModal('newsletter')"
-      >
-        <span>Real Estate Newsletter</span>
-        <i class="fa-solid fa-envelope-open-text"></i>
-      </li>
-
-      <li
-        class="total-leads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-      >
-        <span>Lead Transfer</span>
-        <i class="fa-solid fa-right-left"></i>
-      </li>
-
-      <!-- Export Button -->
-      <li
-        class="total-leads"
-        @click="exportLeads"
-        :class="{ disabled: selectedLeads.length === 0 }"
-        :disabled="selectedLeads.length === 0"
-      >
-        <span>Export Lead</span>
-        <i class="fa-solid fa-file-export"></i>
-      </li>
-          <!-- Import Button -->
-          <li class="total-leads" @click="openImportModal">
-        <span>Import</span>
-        <i class="fa-solid fa-file-import"></i>
-      </li>
-        </ul>
+    <div class="leads-section">
+      <div class="lead-buttons">
+        <button
+          class="btn"
+          :class="{ active: activeLeadType === 'all' }"
+          @click="fetchLeads('all')"
+        >
+          All Leads
+        </button>
+        <button
+          class="btn"
+          :class="{ active: activeLeadType === 'my' }"
+          @click="fetchLeads('my')"
+        >
+          My Leads
+        </button>
       </div>
     </div>
+
+    <div class="icon-section">
+      <ul>
+        <!-- Common list items for both "All Leads" and "My Leads" -->
+        <li class="selected-count total-leads">
+          Selected Leads: {{ selectedLeads.length }}
+        </li>
+        <li class="total-leads">
+          <i class="fa-solid fa-plus"></i>
+        </li>
+
+        <li
+          class="total-leads"
+          @click="deleteLeads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+        >
+          <span>Delete</span>
+          <i class="fa-solid fa-trash-can-arrow-up"></i>
+        </li>
+
+        <!-- Conditional rendering for "My Leads" -->
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          @click="openEmailModal"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+        >
+          <span>Email</span>
+          <i class="fa-solid fa-envelope"></i>
+        </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          @click="openSmsModal"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+        >
+          <span>Smart SMS</span>
+          <i class="fa-solid fa-comment-dots"></i>
+        </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="openTagModal"
+        >
+          <span>Tags</span>
+          <i class="fa-solid fa-tags"></i>
+        </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="openStageModal"
+        >
+          <span>Stage</span>
+          <i class="fa-solid fa-table-cells"></i>
+        </li>
+
+        <!-- Hidden on "All Leads" -->
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="openModal('listingAlert')"
+        >
+          <span>New Listing Alert</span>
+          <i class="fa-solid fa-bell"></i>
+        </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="openModal('neighbourhoodAlert')"
+        >
+          <span>Neighbourhood Alert</span>
+          <i class="fa-solid fa-map-location-dot"></i>
+        </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="openModal('openHouseAlert')"
+        >
+          <span>Open House Alert</span>
+          <i class="fa-solid fa-circle-exclamation"></i>
+        </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="openModal('actionPlan')"
+        >
+          <span>Action Plan</span>
+          <i class="fa-solid fa-plus"></i>
+        </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="openModal('marketUpdates')"
+        >
+          <span>Market Updates</span>
+          <i class="fa fa-bar-chart" aria-hidden="true"></i>
+        </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="openModal('newsletter')"
+        >
+          <span>Real Estate Newsletter</span>
+          <i class="fa-solid fa-envelope-open-text"></i>
+        </li>
+
+        <!-- Always visible buttons -->
+        <li
+          class="total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+        >
+          <span>Lead Transfer</span>
+          <i class="fa-solid fa-right-left"></i>
+        </li>
+
+        <li
+          class="total-leads"
+          @click="exportLeads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+        >
+          <span>Export Lead</span>
+          <i class="fa-solid fa-file-export"></i>
+        </li>
+
+        <li class="total-leads" @click="openImportModal">
+          <span>Import</span>
+          <i class="fa-solid fa-file-import"></i>
+        </li>
+      </ul>
+    </div>
+  </div>
 
     <!-- Import Modal -->
     <div v-if="showImportModal" class="modal-overlay">
@@ -256,7 +285,7 @@
     </div>
 <!------------------------------------------------------------------->
 
-    <div v-if="!loading && !error">
+    <div>
       <div class="header">
         <input v-model="searchQuery" type="text" placeholder="Search leads by name..." class="search-bar" />
         <div class="total-leads">Total Leads: {{ filteredLeads.length }}</div>
@@ -319,17 +348,18 @@
       </div>
     </div>
     <!-- Leads Table -->
-    <div v-if="!loading && !error">
+    <div>
 
     <div>
-    <label for="pageSize">Rows per page:</label>
-    <select v-model="pageSize" @change="setPageSize(Number($event.target.value))">
-      <option value="5">5</option>
-      <option value="10">10</option>
-      <option value="25">25</option>
-      <option value="50">50</option>
-    </select>
+      <label for="pageSize">Rows per page:</label>
+      <select v-model="pageSize" @change="setPageSize(Number($event.target.value))">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+      </select>
     </div>
+    <div v-if="!loading && !error">
       <table id="leadsTable" class="table table-striped table-bordered leads-table" v-if="filteredLeads.length">
       <thead>
         <tr>
@@ -360,7 +390,11 @@
             </label>
           </td>
           <!-- Other columns -->
-          <td>{{ lead.first_name }}</td>
+          <td>
+            <router-link :to="{ name: 'update-profile', params: { id: lead.id } }" style="color: blue; text-decoration: underline;">
+              {{ lead.first_name }}
+            </router-link>
+          </td>
           <td>{{ lead.last_name }}</td>
           <td>{{ lead.phone }}</td>
           <td>{{ lead.email }}</td>
@@ -372,7 +406,7 @@
         </tr>
       </tbody>
     </table>
-
+  </div>
       <!-- No leads available message -->
       <div v-if="filteredLeads.length === 0" class="no-leads">No leads available.</div>
     </div>
@@ -386,10 +420,12 @@
       <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">Next</button>
     </div>
   </div>
+
 </template>
 
 
 <script lang="js">
+
 import '@/assets/leads.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -398,7 +434,7 @@ import { computed, onMounted, ref } from 'vue';
 export default {
   name: 'LeadsPage',
   setup() {
-    // Reactive properties
+    const activeLeadType = ref('all'); // 'all' or 'my'
     const leads = ref([]);
     const loading = ref(true);
     const error = ref('');
@@ -567,16 +603,40 @@ export default {
       }
     };
 
-    const fetchLeads = async () => {
-      try {
-        const response = await axios.get('/leads');
-        leads.value = Array.isArray(response.data) ? response.data : [];
-      } catch (err) {
-        error.value = 'Failed to fetch leads.';
-      } finally {
-        loading.value = false;
-      }
-    };
+
+    const fetchLeads = async (type) => {
+        activeLeadType.value = type;
+        loading.value = true; // Set loading state while fetching leads
+
+        if (type === 'all') {
+          await getAllLeads();
+        } else if (type === 'my') {
+          await getMyLeads();
+        }
+      };
+
+      const getAllLeads = async () => {
+        try {
+          const response = await axios.get('/leads');
+          leads.value = Array.isArray(response.data) ? response.data : [];
+        } catch (err) {
+          error.value = 'Failed to fetch leads.';
+        } finally {
+          loading.value = false;
+        }
+      };
+
+      const getMyLeads = async () => {
+        try {
+          const response = await axios.get('/leads/my'); // Adjust this API endpoint to fetch "my leads" data
+          leads.value = Array.isArray(response.data) ? response.data : [];
+        } catch (err) {
+          error.value = 'Failed to fetch my leads.';
+        } finally {
+          loading.value = false;
+        }
+      };
+
 
     const fetchItems = async () => {
       try {
@@ -646,9 +706,10 @@ export default {
 
     const filteredLeads = computed(() => {
       return leads.value.filter((lead) =>
-        lead.first_name.toLowerCase().includes(searchQuery.value.toLowerCase())
+        lead.first_name && lead.first_name.toLowerCase().includes(searchQuery.value.toLowerCase())
       );
     });
+
 
     const getTagValue = (id) => {
       const tag = tags.value.find(t => t.id === id);
@@ -851,6 +912,7 @@ export default {
         try {
           const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
           const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+          const authToken = localStorage.getItem('auth_token');  // Get the token from localStorage
 
           const response = await axios.post('/leads', {
             first_name: newLead.value.first_name,
@@ -862,6 +924,7 @@ export default {
           }, {
             headers: {
               'X-CSRF-TOKEN': csrfToken,
+              'Authorization': `Bearer ${authToken}`,  // Include the auth token here
             },
           });
 
@@ -885,11 +948,15 @@ export default {
     };
 
     onMounted(async () => {
-      await fetchLeads();
+      await  fetchLeads(activeLeadType.value);
       await fetchItems();
     });
 
     return {
+      getAllLeads,
+      getMyLeads,
+      fetchLeads,
+      activeLeadType,
       leads,
       loading,
       error,
@@ -959,7 +1026,6 @@ export default {
       isTagSelected,
       toggleTagSelection,
       closeModal,
-     
     };
   },
 };

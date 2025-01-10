@@ -76,10 +76,7 @@ const logout = () => {
     }
   });
 };
-
-
 </script>
-
 
 <template>
   <VBadge
@@ -173,7 +170,7 @@ const logout = () => {
           </VListItem>
 
           <!-- 👉 FAQ -->
-          <VListItem link>
+          <VListItem :to="{ name: 'authentication' }">
             <template #prepend>
               <VIcon
                 class="me-2"
@@ -182,7 +179,7 @@ const logout = () => {
               />
             </template>
 
-            <VListItemTitle>FAQ</VListItemTitle>
+            <VListItemTitle>Authentication</VListItemTitle>
           </VListItem>
 
           <!-- Divider -->

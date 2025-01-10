@@ -68,11 +68,24 @@ export const routes = [
         meta: { requiresAuth: true }
       },
       {
-      path: 'change-password',
-      name: 'changePassword',
-      component: () =>import('@/pages/profile/change-password.vue'),
-      meta: { requiresAuth: true }
-      }
+        path: 'change-password',
+        name: 'changePassword',
+        component: () =>import('@/pages/profile/change-password.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'authentication',
+        name: 'authentication',
+        component: () =>import('@/pages/profile/authentication.vue'),
+        meta: { requiresAuth: true }
+        },
+
+        {
+          path: '/update-profile/:id',
+          name: 'update-profile',
+          component: () =>import('@/pages/api/templates/UpdateLeadPage .vue'),
+          props: true, // Pass route params as props
+        },
     ],
   },
 
