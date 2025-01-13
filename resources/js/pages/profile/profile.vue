@@ -18,6 +18,7 @@
     <div class="form-container">
       <form @submit.prevent="handleSubmit">
         <div class="form-grid">
+          
           <!-- First Name -->
           <div class="form-group">
             <label for="first_name">First Name <span style="color: red;">*</span></label>
@@ -29,10 +30,12 @@
             <label for="email1">Email 1 <span style="color: red;">*</span></label>
             <input type="email" id="email1" v-model="form.email1" required />
           </div>
+
           <div class="form-group">
             <label for="email2">Email 2</label>
             <input type="email" id="email2" v-model="form.email2" />
           </div>
+
           <div class="form-group">
             <label for="email3">Email 3</label>
             <input type="email" id="email3" v-model="form.email3" />
@@ -43,10 +46,12 @@
             <label for="phone1">Phone 1 <span style="color: red;">*</span></label>
             <input type="tel" id="phone1" v-model="form.phone1" required />
           </div>
+
           <div class="form-group">
             <label for="phone2">Phone 2</label>
             <input type="tel" id="phone2" v-model="form.phone2" />
           </div>
+
           <div class="form-group">
             <label for="phone3">Phone 3</label>
             <input type="tel" id="phone3" v-model="form.phone3" />
@@ -59,14 +64,14 @@
           </div>
 
         <!-- Role Field -->
-        <div class="form-group" v-if="showRoleField">
-          <label for="role">Role</label>
-          <select id="role" v-model="form.role" required>
-            <option v-for="role in filteredRoles" :key="role.value" :value="role.value">
-              {{ role.label }}
-            </option>
-          </select>
-        </div>
+          <div class="form-group" v-if="showRoleField">
+            <label for="role">Role</label>
+            <select id="role" v-model="form.role" required>
+              <option v-for="role in filteredRoles" :key="role.value" :value="role.value">
+                {{ role.label }}
+              </option>
+            </select>
+          </div>
         </div>
         <!-- Submit Button -->
         <button type="submit">Submit</button>

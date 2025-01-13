@@ -53,5 +53,4 @@ class FormController extends Controller
             ], 500);
         }
     }
-
 }

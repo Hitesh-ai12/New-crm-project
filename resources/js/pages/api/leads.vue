@@ -1,5 +1,6 @@
 <template>
   <div class="leads-container">
+
     <!--div v-if="loading" class="loading">Loading leads...</div-->
     <!--div v-if="error" class="error">{{ error }}</div-->
     <div class="leads-header">
@@ -41,26 +42,90 @@
           <span>Delete</span>
           <i class="fa-solid fa-trash-can-arrow-up"></i>
         </li>
+        
+        <!-- Email Modal -->
+    <!-- Email Modal -->
+    <div v-if="showEmailModal" class="modal">
+      <div class="modal-header">
+        <h2>Compose Email</h2>
+        <button @click="closeEmailModal">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- From -->
+        <div class="form-group">
+          <label for="from">From:</label>
+          <input
+            type="email"
+            id="from"
+            v-model="emailData.from"
+            placeholder="Enter sender email"
+          />
+        </div>
 
-        <!-- Conditional rendering for "My Leads" -->
-        <li
-          v-if="activeLeadType === 'my'"
-          class="total-leads"
-          @click="openEmailModal"
-          :class="{ disabled: selectedLeads.length === 0 }"
-          :disabled="selectedLeads.length === 0"
-        >
-          <span>Email</span>
-          <i class="fa-solid fa-envelope"></i>
-        </li>
+        <!-- To -->
+        <div class="form-group">
+          <label for="to">To:</label>
+          <input
+            type="email"
+            id="to"
+            v-model="emailData.to"
+            placeholder="Enter recipient email"
+          />
+        </div>
 
-        <li
-          v-if="activeLeadType === 'my'"
-          class="total-leads"
-          @click="openSmsModal"
-          :class="{ disabled: selectedLeads.length === 0 }"
-          :disabled="selectedLeads.length === 0"
-        >
+        <!-- Subject -->
+        <div class="form-group">
+          <label for="subject">Subject:</label>
+          <input
+            type="text"
+            id="subject"
+            v-model="emailData.subject"
+            placeholder="Enter subject"
+          />
+        </div>
+
+        <!-- Template List -->
+        <div class="form-group">
+          <label for="template">Template:</label>
+          <select id="template" v-model="emailData.template" @change="loadTemplate">
+            <option value="">Select Template</option>
+            <option v-for="template in templates" :key="template.id" :value="template.id">
+              {{ template.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- TinyMCE Editor -->
+        <textarea id="email-editor"></textarea>
+
+        <!-- Attachments -->
+        <div class="form-group">
+          <label for="attachments">Attachments:</label>
+          <input type="file" id="attachments" multiple @change="handleAttachments" />
+        </div>
+
+        <!-- Preview and Schedule -->
+        <div class="form-actions">
+          <button @click="previewEmail">Preview</button>
+          <button @click="scheduleEmail">Schedule</button>
+          <button @click="sendEmail">Send Email</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- "My Leads" Button -->
+    <li
+      v-if="activeLeadType === 'my'"
+      class="total-leads"
+      @click="openEmailModal"
+      :class="{ disabled: selectedLeads.length === 0 }"
+      :disabled="selectedLeads.length === 0"
+    >
+      <span>Email</span>
+      <i class="fa-solid fa-envelope"></i>
+    </li>
+        
+        <li v-if="activeLeadType === 'my'" class="total-leads" @click="openSmsModal" :class="{ disabled: selectedLeads.length === 0 }" :disabled="selectedLeads.length === 0">
           <span>Smart SMS</span>
           <i class="fa-solid fa-comment-dots"></i>
         </li>
@@ -248,7 +313,7 @@
         <button type="button" @click="closeStageModal" class="close-button">X</button>
         <h3>Select Stage</h3>
 
-     
+
         <div v-if="showAddStageInput">
           <input v-model="newStage" placeholder="Enter new stage" id="m_add_stage" class="m_add_stage"/>
           <button @click="addStage" class="submit-button">Add</button>
@@ -425,11 +490,15 @@
 
 
 <script lang="js">
-
 import '@/assets/leads.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { computed, onMounted, ref } from 'vue';
+import tinymce from 'tinymce';
+import 'tinymce/icons/default';
+import 'tinymce/plugins/link';
+import 'tinymce/plugins/lists';
+import 'tinymce/themes/silver';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 export default {
   name: 'LeadsPage',
@@ -473,9 +542,7 @@ export default {
     const pageSize = ref(10); // Default page size
     const totalPages = computed(() => Math.ceil(leads.value.length / pageSize.value));
 
-    const showEmailModal = ref(false);
     const showSmsModal = ref(false);
-    const emailMessage = ref('');
     const smsMessage = ref('');
     const newTag = ref('');
     const newStage = ref('');
@@ -484,6 +551,9 @@ export default {
     const showAddTagInput = ref(false);
     const showAddStageInput = ref(false);
 
+    const showEmailModal = ref(false);  // To control the visibility of the email editor
+    const tinymceEditor = ref(null);
+    const emailMessage = ref('');
     // Modal methods
     const openModal = (type) => {
       modalType.value = type;
@@ -541,42 +611,103 @@ export default {
       return options[type] || [];
     };
 
+    const emailData = ref({
+      from: 'you@example.com',
+      to: '',
+      subject: '',
+      message: '',
+      template: '',
+      attachments: [],
+    });
+
+    const templates = ref([
+      { id: 1, name: 'Welcome Email', content: '<p>Welcome to our service!</p>' },
+      { id: 2, name: 'Follow-Up', content: '<p>Just checking in with you!</p>' },
+    ]);
+
+    const initializeTinyMCE = () => {
+      nextTick(() => {
+        tinymce.init({
+            selector: '#email-editor', // Replace with your editor's ID
+            plugins: [
+              'anchor autolink autoresize autosave charmap code codesample directionality emoticons fullscreen help image insertdatetime link lists liststyles media nonbreaking pagebreak preview quickbars save searchreplace table visualblocks visualchars wordcount',
+            ],
+            toolbar: [
+              'undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | preview fullscreen emoticons charmap | searchreplace code',
+            ].join(' | '),
+            menubar: 'file edit view insert format tools table help',
+            height: 500,
+            setup: (editor) => {
+            tinymceEditor.value = editor;
+          },
+        });
+      });
+    };
+
+    const destroyTinyMCE = () => {
+      if (tinymceEditor.value) {
+        tinymceEditor.value.remove();
+        tinymceEditor.value = null;
+      }
+    };
+
     const openEmailModal = () => {
       if (selectedLeads.value.length === 0) {
         alert('No leads selected.');
         return;
       }
       showEmailModal.value = true;
+      initializeTinyMCE();
     };
 
     const closeEmailModal = () => {
       showEmailModal.value = false;
-      emailMessage.value = '';
+      destroyTinyMCE();
     };
 
-    const openSmsModal = () => {
-      if (selectedLeads.value.length === 0) {
-        alert('No leads selected.');
-        return;
+    const loadTemplate = () => {
+      const selectedTemplate = templates.value.find(
+        (template) => template.id === emailData.value.template
+      );
+      if (selectedTemplate) {
+        tinymceEditor.value.setContent(selectedTemplate.content);
       }
-      showSmsModal.value = true;
     };
 
-    const closeSmsModal = () => {
-      showSmsModal.value = false;
-      smsMessage.value = '';
+    const handleAttachments = (event) => {
+      emailData.value.attachments = Array.from(event.target.files);
+    };
+
+    const previewEmail = () => {
+      const message = tinymceEditor.value.getContent();
+      alert(`Preview:\nFrom: ${emailData.value.from}\nTo: ${emailData.value.to}\nSubject: ${emailData.value.subject}\nMessage:\n${message}`);
+    };
+
+    const scheduleEmail = () => {
+      alert('Feature not implemented yet. Add scheduling logic here!');
     };
 
     const sendEmail = async () => {
-      if (emailMessage.value.trim() === '') {
-        alert('Message cannot be empty.');
+      const message = tinymceEditor.value.getContent();
+
+      if (!emailData.value.to || !message.trim()) {
+        alert('Recipient email and message cannot be empty.');
         return;
       }
 
       try {
-        await axios.post('/leads/send-email', {
-          lead_ids: selectedLeads.value,
-          message: emailMessage.value,
+        const formData = new FormData();
+        formData.append('from', emailData.value.from);
+        formData.append('to', emailData.value.to);
+        formData.append('subject', emailData.value.subject);
+        formData.append('message', message);
+
+        emailData.value.attachments.forEach((file, index) => {
+          formData.append(`attachments[${index}]`, file);
+        });
+
+        await axios.post('/leads/send-email', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
         alert('Emails sent successfully.');
         closeEmailModal();
@@ -584,6 +715,7 @@ export default {
         alert('Failed to send emails.');
       }
     };
+
 
     const sendSms = async () => {
       if (smsMessage.value.trim() === '') {
@@ -603,6 +735,18 @@ export default {
       }
     };
 
+    const openSmsModal = () => {
+      if (selectedLeads.value.length === 0) {
+        alert('No leads selected.');
+        return;
+      }
+      showSmsModal.value = true;
+    };
+
+    const closeSmsModal = () => {
+      showSmsModal.value = false;
+      smsMessage.value = '';
+    };
 
     const fetchLeads = async (type) => {
         activeLeadType.value = type;
@@ -628,7 +772,7 @@ export default {
 
       const getMyLeads = async () => {
         try {
-          const response = await axios.get('/leads/my'); // Adjust this API endpoint to fetch "my leads" data
+          const response = await axios.get('/leads'); // Adjust this API endpoint to fetch "my leads" data
           leads.value = Array.isArray(response.data) ? response.data : [];
         } catch (err) {
           error.value = 'Failed to fetch my leads.';
@@ -894,7 +1038,7 @@ export default {
 
     const importDirectFile = () => {
       closeImportModal();
-      alert('Direct File Import option selected');
+
     };
 
     const showToast = (message, type) => {
@@ -949,10 +1093,22 @@ export default {
 
     onMounted(async () => {
       await  fetchLeads(activeLeadType.value);
-      await fetchItems();
+      await  fetchItems();
+      await  destroyTinyMCE(); // Clean up TinyMCE on component unmount
     });
 
     return {
+      emailData,
+      templates,
+      loadTemplate,
+      handleAttachments,
+      previewEmail,
+      scheduleEmail,
+      emailMessage,
+      showEmailModal,
+      openEmailModal,
+      closeEmailModal,
+      sendEmail,
       getAllLeads,
       getMyLeads,
       fetchLeads,
@@ -994,15 +1150,10 @@ export default {
       changePage,
       setPageSize,
       paginatedLeads,
-      showEmailModal,
       showSmsModal,
-      emailMessage,
       smsMessage,
-      openEmailModal,
-      closeEmailModal,
       openSmsModal,
       closeSmsModal,
-      sendEmail,
       sendSms,
       showToast,
       newTag,
@@ -1030,3 +1181,62 @@ export default {
   },
 };
 </script>
+<style>
+.modal {
+  position: fixed;
+  z-index: 1000;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 10%);
+  inline-size: 600px;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: 10px;
+}
+
+.modal-body .form-group {
+  margin-block-end: 10px;
+}
+
+.modal-body .form-group label {
+  display: block;
+  margin-block-end: 5px;
+}
+
+.modal-body .form-group input,
+.modal-body .form-group select,
+.modal-body .form-group textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  inline-size: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+button {
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  padding-block: 8px;
+  padding-inline: 12px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+</style>

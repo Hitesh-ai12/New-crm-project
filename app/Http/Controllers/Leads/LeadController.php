@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Leads;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Auth;
+use App\Mail\ComposeEmail;
 use Illuminate\Http\Request;
 use App\Models\Lead;
 use App\Models\User;
@@ -74,39 +75,35 @@ class LeadController extends Controller
             return $response;
         }
     
-        public function sendSms(Request $request)
-        {
-            $leadIds = $request->input('lead_ids');
-            $message = $request->input('message');
-    
-            $leads = Lead::whereIn('id', $leadIds)->get();
-    
-            $twilio = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
-    
-            foreach ($leads as $lead) {
-                $twilio->messages->create(
-                    $lead->phone,
-                    [
-                        'from' => env('TWILIO_PHONE_NUMBER'),
-                        'body' => $message
-                    ]
-                );
-            }
-    
-            return response()->json(['success' => 'SMS sent successfully.']);
-        }
-    
+        /**
+         * Send the composed email to selected leads.
+         *
+         * @param \Illuminate\Http\Request $request
+         * @return \Illuminate\Http\Response
+         */
         public function sendEmail(Request $request)
         {
+            // Validate request data
+            $request->validate([
+                'lead_ids' => 'required|array',
+                'message' => 'required|string',
+                'subject' => 'required|string',
+            ]);
+
+            // Prepare data for the email
+            $subject = $request->input('subject');
+            $content = $request->input('message');
             $leadIds = $request->input('lead_ids');
-            $message = $request->input('message');
-    
-            $leads = Lead::whereIn('id', $leadIds)->get();
-    
-            foreach ($leads as $lead) {
-                Mail::to($lead->email)->send(new LeadMail($message));
+
+            // Send the email to all leads (or customize this based on your application)
+            foreach ($leadIds as $leadId) {
+                $lead = Lead::find($leadId); // Assuming you have a Lead model
+
+                // Send the email to the lead
+                Mail::to($lead->email)->send(new ComposeEmail($subject, $content, $leadIds));
             }
-    
-            return response()->json(['success' => 'Emails sent successfully.']);
+
+            return response()->json(['message' => 'Emails sent successfully!']);
         }
+         
     }
