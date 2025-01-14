@@ -1,9 +1,10 @@
 <script setup>
-import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
-import NavItems from '@/layouts/components/NavItems.vue'
-import UserProfile from '@/layouts/components/UserProfile.vue'
-import logo from '@images/logo.svg?raw'
-import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
+import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue';
+import NavItems from '@/layouts/components/NavItems.vue';
+import UserProfile from '@/layouts/components/UserProfile.vue';
+import logo from '@images/logo.svg?raw';
+import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'; /* PartiallyEnd: #3632/scriptSetup.vue */
+
 </script>
 
 <template>
@@ -24,15 +25,19 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
           class="d-flex align-center cursor-pointer"
           style="user-select: none;"
         >
-          <!-- 👉 Search Trigger button -->
-          <IconBtn>
-            <VIcon icon="ri-search-line" />
-          </IconBtn>
+        <!-- 👉 Inbox Button using router-link -->
+        <router-link :to="{ name: 'inbox'}">
+        <button class="icon-buttons">
+          <VIcon icon="ri-inbox-line" />
+        </button>
+      </router-link>
 
-          <span class="d-none d-md-flex align-center text-disabled">
-            <span class="me-3">Search</span>
-            <span class="meta-key">&#8984;K</span>
-          </span>
+      <!-- 👉 Calendar Button using router-link -->
+      <router-link :to="{ name: 'calendar'}">
+        <button class="icon-buttons">
+          <VIcon icon="ri-calendar-line" />
+        </button>
+      </router-link>
         </div>
 
         <VSpacer />
@@ -107,4 +112,19 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
     text-transform: uppercase;
   }
 }
+
+.icon-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border: black;
+  background: none;
+  color: black;
+  cursor: pointer;
+}
+
+// .icon-button:focus {
+//   outline: none;
+// }
 </style>

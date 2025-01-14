@@ -1,6 +1,5 @@
 <template>
   <div class="leads-container">
-
     <!--div v-if="loading" class="loading">Loading leads...</div-->
     <!--div v-if="error" class="error">{{ error }}</div-->
     <div class="leads-header">
@@ -43,7 +42,7 @@
           <i class="fa-solid fa-trash-can-arrow-up"></i>
         </li>
         
-        <!-- Email Modal -->
+        
     <!-- Email Modal -->
     <div v-if="showEmailModal" class="modal">
       <div class="modal-header">
@@ -125,10 +124,94 @@
       <i class="fa-solid fa-envelope"></i>
     </li>
         
-        <li v-if="activeLeadType === 'my'" class="total-leads" @click="openSmsModal" :class="{ disabled: selectedLeads.length === 0 }" :disabled="selectedLeads.length === 0">
-          <span>Smart SMS</span>
-          <i class="fa-solid fa-comment-dots"></i>
-        </li>
+  <!-- SMS Modal -->
+  <div v-if="showSmsModal" class="modal" :class="{ 'modal-fullscreen': isFullscreen }">
+
+      <div class="modal-header">
+        <h2>Compose SMS</h2>
+        <!-- Expand Icon -->
+        <i class="fas fa-expand-alt" @click="expandSmsModal" title="Expand"></i>
+        <button @click="closeSmsModal">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- From -->
+        <div class="form-group">
+          <label for="sms-from">From:</label>
+          <input
+            type="text"
+            id="sms-from"
+            v-model="smsData.from"
+            placeholder="Enter sender's name or phone number"
+          />
+        </div>
+
+        <!-- To -->
+        <div class="form-group">
+          <label for="sms-to">To:</label>
+          <input
+            type="text"
+            id="sms-to"
+            v-model="smsData.to"
+            placeholder="Enter recipient's phone number"
+          />
+        </div>
+
+        <!-- Template List -->
+        <div class="form-group">
+          <label for="sms-template">Template:</label>
+          <select id="sms-template" v-model="smsData.template" @change="loadSmsTemplate">
+            <option value="">Select Template</option>
+            <option v-for="template in smsTemplates" :key="template.id" :value="template.id">
+              {{ template.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Merge Tags -->
+        <div class="form-group">
+          <label for="merge-tags">Insert Merge Tag:</label>
+          <select id="merge-tags" @change="insertMergeTag($event)">
+            <option value="">Select Tag</option>
+            <option v-for="tag in mergeTags" :key="tag" :value="tag">{{ tag }}</option>
+          </select>
+        </div>
+
+        <!-- Message Body -->
+        <div class="form-group">
+          <label for="sms-message">Message:</label>
+          <textarea
+            id="sms-message"
+            v-model="smsData.message"
+            placeholder="Type your message here..."
+            rows="5"
+          ></textarea>
+        </div>
+
+        <!-- Schedule SMS -->
+        <div class="form-group">
+          <label for="sms-schedule">Schedule SMS:</label>
+          <input type="datetime-local" id="sms-schedule" v-model="smsData.schedule" />
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button @click="previewSms">Preview</button>
+          <button @click="sendSms">Send SMS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- "My Leads" Button -->
+    <li
+      v-if="activeLeadType === 'my'"
+      class="total-leads"
+      @click="openSmsModal"
+      :class="{ disabled: selectedLeads.length === 0 }"
+      :disabled="selectedLeads.length === 0"
+    >
+      <span>Smart SMS</span>
+      <i class="fa-solid fa-comment-dots"></i>
+    </li>
 
         <li
           v-if="activeLeadType === 'my'"
@@ -270,16 +353,6 @@
       </div>
     </div>
 
-
-    <!-- SMS Modal -->
-    <div v-if="showSmsModal" class="modal">
-      <div class="modal-content">
-        <span class="close" @click="closeSmsModal">&times;</span>
-        <h2>Send SMS</h2>
-        <textarea v-model="smsMessage" placeholder="Enter your message here"></textarea>
-        <button @click="sendSms">Send SMS</button>
-      </div>
-    </div>
 <!-----------------------------06-09-2024-------------------------------------->
 
     <!-- Tags Modal -->
@@ -509,7 +582,7 @@ export default {
     const error = ref('');
     const searchQuery = ref('');
     const showForm = ref(false);
-    const selectedLeads = ref([]);
+ 
     const newLead = ref({
       id: 0,
       first_name: '',
@@ -539,10 +612,10 @@ export default {
     const fileError = ref('');
 
     const currentPage = ref(1);
-    const pageSize = ref(10); // Default page size
+    const pageSize = ref(10); 
     const totalPages = computed(() => Math.ceil(leads.value.length / pageSize.value));
 
-    const showSmsModal = ref(false);
+  
     const smsMessage = ref('');
     const newTag = ref('');
     const newStage = ref('');
@@ -551,9 +624,13 @@ export default {
     const showAddTagInput = ref(false);
     const showAddStageInput = ref(false);
 
-    const showEmailModal = ref(false);  // To control the visibility of the email editor
+    const showEmailModal = ref(false); 
     const tinymceEditor = ref(null);
     const emailMessage = ref('');
+
+    const showSmsModal = ref(false);
+    const selectedLeads = ref([]);
+    const isFullscreen = ref(false); 
     // Modal methods
     const openModal = (type) => {
       modalType.value = type;
@@ -578,7 +655,7 @@ export default {
         } else {
           selectedTags.value.add(tagId);
         }
-        newLead.value.tag = Array.from(selectedTags.value); // Update newLead.tag with selected tag IDs
+        newLead.value.tag = Array.from(selectedTags.value); 
       };
 
     const submitAction = () => {
@@ -611,6 +688,7 @@ export default {
       return options[type] || [];
     };
 
+    //----------------------*-*****-*-**-*-*---*
     const emailData = ref({
       from: 'you@example.com',
       to: '',
@@ -716,24 +794,22 @@ export default {
       }
     };
 
+//*-*--*-*--*-*-*-*-*-*--*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 
-    const sendSms = async () => {
-      if (smsMessage.value.trim() === '') {
-        alert('Message cannot be empty.');
-        return;
-      }
+const smsData = ref({
+      from: '',
+      to: '',
+      message: '',
+      template: '',
+      schedule: '',
+    });
 
-      try {
-        await axios.post('/leads/send-sms', {
-          lead_ids: selectedLeads.value,
-          message: smsMessage.value,
-        });
-        alert('SMS sent successfully.');
-        closeSmsModal();
-      } catch (err) {
-        alert('Failed to send SMS.');
-      }
-    };
+    const smsTemplates = ref([
+      { id: 1, name: 'Appointment Reminder', content: 'Hi {name}, this is a reminder for your appointment.' },
+      { id: 2, name: 'Promotional Offer', content: 'Hello {name}, check out our latest promotional offers!' },
+    ]);
+
+    const mergeTags = ref(['{name}', '{email}', '{phone}']);
 
     const openSmsModal = () => {
       if (selectedLeads.value.length === 0) {
@@ -743,14 +819,62 @@ export default {
       showSmsModal.value = true;
     };
 
-    const closeSmsModal = () => {
-      showSmsModal.value = false;
-      smsMessage.value = '';
+    const expandSmsModal = () => {
+      isFullscreen.value = !isFullscreen.value; 
     };
 
+    const closeSmsModal = () => {
+      showSmsModal.value = false;
+      smsData.value = { from: '', to: '', message: '', template: '', schedule: '' };
+    };
+
+    const loadSmsTemplate = () => {
+      const selectedTemplate = smsTemplates.value.find(
+        (template) => template.id === smsData.value.template
+      );
+      if (selectedTemplate) {
+        smsData.value.message = selectedTemplate.content;
+      }
+    };
+
+    const insertMergeTag = (event) => {
+      const tag = event.target.value;
+      if (tag) {
+        smsData.value.message += ` ${tag}`;
+        event.target.value = '';
+      }
+    };
+
+    const previewSms = () => {
+      alert(
+        `Preview:\nFrom: ${smsData.value.from}\nTo: ${smsData.value.to}\nMessage:\n${smsData.value.message}`
+      );
+    };
+
+    const sendSms = async () => {
+      if (!smsData.value.from || !smsData.value.to || !smsData.value.message.trim()) {
+        alert('Sender, recipient, and message cannot be empty.');
+        return;
+      }
+
+      try {
+        await axios.post('/leads/send-sms', {
+          lead_ids: selectedLeads.value,
+          from: smsData.value.from,
+          to: smsData.value.to,
+          message: smsData.value.message,
+          schedule: smsData.value.schedule || null,
+        });
+        alert('SMS sent successfully.');
+        closeSmsModal();
+      } catch (err) {
+        alert('Failed to send SMS.');
+      }
+    };
+ 
     const fetchLeads = async (type) => {
         activeLeadType.value = type;
-        loading.value = true; // Set loading state while fetching leads
+        loading.value = true; 
 
         if (type === 'all') {
           await getAllLeads();
@@ -772,7 +896,7 @@ export default {
 
       const getMyLeads = async () => {
         try {
-          const response = await axios.get('/leads'); // Adjust this API endpoint to fetch "my leads" data
+          const response = await axios.get('/leads'); 
           leads.value = Array.isArray(response.data) ? response.data : [];
         } catch (err) {
           error.value = 'Failed to fetch my leads.';
@@ -800,7 +924,7 @@ export default {
 
     const closeTagModal = () => {
       showTagModal.value = false;
-      newTag.value = ''; // Reset input
+      newTag.value = '';
     };
 
     const openStageModal = () => {
@@ -809,7 +933,7 @@ export default {
 
     const closeStageModal = () => {
       showStageModal.value = false;
-      newStage.value = ''; // Reset input
+      newStage.value = ''; 
     };
 
     const addTag = async () => {
@@ -997,7 +1121,7 @@ export default {
     const importIndirectFile = () => {
       closeImportModal();
       alert('Indirect File Import option selected');
-      // Add logic to handle indirect file import
+      // Add logic to handle indirect file impor
     };
 
     const openImportModal = () => {
@@ -1098,6 +1222,18 @@ export default {
     });
 
     return {
+      expandSmsModal,
+      showSmsModal,
+      selectedLeads,
+      smsData,
+      smsTemplates,
+      mergeTags,
+      openSmsModal,
+      closeSmsModal,
+      loadSmsTemplate,
+      insertMergeTag,
+      previewSms,
+      sendSms,
       emailData,
       templates,
       loadTemplate,
@@ -1121,7 +1257,6 @@ export default {
       showForm,
       newLead,
       errors,
-      selectedLeads,
       submitForm,
       toggleSelectAll,
       toast,
@@ -1150,11 +1285,6 @@ export default {
       changePage,
       setPageSize,
       paginatedLeads,
-      showSmsModal,
-      smsMessage,
-      openSmsModal,
-      closeSmsModal,
-      sendSms,
       showToast,
       newTag,
       newStage,
@@ -1181,6 +1311,7 @@ export default {
   },
 };
 </script>
+
 <style>
 .modal {
   position: fixed;
@@ -1238,5 +1369,15 @@ button {
 
 button:hover {
   background-color: #0056b3;
+}
+
+.modal-fullscreen {
+  padding: 40px;
+  border-radius: 0;
+  block-size: 100%;
+  inline-size: 100%;
+
+  /* Fullscreen modal styling */
+  inset: 0;
 }
 </style>

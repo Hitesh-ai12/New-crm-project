@@ -83,7 +83,19 @@ export const routes = [
         {
           path: '/update-profile/:id',
           name: 'update-profile',
-          component: () =>import('@/pages/api/templates/UpdateLeadPage .vue'),
+          component: () =>import('@/pages/api/templates/UpdateLeadPage.vue'),
+          props: true, // Pass route params as props
+        },
+        {
+          path: '/inbox',
+          name: 'inbox',
+          component: () =>import('@/pages/header/inbox.vue'),
+          props: true, // Pass route params as props
+        },
+        {
+          path: '/calendar',
+          name: 'calendar',
+          component: () =>import('@/pages/header/calendar.vue'),
           props: true, // Pass route params as props
         },
     ],
