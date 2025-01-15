@@ -104,14 +104,6 @@ const login = async () => {
               </div>
             </VCol>
 
-            <!-- Loader and Login button>
-            <VCol cols="12" class="d-flex align-center justify-center my-4">
-              <VProgressCircular
-                v-if="isLoading"
-                indeterminate
-                color="primary"
-              />
-            </VCol -->
             <VCol cols="12 login_form_btn">
               <VBtn :loading="isLoading" block type="submit" color="primary" >
                 Login
@@ -139,8 +131,8 @@ const login = async () => {
   padding: 20px !important;
   border-radius: 10px !important;
   background-color: #f4f5fa !important;
-  block-size: 575px !important;
-  box-shadow: 0 4px 23px rgba(0, 0, 0, 25%) !important, 0 6px 6px rgb(0 0 0 / 7%) !important;
+  block-size: 450px !important;
+  box-shadow: 0 4px 23px rgba(0, 0, 0, 25%) !important;
   inline-size: 100% !important;
   max-inline-size: 1080px !important;
 }
