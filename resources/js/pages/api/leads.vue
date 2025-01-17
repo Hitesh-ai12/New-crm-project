@@ -883,28 +883,27 @@ const smsData = ref({
         }
       };
 
-      const getAllLeads = async () => {
-        try {
-          const response = await axios.get('/leads');
-          leads.value = Array.isArray(response.data) ? response.data : [];
-        } catch (err) {
-          error.value = 'Failed to fetch leads.';
-        } finally {
-          loading.value = false;
-        }
-      };
+    const getAllLeads = async () => {
+      try {
+        const response = await axios.get('/leads');
+        leads.value = Array.isArray(response.data) ? response.data : [];
+      } catch (err) {
+        error.value = 'Failed to fetch leads.';
+      } finally {
+        loading.value = false;
+      }
+    };
 
-      const getMyLeads = async () => {
-        try {
-          const response = await axios.get('/leads'); 
-          leads.value = Array.isArray(response.data) ? response.data : [];
-        } catch (err) {
-          error.value = 'Failed to fetch my leads.';
-        } finally {
-          loading.value = false;
-        }
-      };
-
+    const getMyLeads = async () => {
+      try {
+        const response = await axios.get('/leads'); 
+        leads.value = Array.isArray(response.data) ? response.data : [];
+      } catch (err) {
+        error.value = 'Failed to fetch my leads.';
+      } finally {
+        loading.value = false;
+      }
+    };
 
     const fetchItems = async () => {
       try {

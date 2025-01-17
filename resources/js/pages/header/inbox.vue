@@ -296,10 +296,6 @@ export default {
 </script>
 
 <style scoped>
-/* Your styles here */
-</style>
-
-<style scoped>
 .inbox-page {
   padding: 20px;
   font-family: Arial, sans-serif;

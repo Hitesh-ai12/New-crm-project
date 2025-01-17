@@ -97,7 +97,31 @@ export const routes = [
         {
           path: '/calendar',
           name: 'calendar',
-          component: () =>import('@/pages/header/calendars.vue'),
+          component: () => import('@/pages/header/calendars.vue'),
+          props: true, // Pass route params as props
+        },
+        {
+          path: '/settings/birthday-wishes',
+          name: 'birthday-wishes',
+          component: () => import('@/pages/settings/BirthdayWishesTemplate.vue'),
+          props: true, // Pass route params as props
+        },
+        {
+          path: '/settings/email-templates',
+          name: 'email-templates',
+          component: () => import('@/pages/settings/CreateEmailTemplates.vue'),
+          props: true, // Pass route params as props
+        },
+        {
+          path: '/settings/signature',
+          name: 'signature',
+          component: () => import('@/pages/settings/CreateSignaturesTemplates.vue'),
+          props: true, // Pass route params as props
+        },
+        {
+          path: 'settings/sms-templates',
+          name: 'sms-templates',
+          component: () => import('@/pages/settings/CreateSmsTemplates.vue'),
           props: true, // Pass route params as props
         },
     ],

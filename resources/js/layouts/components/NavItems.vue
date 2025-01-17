@@ -124,27 +124,28 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
     <VerticalNavLink
       :item="{
         title: 'Signature',
-        to: '/settings/signature',  // Corrected path
+        to: { name: 'signature' },
       }"
     />
     <VerticalNavLink
       :item="{
         title: 'SMS Templates',
-        to: '/api/leads',  // Corrected path
+        to: { name: 'sms-templates' },
       }"
     />
     <VerticalNavLink
       :item="{
         title: 'Email Templates',
-        to: '/api/leads',  // Corrected path
+        to: { name: 'email-templates' },
       }"
     />
     <VerticalNavLink
       :item="{
         title: 'Birthday Wishes',
-        to: '/api/leads',  // Corrected path
+        to: { name: 'birthday-wishes' },
       }"
     />
+
     <VerticalNavLink
       :item="{
         title: 'Listing Settings',
