@@ -83,13 +83,24 @@
           />
         </div>
 
+        <!-- Merge Field List for Subject -->
+        <div class="form-group">
+          <label for="mergeFields">Merge Fields:</label>
+          <select id="mergeFields" v-model="selectedMergeField" @change="addMergeFieldToSubject">
+            <option value="">Select Merge Field</option>
+            <option v-for="field in mergeFields" :key="field" :value="field">
+              {{ field }}
+            </option>
+          </select>
+        </div>
+
         <!-- Template List -->
         <div class="form-group">
           <label for="template">Template:</label>
           <select id="template" v-model="emailData.template" @change="loadTemplate">
             <option value="">Select Template</option>
             <option v-for="template in templates" :key="template.id" :value="template.id">
-              {{ template.name }}
+              {{ template.title }} <!-- Show template title instead of ID -->
             </option>
           </select>
         </div>
@@ -133,6 +144,7 @@
         <i class="fas fa-expand-alt" @click="expandSmsModal" title="Expand"></i>
         <button @click="closeSmsModal">×</button>
       </div>
+
       <div class="modal-body">
         <!-- From -->
         <div class="form-group">
@@ -421,7 +433,7 @@
         </div>
       </div>
     </div>
-<!------------------------------------------------------------------->
+    <!------------------------------------------------------------------->
 
     <div>
       <div class="header">
@@ -631,6 +643,7 @@ export default {
     const showSmsModal = ref(false);
     const selectedLeads = ref([]);
     const isFullscreen = ref(false); 
+    
     // Modal methods
     const openModal = (type) => {
       modalType.value = type;
@@ -659,8 +672,6 @@ export default {
       };
 
     const submitAction = () => {
-      // Handle the action for the selected option here
-      console.log('Selected Option:', selectedOption.value);
       closeModal();
     };
 
@@ -688,9 +699,18 @@ export default {
       return options[type] || [];
     };
 
-    //----------------------*-*****-*-**-*-*---*
+
+
+   
+    
+
+
+
+
+   // Start -- Send Email And Sms On Selected Leads Functionlity...
+
     const emailData = ref({
-      from: 'you@example.com',
+      from: 'hiteshpandey732195@gmail.com',
       to: '',
       subject: '',
       message: '',
@@ -698,15 +718,49 @@ export default {
       attachments: [],
     });
 
-    const templates = ref([
-      { id: 1, name: 'Welcome Email', content: '<p>Welcome to our service!</p>' },
-      { id: 2, name: 'Follow-Up', content: '<p>Just checking in with you!</p>' },
-    ]);
+    const selectedMergeField = ref('');
 
+    const mergeFields = ref([
+      '{{firstName}}',
+      '{{lastName}}',
+      '{{email}}',
+      '{{company}}',
+      '{{phone}}',
+    ]);
+     
+    const addMergeFieldToSubject = () => {
+        if (selectedMergeField.value) {
+          emailData.value.subject += ' ' + selectedMergeField.value; 
+        }
+      };
+
+      const templates = ref([]);
+      const authToken = localStorage.getItem('auth_token');
+      const fetchTemplates = async () => {
+          try {
+            const response = await axios.get('/api/templates', {
+              headers: {
+               'Authorization': `Bearer ${authToken}`, // Ensure token is stored in localStorage
+              }
+            });
+
+            // Ensure correct response structure
+            templates.value = response.data.data ?? response.data;  
+          } catch (error) {
+            console.error('Error fetching templates:', error);
+
+            if (error.response && error.response.status === 401) {
+              alert('Session expired. Please log in again.');
+              // Redirect to login if necessary
+            }
+          }
+        };
+
+    // onMounted(fetchTemplates);
     const initializeTinyMCE = () => {
       nextTick(() => {
         tinymce.init({
-            selector: '#email-editor', // Replace with your editor's ID
+            selector: '#email-editor', 
             plugins: [
               'anchor autolink autoresize autosave charmap code codesample directionality emoticons fullscreen help image insertdatetime link lists liststyles media nonbreaking pagebreak preview quickbars save searchreplace table visualblocks visualchars wordcount',
             ],
@@ -747,10 +801,13 @@ export default {
       const selectedTemplate = templates.value.find(
         (template) => template.id === emailData.value.template
       );
+
       if (selectedTemplate) {
-        tinymceEditor.value.setContent(selectedTemplate.content);
+        emailData.value.subject = selectedTemplate.subject; 
+        tinymceEditor.value.setContent(selectedTemplate.content); 
       }
     };
+
 
     const handleAttachments = (event) => {
       emailData.value.attachments = Array.from(event.target.files);
@@ -765,44 +822,35 @@ export default {
       alert('Feature not implemented yet. Add scheduling logic here!');
     };
 
-    const sendEmail = async () => {
-      const message = tinymceEditor.value.getContent();
+       // Handle email sending
+       const sendEmail = async () => {
+        const message = tinymceEditor.value.getContent();
+        
+        try {
+          await axios.post('/api/send-email', {
+            from: emailData.value.from,
+            to: emailData.value.to,
+            subject: emailData.value.subject,
+            message: message, // Use TinyMCE content
+            template_id: emailData.value.template, // Send selected template ID
+          });
 
-      if (!emailData.value.to || !message.trim()) {
-        alert('Recipient email and message cannot be empty.');
-        return;
-      }
+          alert('Email sent successfully!');
+          closeEmailModal();
+        } catch (error) {
+          console.error('Error sending email:', error);
+          alert('Failed to send email.');
+        }
+      };
 
-      try {
-        const formData = new FormData();
-        formData.append('from', emailData.value.from);
-        formData.append('to', emailData.value.to);
-        formData.append('subject', emailData.value.subject);
-        formData.append('message', message);
 
-        emailData.value.attachments.forEach((file, index) => {
-          formData.append(`attachments[${index}]`, file);
-        });
-
-        await axios.post('/leads/send-email', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        alert('Emails sent successfully.');
-        closeEmailModal();
-      } catch (err) {
-        alert('Failed to send emails.');
-      }
-    };
-
-//*-*--*-*--*-*-*-*-*-*--*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-
-const smsData = ref({
-      from: '',
-      to: '',
-      message: '',
-      template: '',
-      schedule: '',
-    });
+    const smsData = ref({
+        from: '',
+        to: '',
+        message: '',
+        template: '',
+        schedule: '',
+      });
 
     const smsTemplates = ref([
       { id: 1, name: 'Appointment Reminder', content: 'Hi {name}, this is a reminder for your appointment.' },
@@ -871,7 +919,11 @@ const smsData = ref({
         alert('Failed to send SMS.');
       }
     };
- 
+   // End -- Send Email And Sms On Selected Leads Functionlity...
+
+
+
+   
     const fetchLeads = async (type) => {
         activeLeadType.value = type;
         loading.value = true; 
@@ -886,6 +938,7 @@ const smsData = ref({
     const getAllLeads = async () => {
       try {
         const response = await axios.get('/leads');
+        console.log(response);
         leads.value = Array.isArray(response.data) ? response.data : [];
       } catch (err) {
         error.value = 'Failed to fetch leads.';
@@ -1120,7 +1173,7 @@ const smsData = ref({
     const importIndirectFile = () => {
       closeImportModal();
       alert('Indirect File Import option selected');
-      // Add logic to handle indirect file impor
+     
     };
 
     const openImportModal = () => {
@@ -1179,7 +1232,7 @@ const smsData = ref({
         try {
           const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
           const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
-          const authToken = localStorage.getItem('auth_token');  // Get the token from localStorage
+          const authToken = localStorage.getItem('auth_token');  
 
           const response = await axios.post('/leads', {
             first_name: newLead.value.first_name,
@@ -1191,7 +1244,7 @@ const smsData = ref({
           }, {
             headers: {
               'X-CSRF-TOKEN': csrfToken,
-              'Authorization': `Bearer ${authToken}`,  // Include the auth token here
+              'Authorization': `Bearer ${authToken}`, 
             },
           });
 
@@ -1217,7 +1270,8 @@ const smsData = ref({
     onMounted(async () => {
       await  fetchLeads(activeLeadType.value);
       await  fetchItems();
-      await  destroyTinyMCE(); // Clean up TinyMCE on component unmount
+      await  destroyTinyMCE(); 
+      await fetchTemplates();
     });
 
     return {
@@ -1306,6 +1360,9 @@ const smsData = ref({
       isTagSelected,
       toggleTagSelection,
       closeModal,
+      selectedMergeField,
+      addMergeFieldToSubject,
+      mergeFields,
     };
   },
 };
@@ -1375,8 +1432,6 @@ button:hover {
   border-radius: 0;
   block-size: 100%;
   inline-size: 100%;
-
-  /* Fullscreen modal styling */
   inset: 0;
 }
 </style>

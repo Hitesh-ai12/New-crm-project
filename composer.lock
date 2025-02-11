@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "06730426a8b7b94e136573115f51a782",
+    "content-hash": "6e3ed346c5cf0b44ec375988b96927ad",
     "packages": [
         {
             "name": "brick/math",
@@ -6048,16 +6048,16 @@
         },
         {
             "name": "twilio/sdk",
-            "version": "8.2.3",
+            "version": "8.3.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twilio/twilio-php.git",
-                "reference": "9b0297df39cadcae857387e86d0e062887d59c15"
+                "reference": "9981b086f1463389cb0df0be59e90c1f64d430c2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twilio/twilio-php/zipball/9b0297df39cadcae857387e86d0e062887d59c15",
-                "reference": "9b0297df39cadcae857387e86d0e062887d59c15",
+                "url": "https://api.github.com/repos/twilio/twilio-php/zipball/9981b086f1463389cb0df0be59e90c1f64d430c2",
+                "reference": "9981b086f1463389cb0df0be59e90c1f64d430c2",
                 "shasum": ""
             },
             "require": {
@@ -6095,9 +6095,9 @@
             ],
             "support": {
                 "issues": "https://github.com/twilio/twilio-php/issues",
-                "source": "https://github.com/twilio/twilio-php/tree/8.2.3"
+                "source": "https://github.com/twilio/twilio-php/tree/8.3.13"
             },
-            "time": "2024-08-26T11:24:31+00:00"
+            "time": "2025-01-28T11:38:41+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

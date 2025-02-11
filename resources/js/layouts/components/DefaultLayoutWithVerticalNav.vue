@@ -124,7 +124,4 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'; /* Pa
   cursor: pointer;
 }
 
-// .icon-button:focus {
-//   outline: none;
-// }
 </style>

@@ -11,17 +11,17 @@ class TemplateController extends Controller
     // Fetch all email templates
     public function index(Request $request)
     {
-        $type = $request->get('type', 'email');  // Default to 'email' if no type is provided
+        $type = $request->get('type', 'email');
         
-        $query = Template::where('type', $type);  // Filter templates by the type (sms or email)
+        $query = Template::where('type', $type);
     
         if ($request->has('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%');  // Optional search functionality
+            $query->where('title', 'like', '%' . $request->search . '%');
         }
     
-        $templates = $query->paginate(10);  // Paginate the templates, you can adjust the number
+        $templates = $query->paginate(10);
     
-        return response()->json($templates);  // Return the templates as JSON response
+        return response()->json($templates); 
     }
     
     // Store a new email template
@@ -31,7 +31,7 @@ class TemplateController extends Controller
             'title' => 'required|string|max:255',
             'subject' => 'nullable|string|max:255',
             'content' => 'required|string',
-            'attachment' => 'nullable|file|max:10240', // Max size 10 MB
+            'attachment' => 'nullable|file|max:10240',
         ]);
 
         $data = $request->only('type', 'title', 'subject', 'content');
@@ -59,13 +59,13 @@ class TemplateController extends Controller
             'title' => 'required|string|max:255',
             'subject' => 'nullable|string|max:255',
             'content' => 'required|string',
-            'attachment' => 'nullable|file|max:10240', // Max size 10 MB
+            'attachment' => 'nullable|file|max:10240',
         ]);
 
         $data = $request->only('title', 'subject', 'content');
 
         if ($request->hasFile('attachment')) {
-            // Delete the old attachment if it exists
+           
             if ($template->attachment_path) {
                 \Storage::disk('public')->delete($template->attachment_path);
             }
@@ -86,7 +86,6 @@ class TemplateController extends Controller
     {
         $template = Template::findOrFail($id);
 
-        // Delete the attachment if it exists
         if ($template->attachment_path) {
             \Storage::disk('public')->delete($template->attachment_path);
         }
@@ -98,6 +97,7 @@ class TemplateController extends Controller
             'message' => 'Template deleted successfully',
         ]);
     }
+
     public function bulkDelete(Request $request)
     {
         $request->validate([
@@ -109,4 +109,5 @@ class TemplateController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Templates deleted successfully.']);
     }
+    
 }

@@ -7,7 +7,7 @@
         </div>
         <div class="email-icon">
           <i class="fa-regular fa-plus" @click="openModal"></i>
-                   <!-- Delete button with dynamic disable state -->
+
                    <i 
             class="fa-regular fa-minus" 
             @click="deleteSelectedTemplates" 
@@ -99,9 +99,11 @@
 </template>
 
 <script>
+
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { onMounted, ref, watch } from 'vue';
+
 
 export default {
   setup() {
@@ -116,6 +118,7 @@ export default {
       content: '',
       attachment: null,
     });
+
 
     // Fetch templates from the server
     const fetchTemplates = async () => {
@@ -203,8 +206,8 @@ export default {
 
         // Handle successful response
         if (response.data.success) {
-          fetchTemplates(); // Reload templates
-          closeModal(); // Close modal
+          fetchTemplates();
+          closeModal(); 
           Swal.fire('Success!', `Template has been ${formData.value.id ? 'updated' : 'created'}.`, 'success');
         } else {
           Swal.fire('Error', 'Failed to submit the template. Please try again.', 'error');
@@ -274,13 +277,13 @@ export default {
         try {
           // Send POST request with authorization token for bulk deletion
           await axios.post('/api/templates/bulk-delete', {
-            ids: selectedTemplates.value,  // Selected template IDs
+            ids: selectedTemplates.value,
           }, {
             headers: {
               'Authorization': `Bearer ${authToken}`,
             },
           });
-          fetchTemplates(); // Reload the templates list
+          fetchTemplates();
           Swal.fire('Deleted!', 'Your selected templates have been deleted.', 'success');
         } catch (error) {
           console.error('Error deleting selected templates:', error);
