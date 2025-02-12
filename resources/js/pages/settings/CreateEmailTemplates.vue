@@ -1,15 +1,14 @@
 <template>
   <div class="main">
     <div class="main-2">
+      
       <div class="heading-section">
         <div class="email-templates">
           <h3>Email Template</h3>
         </div>
         <div class="email-icon">
           <i class="fa-regular fa-plus" @click="openModal"></i>
-
-                   <i 
-            class="fa-regular fa-minus" 
+           <i class="fa-regular fa-minus" 
             @click="deleteSelectedTemplates" 
             :class="{'disabled': selectedTemplates.length === 0}" 
             :style="{cursor: selectedTemplates.length === 0 ? 'not-allowed' : 'pointer'}">
@@ -31,30 +30,45 @@
       <!-- Data Section -->
       <div class="data-section">
         <table>
-          <thead>
-            <tr>
-              <th><input type="checkbox" @change="toggleSelectAll" /></th>
-              <th>Name</th>
-              <th>Created By</th>
-              <th>Subject</th>
-              <th>Body</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="template in templates.data" :key="template.id">
-              <td><input type="checkbox" v-model="selectedTemplates" :value="template.id" /></td>
-              <td>{{ template.title }}</td>
-              <td>{{ template.created_by }}</td>
-              <td>{{ template.subject }}</td>
-              <td>{{ template.content }}</td>
-              <td>
-                <button @click="openModal(template)">Edit</button>
-                <button @click="confirmDeleteTemplate(template.id)">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <thead>
+    <tr>
+      <th><input type="checkbox" @change="toggleSelectAll" /></th>
+      <th>Attachment</th> <!-- Add a column for the attachment -->
+      <th>Name</th>
+      <th>Created By</th>
+      <th>Subject</th>
+      <th>Body</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="template in templates.data" :key="template.id">
+      <td><input type="checkbox" v-model="selectedTemplates" :value="template.id" /></td>
+      <td><img 
+          v-if="template.attachment_path" 
+          :src="`/storage/${template.attachment_path}`" 
+          alt="Template Image" 
+          width="50" 
+          height="50" 
+          class="image-thumbnail" />
+        <i 
+          v-else 
+          class="fa fa-user-circle" 
+          style=" color: #ccc;font-size: 50px;" 
+          aria-hidden="true"></i>
+      </td>      
+      <td>{{ template.title }}</td>
+      <td>{{ template.created_by }}</td>
+      <td>{{ template.subject }}</td>
+      <td>{{ template.content }}</td>
+      <td>
+        <button @click="openModal(template)">Edit</button>
+        <button @click="confirmDeleteTemplate(template.id)">Delete</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
 
         <!-- Pagination -->
         <div class="pagination">
@@ -119,7 +133,10 @@ export default {
       attachment: null,
     });
 
-
+    const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    formData.value.attachment = file; 
+};
     // Fetch templates from the server
     const fetchTemplates = async () => {
       const authToken = localStorage.getItem('auth_token');
@@ -148,80 +165,47 @@ export default {
 
 
     const submitForm = async () => {
-      const authToken = localStorage.getItem('auth_token');
+    const authToken = localStorage.getItem('auth_token');
 
-      try {
+    try {
         let response;
+        const form = new FormData();
+        form.append('title', formData.value.title);
+        form.append('subject', formData.value.subject);
+        form.append('content', formData.value.content);
+        form.append('type', 'email');
 
-        if (formData.value.id) {
-          // Fetch the current data for the template
-          const currentDataResponse = await axios.get(`/api/templates/${formData.value.id}`, {
-            headers: {
-              'Authorization': `Bearer ${authToken}`,
-            },
-          });
+        // Check if file is selected
+        console.log(formData.value.attachment);
 
-          const currentData = currentDataResponse.data;
-
-          // Merge current data with updated fields
-          const updatedData = {
-            title: formData.value.title || currentData.title,
-            subject: formData.value.subject || currentData.subject,
-            content: formData.value.content || currentData.content,
-          };
-
-          // Create FormData object for the request
-          const form = new FormData();
-          form.append('title', updatedData.title);
-          form.append('subject', updatedData.subject);
-          form.append('content', updatedData.content);
-
-          if (formData.value.attachment) {
+        if (formData.value.attachment) {
             form.append('attachment', formData.value.attachment);
-          }
-
-          // Send PUT request with the merged data
-          response = await axios.put(`/api/templates/${formData.value.id}`, form, {
-            headers: {
-              'Authorization': `Bearer ${authToken}`,
-            },
-          });
-        } else {
-          // Create new template
-          const form = new FormData();
-          form.append('title', formData.value.title);
-          form.append('subject', formData.value.subject);
-          form.append('content', formData.value.content);
-
-          if (formData.value.attachment) {
-            form.append('attachment', formData.value.attachment);
-          }
-
-          response = await axios.post('/api/templates', form, {
-            headers: {
-              'Authorization': `Bearer ${authToken}`,
-            },
-          });
         }
+
+        response = await axios.post('/api/templates', form, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+            },
+        });
 
         // Handle successful response
         if (response.data.success) {
-          fetchTemplates();
-          closeModal(); 
-          Swal.fire('Success!', `Template has been ${formData.value.id ? 'updated' : 'created'}.`, 'success');
+            fetchTemplates();
+            closeModal();
+            Swal.fire('Success!', `Template has been ${formData.value.id ? 'updated' : 'created'}.`, 'success');
         } else {
-          Swal.fire('Error', 'Failed to submit the template. Please try again.', 'error');
+            Swal.fire('Error', 'Failed to submit the template. Please try again.', 'error');
         }
-      } catch (error) {
-        // Handle errors
+    } catch (error) {
+    
         if (error.response && error.response.data.errors) {
-          const messages = Object.values(error.response.data.errors).flat().join('\n');
-          Swal.fire('Validation Error', messages, 'error');
+            const messages = Object.values(error.response.data.errors).flat().join('\n');
+            Swal.fire('Validation Error', messages, 'error');
         } else {
-          Swal.fire('Error', 'An error occurred while submitting the template. Please try again.', 'error');
+            Swal.fire('Error', 'An error occurred while submitting the template. Please try again.', 'error');
         }
-      }
-    };
+    }
+};
 
 
     // Open the modal to create a new template or edit an existing one
@@ -356,6 +340,7 @@ export default {
     onMounted(fetchTemplates);
 
     return {
+      handleFileUpload,
       templates,
       selectedTemplates,
       searchQuery,
@@ -407,6 +392,7 @@ export default {
 
 .data-section table th {
   inline-size: 20%;
+  text-align: justify;
 }
 
 table {
