@@ -41,8 +41,47 @@
           <span>Delete</span>
           <i class="fa-solid fa-trash-can-arrow-up"></i>
         </li>
-        
-        
+
+ <!--  Email to field  Lead modal-->   
+  <div v-if="showLeadModal" class="integrte_LeadModal">
+    <div class="modal_LeadContent">
+      <div class="modal-header">
+        <h2>Select Leads</h2>
+        <button @click="closeLeadModal">×</button>
+      </div>
+      <div class="modal_LeadBody">
+        <table>
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Name</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="lead in leads" :key="lead.id">
+              <td>
+                <input 
+                  type="checkbox" 
+                  :value="lead.email" 
+                  v-model="selectedEmails"
+                  :checked="selectedLeads.includes(lead.id)"
+                />
+
+                <!--input type="checkbox" :value="lead.email" v-model="selectedEmails" /-->
+              </td>
+              <td>{{ lead.first_name }} {{ lead.last_name }}</td>
+              <td>{{ lead.email }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button @click="addSelectedEmails">Add Selected</button>
+      </div>
+    </div>
+  </div>
+
     <!-- Email Modal -->
     <div v-if="showEmailModal" class="modal">
       <div class="modal-header">
@@ -61,16 +100,21 @@
           />
         </div>
 
-        <!-- To -->
+        <!-- To Field -->
+        <!-- To Field with Email Chips -->
         <div class="form-group">
           <label for="to">To:</label>
-          <input
-            type="email"
-            id="to"
-            v-model="emailData.to"
-            placeholder="Enter recipient email"
-          />
+          <div class="email-input-container">
+            <div class="email-tags">
+              <span v-for="(email, index) in selectedEmails" :key="index" class="email-tag">
+                {{ email }}
+                <button @click="removeEmail(index)" class="remove-email">×</button>
+              </span>
+            </div>
+            <button @click="openLeadModal">+</button> <!-- Open Lead Modal -->
+          </div>
         </div>
+
 
         <!-- Subject -->
         <div class="form-group">
@@ -419,14 +463,12 @@
         <button type="button" @click="closeModal" class="close-button">X</button>
         <h2>{{ modalTitle }}</h2>
         
-        <!-- Dropdown for dynamic options -->
         <select v-model="selectedOption" class="open_modal_drop-box">
           <option v-for="option in modalOptions" :key="option.value" :value="option.value">
             {{ option.text }}
           </option>
         </select>
         
-        <!-- Submit and Cancel Buttons -->
         <div class="modal-buttons">
           <button @click="submitAction" class="submit-button">Submit</button>
           <button @click="closeModal" class="cancel-button">Cancel</button>
@@ -453,48 +495,47 @@
         <button type="button" @click="showForm = false" id="cancel_button">X</button>
         <h2>Create New Lead</h2>
         <form @submit.prevent="submitForm">
-        <label>
-          First Name:
-          <input v-model="newLead.first_name" type="text" required />
-          <span v-if="errors.first_name" class="error">{{ errors.first_name }}</span>
+          <label>
+            First Name:
+            <input v-model="newLead.first_name" type="text" required />
+            <span v-if="errors.first_name" class="error">{{ errors.first_name }}</span>
+          </label>
+          <label>
+            Last Name:
+            <input v-model="newLead.last_name" type="text" required />
+            <span v-if="errors.last_name" class="error">{{ errors.last_name }}</span>
+          </label>
+          <label>
+            Email:
+            <input v-model="newLead.email" type="email" required />
+            <span v-if="errors.email" class="error">{{ errors.email }}</span>
+          </label>
+          <label>
+            Phone:
+            <input v-model="newLead.phone" type="tel" required />
+            <span v-if="errors.phone" class="error">{{ errors.phone }}</span>
+          </label>
+          <label>
+          Tag:
+          <select v-model="newLead.tag" required>
+            <option v-for="tag in tags" :key="tag.id" :value="tag.id">
+              {{ tag.name }}
+            </option>
+          </select>
+          <span v-if="errors.tag" class="error">{{ errors.tag }}</span>
         </label>
-        <label>
-          Last Name:
-          <input v-model="newLead.last_name" type="text" required />
-          <span v-if="errors.last_name" class="error">{{ errors.last_name }}</span>
-        </label>
-        <label>
-          Email:
-          <input v-model="newLead.email" type="email" required />
-          <span v-if="errors.email" class="error">{{ errors.email }}</span>
-        </label>
-        <label>
-          Phone:
-          <input v-model="newLead.phone" type="tel" required />
-          <span v-if="errors.phone" class="error">{{ errors.phone }}</span>
-        </label>
-        <label>
-        Tag:
-        <select v-model="newLead.tag" required>
-          <option v-for="tag in tags" :key="tag.id" :value="tag.id">
-            {{ tag.name }}
-          </option>
-        </select>
-        <span v-if="errors.tag" class="error">{{ errors.tag }}</span>
-      </label>
 
-      <label>
-        Stage:
-        <select v-model="newLead.stage" required>
-          <option v-for="stage in stages" :key="stage.id" :value="stage.id">
-            {{ stage.name }}
-          </option>
-        </select>
-        <span v-if="errors.stage" class="error">{{ errors.stage }}</span>
-      </label>
-        <button type="submit" id="submit_button">Submit</button>
+        <label>
+          Stage:
+          <select v-model="newLead.stage" required>
+            <option v-for="stage in stages" :key="stage.id" :value="stage.id">
+              {{ stage.name }}
+            </option>
+          </select>
+          <span v-if="errors.stage" class="error">{{ errors.stage }}</span>
+        </label>
+          <button type="submit" id="submit_button">Submit</button>
       </form>
-
       </div>
     </div>
     <!-- Leads Table -->
@@ -583,7 +624,7 @@ import 'tinymce/icons/default';
 import 'tinymce/plugins/link';
 import 'tinymce/plugins/lists';
 import 'tinymce/themes/silver';
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 export default {
   name: 'LeadsPage',
@@ -643,6 +684,12 @@ export default {
     const showSmsModal = ref(false);
     const selectedLeads = ref([]);
     const isFullscreen = ref(false); 
+  
+    
+    const showLeadModal = ref(false);
+    const selectedEmails = ref([]);
+ 
+
     
     // Modal methods
     const openModal = (type) => {
@@ -655,7 +702,6 @@ export default {
     const closeModal = () => {
       showModal.value = false;
     };
-
 
     //-  ---- - -- - Tag
     const isTagSelected = (tagId) => {
@@ -700,14 +746,13 @@ export default {
     };
 
 
+    // ✅ Sync Selected Emails to "To" Field
+      const addSelectedEmails = () => {
+        showLeadModal.value = false;
+      };
 
-   
-    
 
-
-
-
-   // Start -- Send Email And Sms On Selected Leads Functionlity...
+   // Start Send Email And Sms On Selected Leads Functionlity...
 
     const emailData = ref({
       from: 'hiteshpandey732195@gmail.com',
@@ -717,6 +762,48 @@ export default {
       template: '',
       attachments: [],
     });
+
+// ✅ Function to remove an email from the list
+const removeEmail = (index) => {
+  selectedEmails.value.splice(index, 1);
+  emailData.value.to = selectedEmails.value.join(', '); // Update "To" field
+};
+
+    // ✅ Automatically updates "To" field
+    watch(selectedLeads, (newSelectedLeads) => {
+     selectedEmails.value = leads.value
+       .filter((lead) => newSelectedLeads.includes(lead.id))
+       .map((lead) => lead.email);
+
+     emailData.value.to = selectedEmails.value.join(', ');
+     console.log('Updated To Field:', emailData.value.to);
+    });
+
+    // ✅ Sync selectedEmails to emailData.to (Handles modal selection)
+    watch(selectedEmails, (newSelectedEmails) => {
+      emailData.value.to = newSelectedEmails.join(', ');
+      console.log('Updated To Field from Modal:', emailData.value.to);
+    });
+
+    // ✅ Function to open lead modal
+    const openLeadModal = async () => {
+        console.log('Lead modal opening...')
+        showLeadModal.value = true
+        await getMyLeads()
+      }
+
+      const closeLeadModal = () => {
+        showLeadModal.value = false;
+      };
+
+    // ✅ Add/remove leads from modal
+    const toggleLeadSelection = (email) => {
+      if (selectedEmails.value.includes(email)) {
+        selectedEmails.value = selectedEmails.value.filter((e) => e !== email);
+      } else {
+        selectedEmails.value.push(email);
+      }
+    };     
 
     const selectedMergeField = ref('');
 
@@ -785,12 +872,17 @@ export default {
 
     const openEmailModal = () => {
       if (selectedLeads.value.length === 0) {
-        alert('No leads selected.');
+        Swal.fire({
+          icon: 'warning',
+          title: 'No Leads Selected',
+          text: 'Please select at least one lead before sending an email.',
+        });
         return;
       }
       showEmailModal.value = true;
       initializeTinyMCE();
     };
+
 
     const closeEmailModal = () => {
       showEmailModal.value = false;
@@ -822,26 +914,58 @@ export default {
       alert('Feature not implemented yet. Add scheduling logic here!');
     };
 
-       // Handle email sending
-       const sendEmail = async () => {
+        // Handle email sending
+        const sendEmail = async () => {
         const message = tinymceEditor.value.getContent();
-        
-        try {
-          await axios.post('/api/send-email', {
-            from: emailData.value.from,
-            to: emailData.value.to,
-            subject: emailData.value.subject,
-            message: message, // Use TinyMCE content
-            template_id: emailData.value.template, // Send selected template ID
-          });
 
-          alert('Email sent successfully!');
-          closeEmailModal();
-        } catch (error) {
-          console.error('Error sending email:', error);
-          alert('Failed to send email.');
+        if (!emailData.value.to) {
+          Swal.fire({
+            icon: 'error',
+            title: 'No Recipients',
+            text: 'Please add at least one recipient.',
+          });
+          return;
         }
+
+        Swal.fire({
+          title: 'Are you sure?',
+          text: 'Do you want to send this email?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, send it!',
+          cancelButtonText: 'Cancel',
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            try {
+              await axios.post('/api/send-email', {
+                from: emailData.value.from,
+                to: emailData.value.to.split(',').map(email => email.trim()),
+                subject: emailData.value.subject,
+                message: message,
+                template_id: emailData.value.template,
+              });
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Email Sent!',
+                text: 'Your email has been successfully sent.',
+              });
+
+              closeEmailModal();
+            } catch (error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Failed to Send',
+                text: 'Something went wrong. Please try again later.',
+              });
+            }
+          }
+        });
       };
+
+
+
+
 
 
     const smsData = ref({
@@ -923,7 +1047,7 @@ export default {
 
 
 
-   
+
     const fetchLeads = async (type) => {
         activeLeadType.value = type;
         loading.value = true; 
@@ -1029,7 +1153,7 @@ export default {
         lead.first_name && lead.first_name.toLowerCase().includes(searchQuery.value.toLowerCase())
       );
     });
-
+    
 
     const getTagValue = (id) => {
       const tag = tags.value.find(t => t.id === id);
@@ -1275,6 +1399,14 @@ export default {
     });
 
     return {
+      removeEmail,
+      toggleLeadSelection,
+      toggleSelectAll,
+      showLeadModal,
+      selectedEmails,
+      addSelectedEmails,
+      closeLeadModal,
+      openLeadModal,
       expandSmsModal,
       showSmsModal,
       selectedLeads,
@@ -1434,4 +1566,59 @@ button:hover {
   inline-size: 100%;
   inset: 0;
 }
+
+.integrte_LeadModal {
+  position: fixed;
+  z-index: 1000;
+  padding: 50px;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 10%);
+  inline-size: 550px;
+  inset-block-start: 50%;
+  inset-inline: 1600px 0;
+  inset-inline-start: 50%;
+  inset-inline-start: 1582px;
+  transform: translate(-50%, -50%);
+}
+
+.modal_LeadContent {
+  display: grid;
+  padding: 0;
+  border: 5px solid #87b;
+  background-color: #f5eded;
+  block-size: 500px;
+  inline-size: 100%;
+  margin-block: 0%;
+}
+
+.modal_LeadBody {
+  block-size: 320px;
+  overflow-y: scroll;
+}
+
+.email-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.email-tag {
+  display: flex;
+  align-items: center;
+  border-radius: 20px;
+  background-color: #e0e0e0;
+  padding-block: 5px;
+  padding-inline: 10px;
+}
+
+.remove-email {
+  border: none;
+  background: none;
+  color: red;
+  cursor: pointer;
+  font-weight: bold;
+  margin-inline-start: 5px;
+}
+
 </style>
