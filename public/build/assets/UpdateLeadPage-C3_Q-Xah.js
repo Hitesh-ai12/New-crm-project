@@ -1,0 +1,1 @@
+import{_ as a,l as t,j as o,k as s,o as d}from"./main-B1XrQ5dN.js";const r={props:["id"],created(){console.log("Fetching lead data for id:",this.id)}};function c(n,i,e,l,p,_){return d(),t("div",null,[o("h2",null,"Update Profile - Lead ID: "+s(e.id),1)])}const u=a(r,[["render",c]]);export{u as default};
