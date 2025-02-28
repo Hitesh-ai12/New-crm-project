@@ -1,0 +1,34 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect all requests to the public directory
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteCond %{REQUEST_URI} !^/storage/
+    RewriteRule ^(.*)$ /public/$1 [L]
+
+    # Handle Vite's assets (removing 'build' from the URL)
+    RewriteCond %{REQUEST_URI} ^/(.+)\.(js|css|json|svg|woff2?)$
+    RewriteCond %{DOCUMENT_ROOT}/public/build/%1.%2 -f
+    RewriteRule ^(.*)$ public/build/$1 [L]
+
+    # Handle Front Controller for Laravel (index.php)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ /public/index.php [L]
+</IfModule>
+
+# Set the correct MIME types for Vite's assets
+<IfModule mod_mime.c>
+    AddType application/javascript .js
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType application/json .json
+    AddType font/woff2 .woff2
+</IfModule>
+
+# Caching of static files
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|svg|woff2?)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+</IfModule>
