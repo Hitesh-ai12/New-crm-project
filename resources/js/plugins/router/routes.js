@@ -84,14 +84,14 @@ export const routes = [
           path: '/update-profile/:id',
           name: 'update-profile',
           component: () =>import('@/pages/api/templates/UpdateLeadPage.vue'),
-          props: true, // Pass route params as props
+          props: true, 
           meta: { requiresAuth: true }
         },
         {
           path: '/inbox',
           name: 'inbox',
           component: () =>import('@/pages/header/inbox.vue'),
-          props: true, // Pass route params as props
+          props: true,
           meta: { requiresAuth: true }
         },
         {
@@ -130,6 +130,7 @@ export const routes = [
           component: () => import('@/pages/profile/signature.vue'),
           props: true, // Pass route params as props
         },
+
     ],
   },
 

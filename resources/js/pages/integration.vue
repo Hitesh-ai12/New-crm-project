@@ -7,14 +7,19 @@
         <ul>
           <li @click="handleIntegration('Facebook Ads')">Facebook Ads</li>
           <li @click="handleIntegration('Google Ads')">Google Ads</li>
-          <li @click="handleIntegration('Twitter Ads')">Twitter Ads</li>
-          <li @click="handleIntegration('TikTok Ads')">TikTok Ads</li>
-          <li @click="handleIntegration('Snapchat Ads')">Snapchat Ads</li>
-          <li @click="handleIntegration('Instagram Ads')">Instagram Ads</li>
         </ul>
       </div>
     </div>
 
+    <div v-if="connectedAccounts.length" class="connected-accounts">
+      <h2>Connected Accounts</h2>
+      <ul>
+        <li v-for="(account, index) in connectedAccounts" :key="index">
+          {{ account.platform }} - {{ account.token.substring(0, 15) }}...
+          <button @click="removeAccount(index)">Remove</button>
+        </li>
+      </ul>
+    </div>
 
     <div class="cards-container">
       <div class="card" v-for="card in cards" :key="card.id">
@@ -22,10 +27,6 @@
         <p>{{ card.description }}</p>
       </div>
     </div>
-     
-      <div v-if="accessToken">
-        <p>Access Token: {{ accessToken }}</p>
-      </div>
   </div>
 </template>
 
@@ -35,31 +36,25 @@ export default {
   data() {
     return {
       showDropdown: false,
-      accessToken: null, 
+      connectedAccounts: [], 
       cards: [
         { id: 1, title: 'Facebook Integration', description: 'Lead Ads Integration for Facebook.' },
-        { id: 2, title: 'Google Integration', description: 'Lead Ads Integration for Google Ads.' },
-        { id: 3, title: 'Twitter Integration', description: 'Lead Ads Integration for Twitter Ads.' }
+        { id: 2, title: 'Google Integration', description: 'Lead Ads Integration for Google Ads.' }
       ]
     };
   },
   mounted() {
-    this.checkForAccessToken();
+    this.loadConnectedAccounts(); 
   },
   methods: {
     toggleDropdown() {
       this.showDropdown = !this.showDropdown;
     },
     handleIntegration(platform) {
-      this.showDropdown = false; 
+      this.showDropdown = false;
       const oauthUrls = {
         'Facebook Ads': 'https://www.facebook.com/v18.0/dialog/oauth?client_id=983501733459311&redirect_uri=https://jsithub.com/test&response_type=token&scope=public_profile,email&display=popup',
         'Google Ads': 'https://accounts.google.com/o/oauth2/auth?client_id=932644499351-u8hu1a2885v7277npsisd0u31mopjulc.apps.googleusercontent.com&redirect_uri=http://127.0.0.1:8000/&response_type=token&scope=https://www.googleapis.com/auth/adwords&state=google_ads',
-
-        'Twitter Ads': 'https://api.twitter.com/oauth/authorize?client_id=YOUR_TWITTER_CLIENT_ID&redirect_uri=https://your-redirect-url.com&response_type=token&scope=ads.read,ads.write&state=twitter_ads',
-        'TikTok Ads': 'https://ads.tiktok.com/open/oauth?app_id=YOUR_TIKTOK_APP_ID&redirect_uri=https://your-redirect-url.com&state=tiktok_ads&scope=ad.manage',
-        'Snapchat Ads': 'https://accounts.snapchat.com/accounts/oauth2/auth?client_id=YOUR_SNAPCHAT_CLIENT_ID&redirect_uri=https://your-redirect-url.com&response_type=token&scope=snapchat_ads&state=snapchat_ads',
-        'Instagram Ads': 'https://api.instagram.com/oauth/authorize?client_id=YOUR_INSTAGRAM_CLIENT_ID&redirect_uri=https://your-redirect-url.com&response_type=token&scope=ads_management&state=instagram_ads'
       };
 
       if (oauthUrls[platform]) {
@@ -70,46 +65,41 @@ export default {
     },
     openOAuthPopup(platform, url) {
       const oauthWindow = window.open(url, `${platform} Login`, 'width=600,height=700');
-
       const interval = setInterval(() => {
         try {
           if (oauthWindow && oauthWindow.location.href.includes('access_token')) {
-            const url = oauthWindow.location.href;
-            const accessToken = this.extractAccessToken(url);
+            const accessToken = this.extractAccessToken(oauthWindow.location.href);
 
             if (accessToken) {
-              this.accessToken = accessToken; 
-              console.log('Access Token:', this.accessToken);  
-              oauthWindow.close();  
-              clearInterval(interval);  
+              this.connectedAccounts.push({ platform, token: accessToken });
+              this.saveConnectedAccounts();
+              oauthWindow.close();
+              clearInterval(interval);
             }
           }
-        } catch (e) {
-       
-        }
+        } catch (e) {}
       }, 1000);
     },
     extractAccessToken(url) {
-      const regex = /access_token=([^&]+)/;
-      const match = url.match(regex);
+      const match = url.match(/access_token=([^&]+)/);
       return match ? match[1] : null;
     },
-    checkForAccessToken() {
-      const urlHash = window.location.hash;
-      const regex = /access_token=([^&]+)/;
-      const match = urlHash.match(regex);
-
-      if (match && match[1]) {
-        this.accessToken = match[1]; 
-        console.log('Access Token:', this.accessToken);  
-      } else {
-        console.log('No access token found in the URL fragment.');
+    saveConnectedAccounts() {
+      localStorage.setItem('connectedAccounts', JSON.stringify(this.connectedAccounts));
+    },
+    loadConnectedAccounts() {
+      const storedAccounts = localStorage.getItem('connectedAccounts');
+      if (storedAccounts) {
+        this.connectedAccounts = JSON.parse(storedAccounts);
       }
+    },
+    removeAccount(index) {
+      this.connectedAccounts.splice(index, 1);
+      this.saveConnectedAccounts();
     }
   }
 };
 </script>
-
 
 <style scoped>
 .container {
@@ -132,7 +122,6 @@ button {
   background-color: hsla(11deg, 100%, 42.2%, 100%);
   color: white;
   cursor: pointer;
-  inline-size: max-content;
   padding-block: 4px;
   padding-inline: 16px;
 }
@@ -188,5 +177,37 @@ button:hover {
 
 .card p {
   margin-block-end: 0;
+}
+
+.connected-accounts {
+  margin-block-end: 20px;
+}
+
+.connected-accounts ul {
+  padding: 0;
+  list-style: none;
+}
+
+/* .connected-accounts li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-radius: 5px;
+  background: #f8f8f8;
+  margin-block-end: 5px;
+} */
+
+.connected-accounts button {
+  border: none;
+  border-radius: 3px;
+  background: #d9534f;
+  color: white;
+  cursor: pointer;
+  padding-block: 5px;
+  padding-inline: 10px;
+}
+
+.connected-accounts button:hover {
+  background: #c9302c;
 }
 </style>

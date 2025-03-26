@@ -10,6 +10,8 @@ use App\Models\ApiKey;
 use App\Http\Controllers\Email\EmailController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\Sms\SmsController;
+use App\Http\Controllers\ColumnSettingController;
+use App\Http\Controllers\Leads\LeadController;
 
 
 Route::get('/user', function (Request $request) {
@@ -41,7 +43,7 @@ Route::put('/signatures/{id}', [SignatureController::class, 'update']);
 
 
 Route::middleware('auth:sanctum')->post('/generate-api-key', [AuthController::class, 'generateApiKey']);
-
+Route::post('/leads', [LeadController::class, 'store']);
 
 Route::middleware('auth:sanctum')->group(function () {
     //Route::get('/templates', [TemplateController::class, 'index']);
@@ -51,6 +53,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/templates/{id}', [TemplateController::class, 'update']);
     Route::delete('/templates/{id}', [TemplateController::class, 'destroy']);
     Route::post('/templates/bulk-delete', [TemplateController::class, 'bulkDelete']);
+    Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
+    Route::post('/columns-settings', [ColumnSettingController::class, 'saveColumnSettings']);
+    Route::post('/columns-order', [ColumnSettingController::class, 'saveColumnOrderSettings']);
+    Route::put('/leads/{id}', [LeadController::class, 'update']);
+    Route::get('/leads/{id}', [LeadController::class, 'show']);
+    
 });
 
 

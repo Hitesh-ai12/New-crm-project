@@ -9,10 +9,8 @@ class Lead extends Model
 {
     use HasFactory;
 
-    // Define the table name if it's not the plural of the model name
-    protected $table = 'leads';
+        protected $table = 'leads';
 
-    // Specify which attributes can be mass-assigned
         protected $fillable = [
             'first_name',
             'last_name',
@@ -36,18 +34,15 @@ class Lead extends Model
             'appointments',
         ];
         
+        protected $casts = [
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'tasks' => 'array', 
+            'appointments' => 'array', 
+        ];
 
-    // Cast attributes to native types
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'tasks' => 'array', // Assumes tasks is stored as JSON
-        'appointments' => 'array', // Assumes appointments is stored as JSON
-    ];
-
-    // Define relationship with User model
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+        public function user()
+        {
+            return $this->belongsTo(User::class);
+        }
 }

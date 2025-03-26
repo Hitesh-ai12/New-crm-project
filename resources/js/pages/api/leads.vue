@@ -1,7 +1,6 @@
 <template>
   <div class="leads-container">
-    <!--div v-if="loading" class="loading">Loading leads...</div-->
-    <!--div v-if="error" class="error">{{ error }}</div-->
+
     <div class="leads-header">
     <div class="leads-section">
       <div class="lead-buttons">
@@ -20,11 +19,11 @@
           My Leads
         </button>
       </div>
+      
     </div>
 
     <div class="icon-section">
       <ul>
-        <!-- Common list items for both "All Leads" and "My Leads" -->
         <li class="selected-count total-leads">
           Selected Leads: {{ selectedLeads.length }}
         </li>
@@ -80,9 +79,18 @@
         </div>
 
 
-
+      <!-- Subject & Merge Field -->
+      <div class="form-group subject-container">
+        <input type="text" v-model="emailData.subject" placeholder="Subject" class="subject-input" />
+        <select v-model="selectedMergeField" @change="addMergeFieldToSubject" class="merge-field">
+          <option value="">Merge Field</option>
+          <option v-for="field in mergeFields" :key="field" :value="field">
+            {{ field }}
+          </option>
+        </select>
+      </div>
         <!-- Subject -->
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label for="subject">Subject:</label>
           <input
             type="text"
@@ -90,10 +98,10 @@
             v-model="emailData.subject"
             placeholder="Enter subject"
           />
-        </div>
+        </div> -->
 
         <!-- Merge Field List for Subject -->
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label for="mergeFields">Merge Fields:</label>
           <select id="mergeFields" v-model="selectedMergeField" @change="addMergeFieldToSubject">
             <option value="">Select Merge Field</option>
@@ -101,7 +109,7 @@
               {{ field }}
             </option>
           </select>
-        </div>
+        </div> -->
 
         <!-- Template List -->
         <div class="form-group">
@@ -396,6 +404,27 @@
           <span>Import</span>
           <i class="fa-solid fa-file-import"></i>
         </li>
+
+        <li
+          v-if="activeColomType === 'my'"
+          class="total-leads_colom"
+          :class="{ disabled: selectedcoloms.length === 0 }"
+          :disabled="selectedcoloms.length === 0"
+          @click="opencolomsModal"
+        >
+          <span>Lead</span>
+          <i class="fa-solid fa-table-cells"></i>
+        </li>
+        
+        <li
+        v-if="activeLeadType === 'my'"
+        class="total-leads"
+        @click="openColumnsModal"
+        >
+        <span>Settings</span>
+        <i class="fa-solid fa-gear"></i>
+        </li>
+
       </ul>
     </div>
   </div>
@@ -429,17 +458,25 @@
       <div class="tag-modal-container">
         <button type="button" @click="closeTagModal" class="close-button">X</button>
         <h3>Select Tags</h3>
+        
         <div class="modal_tags">
-          <div v-for="tag in tags" :key="tag.id" class="modal_tag">
+          <div 
+            v-for="tag in tags" 
+            :key="tag.id" 
+            class="modal_tag" 
+            :class="{ selected: isTagSelected(tag.id) }"
+            @click="toggleTagSelection(tag.id)"
+          >
             <input
               type="checkbox"
               :value="tag.id"
               :checked="isTagSelected(tag.id)"
-              @change="toggleTagSelection(tag.id)"
+              readonly
             />
             {{ tag.name }}
           </div>
         </div>
+
         <button @click="showAddTagInput = !showAddTagInput" class="add-button">Add Tag</button>
         <div v-if="showAddTagInput">
           <input v-model="newTag" placeholder="Enter new tag" />
@@ -449,26 +486,42 @@
       </div>
     </div>
 
+
+
     <!-- Stage Modal -->
     <div v-if="showStageModal" class="stage-modal-overlay">
       <div class="stage-modal-container">
         <button type="button" @click="closeStageModal" class="close-button">X</button>
         <h3>Select Stage</h3>
 
+        <div class="modal_stages">
+          <div 
+            v-for="stage in stages" 
+            :key="stage.id" 
+            class="modal_stage"
+            :class="{ selected: newLead.stage === stage.id }"
+            @click="selectStage(stage.id)"
+          >
+            <input
+              type="radio"
+              :value="stage.id"
+              v-model="newLead.stage"
+              readonly
+            />
+            {{ stage.name }}
+          </div>
+        </div>
 
+        <button @click="showAddStageInput = !showAddStageInput" class="add-button">Add Stage</button>
         <div v-if="showAddStageInput">
           <input v-model="newStage" placeholder="Enter new stage" id="m_add_stage" class="m_add_stage"/>
           <button @click="addStage" class="submit-button">Add</button>
         </div>
-        <button @click="showAddStageInput = !showAddStageInput" class="add-button">Add Stage</button>
-        <select v-model="newLead.stage" id="stage_id" class="stage_class">
-          <option v-for="stage in stages" :key="stage.id" :value="stage.id" class="stage_values">
-            {{ stage.name }}
-          </option>
-        </select>
+
         <button @click="closeStageModal" class="submit-button">Close</button>
       </div>
     </div>
+
 
    <!-- Generic Modal -->
    <div v-if="showModal" class="modal-overlay">
@@ -551,9 +604,9 @@
       </form>
       </div>
     </div>
-    <!-- Leads Table -->
-    <div>
 
+    <!-- Leads Table -->
+  <div>
     <div>
       <label for="pageSize">Rows per page:</label>
       <select v-model="pageSize" @change="setPageSize(Number($event.target.value))">
@@ -564,65 +617,104 @@
       </select>
     </div>
 
-    <div v-if="!loading && !error">
-      <table id="leadsTable" class="table table-striped table-bordered leads-table" v-if="filteredLeads.length">
+    <!-- Leads Table -->
+    <div class="table-container">
+  <div class="table-wrapper">
+    <table class="lead_Table">
       <thead>
         <tr>
-          <th>
+          <!-- Fixed Checkbox Column -->
+          <th class="checkbox-col">
             <label class="custom-checkbox-label">
-              <input type="checkbox" @change="toggleSelectAll" class="custom-checkbox" />
+              <input type="checkbox" @change="toggleSelectAll" v-model="allSelected" class="custom-checkbox" />
               <span class="custom-checkbox-span"></span>
             </label>
           </th>
-          <!-- Other headers -->
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th>Activity</th>
-          <th>Created</th>
-          <th>Tag</th>
-          <th>Stage</th>
-          <th>Source</th>
+
+          <!-- Draggable Columns (Only First 6 Visible) -->
+          <draggable 
+            v-model="selectedColumns" 
+            tag="tr" 
+            item-key="col" 
+            handle=".drag-handle"
+            @end="onColumnReorder"
+          >
+            <template #item="{ element, index }">
+              <th 
+                class="lead_TableHead" 
+                :class="{ 'scroll-column': index >= 6 }"
+              >
+                <span class="drag-handle">☰</span>
+                {{ availableColumns[element]?.label || element }}
+              </th>
+            </template>
+          </draggable>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="lead in paginatedLeads" :key="lead.id">
-          <td>
-            <label class="custom-checkbox-label">
-              <input type="checkbox" :value="lead.id" v-model="selectedLeads" class="custom-checkbox" />
-              <span class="custom-checkbox-span"></span>
-            </label>
+        <tr v-for="(lead, index) in leads" :key="index">
+          <!-- Checkbox Column -->
+          <td class="checkbox-col">
+            <input type="checkbox" v-model="selectedLeads" :value="lead.id" />
           </td>
-          <!-- Other columns -->
-          <td>
-            <router-link :to="{ name: 'update-profile', params: { id: lead.id } }" style="color: blue; text-decoration: underline;">
-              {{ lead.first_name }}
-            </router-link>
+
+          <!-- Dynamic Columns (First 6 Visible, 7th Scrolls) -->
+          <td v-for="(col, idx) in selectedColumns" :key="col" :class="{ 'scroll-column': idx >= 6 }">
+            <template v-if="col === 'first_name'">
+              <router-link :to="'/update-profile/' + lead.id" class="lead-name-link">
+                {{ lead[col] || 'N/A' }}
+              </router-link>
+            </template>
+            <template v-else>
+              {{ lead[col] || 'N/A' }}
+            </template>
           </td>
-          <td>{{ lead.last_name }}</td>
-          <td>{{ lead.phone }}</td>
-          <td>{{ lead.email }}</td>
-          <td>{{ lead.activity || 'N/A' }}</td>
-          <td>{{ new Date(lead.created_at).toLocaleDateString() }}</td>
-          <td>{{ lead.tag || 'N/A' }}</td>
-          <td>{{ lead.stage || 'N/A' }}</td>
-          <td>{{ lead.source || 'N/A' }}</td>
+
         </tr>
       </tbody>
     </table>
   </div>
-      <!-- No leads available message -->
-      <div v-if="filteredLeads.length === 0" class="no-leads">No leads available.</div>
-    </div>
+</div>
+
+    <div v-if="filteredLeads.length === 0" class="no-leads">No leads available.</div>
+
     <div v-if="toast.message" :class="`toast ${toast.type}`">
       {{ toast.message }}
       <button @click="toast.message = ''" class="toast-close-button">X</button>
     </div>  
-      <div>
+
+    <div>
       <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1">Previous</button>
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
       <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">Next</button>
+    </div>
+  </div>
+
+  </div>
+
+  <div v-if="showColumnsModal" class="columns-modal-overlay">
+    <div class="columns-modal-container">
+      <span class="columns-modal-close" @click="closeColumnsModal">&times;</span>
+      <h3>Select and Arrange Columns</h3>
+
+      <ul class="columns-modal-list">
+        <li v-for="(col, key) in availableColumns" :key="key" class="columns-modal-item">
+          <input
+            type="checkbox"
+            :checked="selectedColumns.includes(key)"
+            @change="toggleColumnSelection(key)"
+            :disabled="col.disabled"
+          />
+          {{ col.label }}
+        </li>
+      </ul>
+
+      <p v-if="selectedColumns.length === 0" class="columns-modal-warning">
+        ⚠️ Please select at least one column!
+      </p>
+
+      <button class="columns-modal-update-btn" @click="updateColumns">Save</button>
+      <button class="columns-modal-update-btn cancel-btn" @click="closeColumnsModal">Cancel</button>
     </div>
   </div>
 
@@ -638,11 +730,15 @@ import 'tinymce/plugins/link';
 import 'tinymce/plugins/lists';
 import 'tinymce/themes/silver';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import draggable from "vuedraggable";
 
 export default {
   name: 'LeadsPage',
+   components: { draggable },
   setup() {
-    const activeLeadType = ref('all'); // 'all' or 'my'
+  
+
+    const activeLeadType = ref('all');
     const leads = ref([]);
     const loading = ref(true);
     const error = ref('');
@@ -681,8 +777,6 @@ export default {
     const pageSize = ref(10); 
     const totalPages = computed(() => Math.ceil(leads.value.length / pageSize.value));
 
-  
-    const smsMessage = ref('');
     const newTag = ref('');
     const newStage = ref('');
     const showTagModal = ref(false);
@@ -697,8 +791,6 @@ export default {
     const showSmsModal = ref(false);
     const selectedLeads = ref([]);
     const isFullscreen = ref(false); 
-  
-    
     const showLeadModal = ref(false);
     const selectedEmails = ref([]);
  
@@ -758,8 +850,6 @@ export default {
       return options[type] || [];
     };
 
-
-    // ✅ Sync Selected Emails to "To" Field
       const addSelectedEmails = () => {
         showLeadModal.value = false;
       };
@@ -776,13 +866,11 @@ export default {
       attachments: [],
     });
 
-    // ✅ Function to remove an email from the list
     const removeEmail = (index) => {
       selectedEmails.value.splice(index, 1);
       emailData.value.to = selectedEmails.value.join(', ');
     };
 
-    // ✅ Automatically updates "To" field
     watch(selectedLeads, (newSelectedLeads) => {
      selectedEmails.value = leads.value
        .filter((lead) => newSelectedLeads.includes(lead.id))
@@ -792,13 +880,11 @@ export default {
      console.log('Updated To Field:', emailData.value.to);
     });
 
-    // ✅ Sync selectedEmails to emailData.to (Handles modal selection)
     watch(selectedEmails, (newSelectedEmails) => {
       emailData.value.to = newSelectedEmails.join(', ');
       console.log('Updated To Field from Modal:', emailData.value.to);
     });
 
-    // ✅ Function to open lead modal
     const openLeadModal = async () => {
         console.log('Lead modal opening...')
         showLeadModal.value = true
@@ -809,7 +895,6 @@ export default {
         showLeadModal.value = false;
       };
 
-    // ✅ Add/remove leads from modal
     const toggleLeadSelection = (email) => {
       if (selectedEmails.value.includes(email)) {
         selectedEmails.value = selectedEmails.value.filter((e) => e !== email);
@@ -1001,11 +1086,6 @@ export default {
 
 
 
-
-
-
-
-
     const showEmailLeadModal = ref(false);
     const showSmsLeadModal = ref(false);
     const selectedPhones = ref([]); 
@@ -1176,7 +1256,7 @@ export default {
         }
 
         try {
-          // ✅ Get selected leads' phone numbers dynamically
+        
           const selectedPhones = selectedLeadsList.value.map(lead => lead.phone);
 
           await axios.post('/api/send-sms', {
@@ -1195,13 +1275,7 @@ export default {
         }
       };
 
-
-
-
-
    // End -- Send Email And Sms On Selected Leads Functionlity...
-
-
 
     const fetchLeads = async (type) => {
         activeLeadType.value = type;
@@ -1240,7 +1314,6 @@ export default {
     const fetchItems = async () => {
       try {
         const response = await axios.get('/items');
-
         tags.value = response.data.tags;
         stages.value = response.data.stages;
         sources.value = response.data.sources;
@@ -1388,7 +1461,7 @@ export default {
       currentPage.value = 1; 
     };
 
-    const paginatedLeads = computed(() => {
+      const paginatedLeads = computed(() => {
       const start = (currentPage.value - 1) * pageSize.value;
       const end = start + pageSize.value;
       return leads.value.slice(start, end);
@@ -1485,7 +1558,7 @@ export default {
         fileError.value = 'No file selected or invalid file type.';
         return;
       }
-      // Proceed with the file upload logic
+ 
       console.log('CSV file selected:', selectedFile.value);
       closeImportModal();
     };
@@ -1537,23 +1610,136 @@ export default {
         }
       };
 
-    // const toggleSelectAll = (event) => {
-    //   if (event.target.checked) {
-    //     selectedLeads.value = filteredLeads.value.map((lead) => lead.id);
-    //   } else {
-    //     selectedLeads.value = [];
-    //   }
-    // };
+   // Column selection modal
+    const showColumnsModal = ref(false);
+    const selectedColumns = ref(['first_name', 'email', 'phone']); 
+    const availableColumns = ref({
+      first_name: { label: 'Name', disabled: true },
+      email: { label: 'Email', disabled: true },
+      phone: { label: 'Phone', disabled: true },
+      latest_activity: { label: 'Latest Activity' },
+      activity_at: { label: 'Activity At' },
+      created_on: { label: 'Created On' },
+      tags: { label: 'Tags' },
+      stage: { label: 'Stage' },
+      latest_source: { label: 'Latest Source' },
+      latest_sms: { label: 'Latest SMS' },
+      latest_email: { label: 'Latest Email' },
+      next_task: { label: 'Next Task' },
+      next_appointment: { label: 'Next Appointment' },
+      new_listing_alert: { label: 'New Listing Alerts' },
+      neighbourhood_alert: { label: 'Neighbourhood Alerts' },
+      open_house_alert: { label: 'Open House Alerts' },
+      price_drop_alert: { label: 'Price Drop Alerts' },
+      action_plans: { label: 'Active Action Plans' },
+      market_updates: { label: 'Assigned Market Updates' },
+      real_estate_newsletter: { label: 'Assigned Newsletters' },
+      notes: { label: 'Notes' },
+      dob: { label: 'DOB' },
+      background: { label: 'Background' },
+      city: { label: 'City' },
+      facebook: { label: 'Facebook' },
+      instagram: { label: 'Instagram' },
+      linkedin: { label: 'LinkedIn' },
+      whatsapp: { label: 'WhatsApp' },
+      twitter: { label: 'Twitter' }
+    });
+   
+    const openColumnsModal = () => { showColumnsModal.value = true; };
+    const closeColumnsModal = () => { showColumnsModal.value = false; };
+
+    const updateColumns = async () => {
+      await saveColumnVisibilitySettings();
+      closeColumnsModal(); 
+    };
+   
+    const fetchColumnSettings = async () => {
+      try {
+        const response = await axios.get("/api/columns-settings", {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        selectedColumns.value = Array.isArray(response.data.selectedColumns)
+          ? response.data.selectedColumns
+          : ['first_name', 'email', 'phone'];
+      } catch (error) {
+        showToast('Failed to fetch column settings!');
+      }
+    };
+
+    // Save column settings
+    const saveColumnSettings = async () => {
+      try {
+        await axios.post("/api/columns-settings", { selectedColumns: selectedColumns.value }, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        showToast("Column settings saved successfully!");
+      } catch (error) {
+        showToast("Failed to save column settings!");
+      }
+    };
+
+    // column visibility toggle
+    const toggleColumnSelection = (column) => {
+      if (!availableColumns.value[column].disabled) {
+        const index = selectedColumns.value.indexOf(column);
+        if (index === -1) {
+          selectedColumns.value.push(column);
+          showToast(`Column "${availableColumns.value[column].label}" added`);
+        } else {
+          selectedColumns.value.splice(index, 1);
+          showToast(`Column "${availableColumns.value[column].label}" removed`);
+        }
+      }
+    };
+
+    const saveColumnVisibilitySettings = async () => {
+      try {
+        await axios.post("/api/columns-settings", { selectedColumns: selectedColumns.value }, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        showToast("Column visibility settings saved successfully!");
+      } catch (error) {
+        showToast("Failed to save column visibility settings!");
+      }
+    };
+
+    const saveColumnOrderSettings = async () => {
+      try {
+      
+        await axios.post("/api/columns-order", { selectedColumns: selectedColumns.value }, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        showToast("Column order saved successfully!");
+      } catch (error) {
+        showToast("Failed to save column order.");
+      }
+    };
+
+    const onColumnReorder = async () => {
+      try {
+        await saveColumnOrderSettings();
+      } catch (error) {
+        showToast("Failed to save column order.");
+      }
+    };
 
     onMounted(async () => {
       await fetchLeads(activeLeadType.value);
       await fetchItems();
-      await destroyTinyMCE(); 
+      
+      try {
+        await destroyTinyMCE(); 
+      } catch (error) {
+        console.warn("TinyMCE destruction failed:", error);
+      }
+      
       await fetchTemplates();
+      await fetchColumnSettings();
     });
 
     return {
       removeEmail,
+      saveColumnSettings,
       toggleLeadSelection,
       toggleSelectAll,
       showLeadModal,
@@ -1669,12 +1855,30 @@ export default {
       addSelectedPhones,
       toggleSmsLeadSelection,
       updateSmsToField,
+      showColumnsModal,
+      openColumnsModal,
+      closeColumnsModal,
+      selectedColumns,
+      availableColumns,
+      updateColumns,
+      toggleColumnSelection,
+      fetchColumnSettings, 
+      onColumnReorder,   
     };
   },
 };
 </script>
 
 <style>
+.lead_Table th,
+.lead_Table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  min-inline-size: 252px;
+  text-align: start;
+  white-space: nowrap;
+}
+
 .modal {
   position: fixed;
   z-index: 1000;
@@ -1720,16 +1924,13 @@ export default {
 }
 
 button {
-  border: none;
   border-radius: 4px;
-  background-color: #007bff;
-  cursor: pointer;
   padding-block: 8px;
   padding-inline: 12px;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #8c57ff;
 }
 
 .modal-fullscreen {
@@ -1758,7 +1959,7 @@ button:hover {
 .modal_LeadContent {
   display: grid;
   padding: 0;
-  border: 5px solid #87b;
+  border: 5px solid #a17de1;
   background-color: #f5eded;
   block-size: 500px;
   inline-size: 100%;
@@ -1819,7 +2020,7 @@ button:hover {
 .plus-button {
   border: none;
   border-radius: 0 5px 5px 0;
-  background-color: #007bff;
+  background-color: #a17de1;
   color: white;
   cursor: pointer;
   font-size: 18px;
@@ -1828,7 +2029,7 @@ button:hover {
 }
 
 .plus-button:hover {
-  background-color: #0056b3;
+  background-color: #a17de1;
 }
 
 .modal-header h2 {
@@ -1852,7 +2053,7 @@ button:hover {
 .modal-footer button {
   border: none;
   border-radius: 4px;
-  background-color: #007bff;
+  background-color: #a17de1;
   color: white;
   cursor: pointer;
   padding-block: 8px;
@@ -1863,7 +2064,7 @@ button:hover {
   display: flex;
   align-items: center;
   border-radius: 5px;
-  background: #007bff;
+  background: #8c57ff;
   color: white;
   padding-block: 5px;
   padding-inline: 10px;
@@ -1889,4 +2090,320 @@ button:hover {
   gap: 5px;
 }
 
+.columns-modal-overlay {
+  position: fixed;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 50%);
+  block-size: 100vh;
+  inline-size: 100vw;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+}
+
+.columns-modal-container {
+  position: relative;
+  padding: 20px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 30%);
+  inline-size: 400px;
+  text-align: center;
+}
+
+.columns-modal-close {
+  position: absolute;
+  cursor: pointer;
+  font-size: 24px;
+  inset-block-start: 10px;
+  inset-inline-end: 15px;
+}
+
+.columns-modal-list {
+  display: grid;
+  padding: 0;
+  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  margin-block-start: 15px;
+  text-align: start;
+}
+
+.columns-modal-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.columns-modal-warning {
+  color: red;
+  font-size: 12px;
+  margin-block-start: 10px;
+}
+
+.columns-modal-update-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background: red;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  inline-size: 100%;
+  margin-block-start: 15px;
+}
+
+.columns-modal-update-btn:hover {
+  background: darkred;
+}
+
+.cancel-btn {
+  background: gray;
+}
+
+.cancel-btn:hover {
+  background: darkgray;
+}
+
+.column-container {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #f9f9f9;
+  margin-block: 10px;
+  margin-inline: 0;
+  max-inline-size: 300px;
+}
+
+.column-item {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border-block-end: 1px solid #ddd;
+  cursor: grab;
+}
+
+/* Extra tr ko hide karne ke liye */
+.draggable-header-wrapper > tr:nth-child(2) {
+  display: none;
+}
+
+.tag-modal-container,
+.stage-modal-container {
+  position: relative;
+  padding: 20px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 30%);
+  inline-size: 400px;
+  text-align: center;
+}
+
+.modal_tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-block: 15px;
+}
+
+.modal_tag {
+  display: flex;
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  background: #f9f9f9;
+  cursor: pointer;
+  gap: 8px;
+  padding-block: 8px;
+  padding-inline: 12px;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.modal_tag.selected {
+  border-color: #8c57ff;
+  background: #f3e8ff;
+}
+
+.add-button,
+.submit-button {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background: #8c57ff;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  margin-block-start: 10px;
+}
+
+.add-button:hover,
+.submit-button:hover {
+  background: #7135d8;
+}
+
+.close-button {
+  position: absolute;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 15px;
+  inset-block-start: 10px;
+  inset-inline-end: 10px;
+}
+
+.modal_stage {
+  display: flex;
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  background: #f9f9f9;
+  cursor: pointer;
+  gap: 8px;
+  padding-block: 8px;
+  padding-inline: 12px;
+  transition: all 0.3s ease;
+  user-select: none; /* Text select na ho */
+}
+
+.modal_stage.selected {
+  border-color: #8c57ff;
+  background: #f3e8ff;
+}
+
+/* Table Headers */
+
+/* Table Styling */
+
+/* Table Styling */
+.lead_Table {
+  border-collapse: separate;
+  border-spacing: 0;
+  inline-size: 100%;
+  table-layout: fixed;
+  white-space: nowrap;
+}
+
+/* Table Headers */
+
+/* .lead_Table th {
+  padding: 12px;
+  border: 1px solid #ddd;
+  background: #f8f9fa;
+  font-weight: bold;
+  text-align: start;
+  white-space: nowrap;
+} */
+
+/* Table Data Cells */
+.lead_Table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: start;
+  white-space: nowrap;
+}
+
+/* Fix Checkbox Column */
+.checkbox-col {
+  position: sticky;
+  z-index: 3; /* Highest priority */
+  background: white;
+  inline-size: 40px !important;
+  inset-inline-start: 0;
+  text-align: center;
+}
+
+/* Drag Handle Styling */
+.drag-handle {
+  display: inline-block;
+  cursor: grab;
+  padding-inline-end: 5px;
+}
+
+/* Table Header & Body Alignment */
+.lead_Table thead {
+  display: table-header-group;
+}
+
+.lead_Table tbody {
+  display: table-row-group;
+  max-block-size: 400px;
+  overflow-y: auto;
+}
+
+/* Table Container for Scrolling */
+.table-container {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+
+/* Make remaining columns scrollable */
+.lead_Table th:nth-child(n+8),
+.lead_Table td:nth-child(n+8) {
+  min-inline-size: 150px;
+}
+
+/* Ensure email text does not cut off */
+.lead_Table th:nth-child(3),
+.lead_Table td:nth-child(3) {
+  overflow: hidden;
+  max-inline-size: 200px;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+/* Responsive Scrolling */
+@media (max-width: 768px) {
+  .table-container {
+    overflow-x: scroll;
+  }
+}
+
+/*
+.lead_Table th:nth-child(3) {
+  overflow: hidden;
+  max-inline-size: 300px;
+  text-overflow: ellipsis;
+  word-break: break-word;
+} */
+
+.lead-name-link {
+  color: #8c57ff; /* Blue color */
+  text-decoration: underline;
+}
+
+.lead-name-link:hover {
+  color: #8c57ff; /* Darker blue */
+}
+
+/* .lead_Table thead {
+  position: sticky;
+  z-index: 10;
+  display: table-header-group;
+  background: white;
+  inset-block-start: 0;
+} */
+
+.subject-container {
+  display: flex;
+  align-items: center;
+}
+
+.subject-input {
+  flex-grow: 1;
+  padding: 5px;
+  border: none;
+  border-block-end: 1px solid #ccc;
+}
+
+.merge-field {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-inline-start: 10px;
+}
 </style>

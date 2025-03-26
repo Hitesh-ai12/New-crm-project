@@ -212,11 +212,6 @@ input:focus-visible {
   margin-inline-end: 10px;
 }
 
-.layout-nav-type-vertical .layout-vertical-nav {
-  background-color: #fff;
-  border-inline-end: 1px solid #e1e1e1;
-}
-
 #leadsTable_wrapper .dt-search {
   display: none;
 }
@@ -245,6 +240,11 @@ input:focus-visible {
 #leadsTable_wrapper ul.pagination li {
   padding: 10px;
   background: #fff;
+}
+
+.layout-nav-type-vertical .layout-vertical-nav {
+  background-color: #fff;
+  border-inline-end: 1px solid #e1e1e1;
 }
 
 /* -----------------03-010-2024---------------------- */
@@ -336,11 +336,11 @@ input:focus-visible {
   box-sizing: border-box;
   border: 1px solid #ccc;
   border-radius: 3px;
-  background-color: #f0f0f0;
-  block-size: 20px;
-  inline-size: 20px;
-  inset-block-start: 50%;
-  inset-inline-start: 14px;
+  background-color: #fff;
+  block-size: 15px;
+  inline-size: 15px;
+  inset-block-start: 38%;
+  inset-inline-start: 0;
   transform: translateY(-50%);
   transition: background-color 0.3s, border-color 0.3s;
 }
@@ -498,7 +498,8 @@ input:focus-visible {
 }
 
 /* Close Button */
-.close-button {
+
+/* .close-button {
   position: absolute;
   border: none;
   background: transparent;
@@ -506,7 +507,7 @@ input:focus-visible {
   font-size: 24px;
   inset-block-start: 10px;
   inset-inline-end: 10px;
-}
+} */
 
 /* Modal Content */
 .import-options,
@@ -518,10 +519,10 @@ input:focus-visible {
   flex-direction: column;
 }
 
-.error-message {
+/* .error-message {
   color: red;
   margin-block-start: 10px;
-}
+} */
 
 /* Specific Styles for Modal Content */
 .sms-modal-container textarea {

@@ -8,15 +8,15 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::dropIfExists('leads'); // Drop the existing leads table
+        Schema::dropIfExists('leads'); 
         
         Schema::create('leads', function (Blueprint $table) {
-            $table->id(); // Auto-incrementing primary key
-            $table->string('first_name'); // Required  
+            $table->id(); 
+            $table->string('first_name');
             $table->string('last_name');
-            $table->string('email')->unique(); // Required and unique
-            $table->string('phone')->unique(); // Required and unique
-            $table->unsignedBigInteger('user_id'); // Foreign key for logged-in user
+            $table->string('email')->unique(); 
+            $table->string('phone')->unique();
+            $table->unsignedBigInteger('user_id'); 
             $table->string('tag')->nullable();
             $table->string('stage')->nullable();           
             $table->text('new_listing_alert')->nullable();
@@ -32,16 +32,13 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->json('tasks')->nullable();
             $table->json('appointments')->nullable();
-            
-            $table->timestamps(); // Adds created_at and updated_at columns
-            
-            // Foreign key constraint
+            $table->timestamps(); 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('leads'); // Drop the leads table if rolled back
+        Schema::dropIfExists('leads'); 
     }
 };

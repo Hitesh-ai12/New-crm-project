@@ -1,4 +1,5 @@
 <?php
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RoleController;
@@ -22,7 +23,10 @@ Route::put('/api/items/{id}', [ItemController::class, 'update']);
 // Delete an item by ID
 Route::delete('/items/{id}', [ItemController::class, 'destroy']);
 
-
+Route::get('/lead-form', function (Request $request) {
+    $userId = $request->query('user_id'); // URL se user_id fetch karein
+    return view('lead-form', compact('userId'));
+});
 Route::get('{any?}', function() {
     return view('application');
 })->where('any', '.*');
