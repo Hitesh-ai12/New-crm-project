@@ -290,6 +290,27 @@
     <div class="fab">
       <button class="fab-btn"><i class="fas fa-plus"></i></button>
     </div>
+
+    <!-- Floating Action Button -->
+<div class="fab">
+  <button class="fab-btn" @click="toggleActions">
+    <i class="fas fa-times" v-if="showActions"></i>
+    <i class="fas fa-plus" v-else></i>
+  </button>
+
+  <transition-group name="fade" tag="div">
+    <div v-if="showActions" class="fab-actions" key="actions">
+      <button class="fab-action" title="Call Log"><i class="fas fa-phone"></i></button>
+      <button class="fab-action" title="SMS From Smart Number"><i class="fas fa-comment-dots"></i></button>
+      <button class="fab-action" title="Send Email"><i class="fas fa-envelope"></i></button>
+      <button class="fab-action" title="Add Note"><i class="fas fa-clipboard"></i></button>
+      <button class="fab-action" title="Add Action Plan"><i class="fas fa-project-diagram"></i></button>
+      <button class="fab-action" title="Add Task"><i class="fas fa-tasks"></i></button>
+      <button class="fab-action" title="Lead Transfer"><i class="fas fa-random"></i></button>
+    </div>
+  </transition-group>
+</div>
+
   </div>
 </template>
 
@@ -434,6 +455,62 @@ export default {
 
 
 <style scoped>
+.fab {
+  position: fixed;
+  inset-block-end: 20px;
+  inset-inline-end: 20px;
+}
+
+.fab-btn {
+  border: none;
+  border-radius: 50%;
+  background-color: red;
+  block-size: 60px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 30%);
+  color: white;
+  cursor: pointer;
+  font-size: 24px;
+  inline-size: 60px;
+}
+
+.fab-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  margin-block-end: 10px;
+  margin-inline-end: 10px;
+}
+
+.fab-action {
+  display: flex;
+  align-items: center;
+  border: none;
+  border-radius: 50px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 20%);
+  color: #333;
+  cursor: pointer;
+  font-size: 16px;
+  gap: 8px;
+  padding-block: 8px;
+  padding-inline: 12px;
+}
+
+.fab-action i {
+  font-size: 18px;
+}
+
+.fade-enter-active,
+ .fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+ .fade-leave-to {
+  opacity: 0;
+}
+
 .lead-management {
   display: flex;
   flex-direction: column;

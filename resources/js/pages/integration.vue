@@ -7,6 +7,7 @@
         <ul>
           <li @click="handleIntegration('Facebook Ads')">Facebook Ads</li>
           <li @click="handleIntegration('Google Ads')">Google Ads</li>
+          <li @click="handleIntegration('TikTok Ads')">TikTok Ads</li>
         </ul>
       </div>
     </div>
@@ -39,12 +40,13 @@ export default {
       connectedAccounts: [], 
       cards: [
         { id: 1, title: 'Facebook Integration', description: 'Lead Ads Integration for Facebook.' },
-        { id: 2, title: 'Google Integration', description: 'Lead Ads Integration for Google Ads.' }
+        { id: 2, title: 'Google Integration', description: 'Lead Ads Integration for Google Ads.' },
+        { id: 3, title: 'TikTok Integration', description: 'Lead Ads Integration for TikTok Ads.' }
       ]
     };
   },
   mounted() {
-    this.loadConnectedAccounts(); 
+    this.loadConnectedAccounts();
   },
   methods: {
     toggleDropdown() {
@@ -55,6 +57,7 @@ export default {
       const oauthUrls = {
         'Facebook Ads': 'https://www.facebook.com/v18.0/dialog/oauth?client_id=983501733459311&redirect_uri=https://jsithub.com/test&response_type=token&scope=public_profile,email&display=popup',
         'Google Ads': 'https://accounts.google.com/o/oauth2/auth?client_id=932644499351-u8hu1a2885v7277npsisd0u31mopjulc.apps.googleusercontent.com&redirect_uri=http://127.0.0.1:8000/&response_type=token&scope=https://www.googleapis.com/auth/adwords&state=google_ads',
+        'TikTok Ads': `https://www.tiktok.com/auth/authorize/?client_key=sbawn1r29tozo1b810&redirect_uri=http://127.0.0.1:8000/callback/tiktok&response_type=code&scope=advertiser.read&state=tiktok_ads`
       };
 
       if (oauthUrls[platform]) {
@@ -67,22 +70,38 @@ export default {
       const oauthWindow = window.open(url, `${platform} Login`, 'width=600,height=700');
       const interval = setInterval(() => {
         try {
-          if (oauthWindow && oauthWindow.location.href.includes('access_token')) {
-            const accessToken = this.extractAccessToken(oauthWindow.location.href);
+          if (oauthWindow && oauthWindow.location.href.includes('code=')) {
+            const authCode = this.extractAuthCode(oauthWindow.location.href);
 
-            if (accessToken) {
-              this.connectedAccounts.push({ platform, token: accessToken });
-              this.saveConnectedAccounts();
+            if (authCode) {
               oauthWindow.close();
               clearInterval(interval);
+              this.exchangeCodeForToken(platform, authCode);
             }
           }
         } catch (e) {}
       }, 1000);
     },
-    extractAccessToken(url) {
-      const match = url.match(/access_token=([^&]+)/);
+    extractAuthCode(url) {
+      const match = url.match(/code=([^&]+)/);
       return match ? match[1] : null;
+    },
+    exchangeCodeForToken(platform, code) {
+      fetch(`/api/oauth/${platform.toLowerCase()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.access_token) {
+          this.connectedAccounts.push({ platform, token: data.access_token });
+          this.saveConnectedAccounts();
+        } else {
+          alert("Failed to get access token.");
+        }
+      })
+      .catch(error => console.error("OAuth Error:", error));
     },
     saveConnectedAccounts() {
       localStorage.setItem('connectedAccounts', JSON.stringify(this.connectedAccounts));
