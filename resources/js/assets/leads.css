@@ -134,8 +134,9 @@ input:focus-visible {
   border-radius: 5px;
   color: #8c57ff;
   cursor: pointer;
-  padding-block: 5px;
-  padding-inline: 10px;
+  inline-size: max-content;
+  padding-block: 8px;
+  padding-inline: 8px;
   transition: 0.4s ease;
 }
 
@@ -757,4 +758,222 @@ button[data-v-ab54f3b8]:hover {
 
 button[data-v-ab54f3b8]:hover {
   background-color: #8156d1 !important;
+}
+
+/*  10/04/2025 css */
+
+.btn.active,
+.btn:hover {
+  margin: 0;
+  background-color: #8c57ff;
+  color: #fff;
+}
+
+.btn {
+  border: 1px solid #8c57ff;
+  border-radius: 4px;
+  margin: 0;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  inline-size: max-content;
+  margin-block: 0;
+  margin-inline: 8px;
+  padding-block: 8px;
+  padding-inline: 16px;
+  transition: background-color 0.3s;
+}
+
+.leads-header ul li {
+  margin-inline-end: 0;
+}
+
+.leads-header ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  list-style: none;
+}
+
+.leads-header {
+  display: flex;
+  justify-content: space-between;
+  column-gap: 200px;
+  margin-block-end: 20px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-block-end: 20px;
+}
+
+.leads-container input {
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  margin: 0;
+}
+
+.header .total-leads {
+  padding-inline: 10px;
+}
+
+.table-container .lead_Table tbody {
+  overflow: auto;
+  inline-size: 100%;
+}
+
+.table-container .lead_Table tbody tr {
+  display: flex;
+  inline-size: 100%;
+}
+
+.table-container .lead_Table tbody td input {
+  inline-size: 250px;
+}
+
+.leads-container [disabled] {
+  border: 1px solid #8c57ff;
+  cursor: default;
+}
+
+.modal {
+  position: fixed;
+  z-index: 1000;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #fff;
+  block-size: 500px;
+  box-shadow: 0 4px 6px #0000001a;
+  inline-size: 600px;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  overflow-y: scroll;
+  transform: translate(-50%, -50%);
+}
+
+.modal-body .form-group input:focus-visible {
+  border: 1px solid #ccc;
+}
+
+.email-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 4px;
+  background-color: #e0e0e0;
+  inline-size: 100%;
+  padding-block: 5px;
+  padding-inline: 10px;
+}
+
+.remove-email {
+  border: none;
+  background: none !important;
+  color: red;
+  cursor: pointer;
+  font-weight: 700;
+  margin-inline-start: 5px;
+}
+
+.form-actions button {
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  background-color: #8c57ff;
+  color: #fff;
+  transition: 0.4s ease;
+}
+
+.form-actions button:hover {
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  background-color: #fff;
+  color: #8c57ff;
+  transition: 0.4s ease;
+}
+
+.selected-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: #fff;
+  color: #6e7881;
+  inline-size: 100%;
+  padding-block: 5px;
+  padding-inline: 10px;
+}
+
+.selected-leads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  inline-size: 100%;
+}
+
+.selected-tag button {
+  border: none;
+  background: none;
+  color: #f00;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.selected-tag button:hover {
+  color: #f00;
+}
+
+.modal_tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-block: 0;
+}
+
+.modal_tags .modal_tag {
+  display: flex;
+  align-items: center;
+  inline-size: auto;
+  padding-inline: 0;
+}
+
+.modal_tags .modal_tag input {
+  inline-size: auto;
+  margin-inline-end: 0;
+}
+
+.email-input-container > button {
+  border: 1px solid #8c57ff;
+  color: #8c57ff;
+  margin-block-start: 10px;
+}
+
+.email-input-container > button:hover {
+  border: 1px solid #8c57ff;
+  color: #fff;
+}
+
+.tag-modal-container > div {
+  display: flex;
+  gap: 10px;
+}
+
+.tag-modal-container > div button.submit-button {
+  margin: 0;
+  padding-inline: 40px;
+}
+
+.tag-modal-container button.submit-button {
+  margin-block: 10px;
+  margin-inline: auto;
+  padding-block: 10px;
+  padding-inline: 40px;
+  text-align: center;
 }
