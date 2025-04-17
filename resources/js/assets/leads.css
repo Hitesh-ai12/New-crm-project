@@ -977,3 +977,185 @@ button[data-v-ab54f3b8]:hover {
   padding-inline: 40px;
   text-align: center;
 }
+
+.modal_stage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-block: 0;
+}
+
+.modal_stages .modal_stage {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  inline-size: auto;
+  padding-inline: 0;
+}
+
+.modal_stages .modal_stage input {
+  inline-size: auto;
+  margin-inline-end: 0;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.submit-button,
+.cancel-button {
+  background: #9268dd;
+  inline-size: 100px;
+}
+
+.import-options {
+  display: flex;
+  flex-direction: row !important;
+  justify-content: space-between;
+  margin-block-start: 20px;
+}
+
+.columns-modal-container {
+  position: relative;
+  padding: 20px;
+  border-radius: 8px;
+  background: #fff;
+  block-size: 500px;
+  box-shadow: 0 4px 10px #0000004d;
+  inline-size: 600px;
+  text-align: center;
+}
+
+.columns-modal-list {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  gap: 10px;
+  margin-block-start: 15px;
+  text-align: start;
+}
+
+.columns-modal-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  inline-size: calc(33% - 10px);
+}
+
+.columns-modal-update-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background: #8c57ff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  inline-size: 120px;
+  margin-block-start: 15px;
+}
+
+.columns-modal-update-btn:hover {
+  background: #9155fd;
+}
+
+.cancel-btn {
+  background: #e31521;
+  margin-inline-start: 20px;
+}
+
+.cancel-btn:hover {
+  background: #dd3e47;
+}
+
+.card h3 {
+  border-block-end: 1px solid #d9d9d9;
+  padding-block-end: 20px;
+  text-align: start;
+}
+
+.card .tag-icons {
+  position: absolute;
+  display: flex;
+  background: transparent;
+  gap: 5px;
+  inline-size: fit-content;
+  inset-block-start: -25px;
+  inset-inline-start: 10px;
+  transition: 0.4s ease;
+}
+
+.tag-icon {
+  cursor: pointer;
+}
+
+/* =============New-CSS=================
+
+============Icon-modal-CSS================== */
+
+.stage-modal-container > div {
+  display: flex;
+  gap: 10px;
+}
+
+.stage-modal-container > div button.submit-button {
+  margin: 0;
+  padding-inline: 40px;
+}
+
+.stage-modal-container button.submit-button {
+  margin-block: 10px;
+  margin-inline: auto;
+  padding-block: 10px;
+  padding-inline: 40px;
+  text-align: center;
+}
+
+.modal-container h2 {
+  font-size: 17.5px;
+  text-align: center;
+}
+
+select.open_modal_drop-box {
+  padding: 10px;
+  border: 1px solid #8c57ff;
+  border-radius: 6px;
+  background-color: #fff;
+  block-size: 100%;
+  inline-size: 100%;
+  margin-block-start: 10px;
+}
+
+select.open_modal_drop-box:focus-visible {
+  border: 1px solid #8c57ff;
+}
+
+.modal-buttons .cancel-button {
+  border: #fff;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  margin-block: 7px;
+  margin-inline: 0;
+  padding-block: 10px;
+  padding-inline: 25px;
+}
+
+button.import-button {
+  background: #8c57ff !important;
+}
+
+.modal-actions button {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background: #8c57ff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  inline-size: 150px;
+}
