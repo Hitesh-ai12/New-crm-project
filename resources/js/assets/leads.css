@@ -1107,10 +1107,10 @@ button[data-v-ab54f3b8]:hover {
 }
 
 .stage-modal-container button.submit-button {
+  color: #fff;
   margin-block: 10px;
   margin-inline: auto;
   padding-block: 10px;
-  padding-inline: 40px;
   text-align: center;
 }
 
@@ -1158,4 +1158,127 @@ button.import-button {
   font-size: 16px;
   font-weight: 700;
   inline-size: 150px;
+}
+
+.form-overlay {
+  z-index: 99;
+}
+
+.leads-container input {
+  border: 1px solid #8c57ff !important;
+  padding-inline: 10px;
+}
+
+.custom-checkbox-span {
+  border-radius: 2px;
+}
+
+.custom-checkbox-span::after {
+  block-size: 9px;
+  inline-size: 5px;
+  inset-block-start: 2px;
+  inset-inline-start: 1px;
+}
+
+td.checkbox-col:first-child {
+  min-inline-size: 40px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  column-gap: 25px;
+  margin-block: 20px;
+}
+
+.pagination button {
+  color: #8c57ff;
+}
+
+.pagination button:hover {
+  color: #fff;
+}
+
+button.import-button {
+  color: #fff;
+}
+
+/* =============tag-modal-container==================== */
+
+.tag-modal-container > div {
+  row-gap: 0;
+}
+
+.modal_tag.selected {
+  /* border-color: #8c57ff; */
+  background: transparent;
+}
+
+.tag-modal-container > div {
+  justify-content: space-between;
+}
+
+.tag-modal-container > div input {
+  inline-size: 100%;
+}
+
+.tag-modal-container button.submit-button {
+  /* padding-inline: 40px; */
+  color: #fff;
+}
+
+.tag-modal-container > div button.submit-button {
+  color: #fff;
+}
+
+.submit-button,
+.cancel-button {
+}
+
+.tag-modal-container .add-button {
+  color: #fff;
+  padding-block: 10px;
+}
+
+.tag-modal-container button:hover {
+  background-color: #8c57ff;
+  color: #fff;
+}
+
+/* =============stage-modal-container==================== */
+
+.stage-modal-container > div {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+
+..modal_stage.selected {
+  /* border-color: #8c57ff; */
+  background: transparent !important;
+}
+
+/* =========add-this-HTML================= */
+
+.stage-modal-container > .new-stage-input {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.stage-modal-container > .new-stage-input input {
+  inline-size: 100%;
+}
+
+.stage-modal-container > div button.submit-button {
+  /* padding-inline: 40px; */
+  color: #fff;
+}
+
+.stage-modal-container .add-button {
+  color: #fff;
+  padding-block: 10px;
+}
+
+.stage-modal-container button:hover {
+  background-color: #8c57ff;
+  color: #fff;
 }

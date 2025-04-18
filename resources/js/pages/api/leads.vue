@@ -513,7 +513,7 @@
         </div>
 
         <button @click="showAddStageInput = !showAddStageInput" class="add-button">Add Stage</button>
-        <div v-if="showAddStageInput">
+        <div v-if="showAddStageInput" class="new-stage-input">
           <input v-model="newStage" placeholder="Enter new stage" id="m_add_stage" class="m_add_stage"/>
           <button @click="addStage" class="submit-button">Add</button>
         </div>
@@ -683,7 +683,7 @@
       <button @click="toast.message = ''" class="toast-close-button">X</button>
     </div>  
 
-    <div>
+    <div class="pagination">
       <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1">Previous</button>
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
       <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">Next</button>
