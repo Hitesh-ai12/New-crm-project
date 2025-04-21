@@ -34,6 +34,7 @@ header.layout-navbar {
 
 .form-overlay {
   position: fixed;
+  z-index: 99;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,11 +75,6 @@ header.layout-navbar {
 
 .leads-table th {
   background-color: #f4f4f4;
-}
-
-.leads-container input {
-  border: 1px solid #8c57ff;
-  border-radius: 5px;
 }
 
 input:focus-visible {
@@ -317,22 +313,17 @@ input:focus-visible {
 
 .custom-checkbox-label {
   position: relative;
-  display: inline-block;
   cursor: pointer;
-  line-height: 20px;
-  padding-inline-start: 30px;
 }
 
 .custom-checkbox-span {
   position: absolute;
   box-sizing: border-box;
   border: 1px solid #ccc;
-  border-radius: 3px;
+  border-radius: 2px;
   background-color: #fff;
   block-size: 15px;
   inline-size: 15px;
-  inset-block-start: 38%;
-  inset-inline-start: 0;
   transform: translateY(-50%);
   transition: background-color 0.3s, border-color 0.3s;
 }
@@ -346,11 +337,11 @@ input:focus-visible {
   position: absolute;
   border: solid white;
   border-width: 0 2px 2px 0;
-  block-size: 12px;
+  block-size: 9px;
   content: "";
-  inline-size: 6px;
-  inset-block-start: 3px;
-  inset-inline-start: 2px;
+  inline-size: 5px;
+  inset-block-start: 2px;
+  inset-inline-start: 1px;
   transform: translateY(-50%) rotate(45deg) scale(0);
   transform-origin: bottom left;
   transition: transform 0.3s ease;
@@ -583,19 +574,6 @@ select.open_modal_drop-box {
   padding-inline: 25px;
 }
 
-.btn {
-  border: none;
-  border-radius: 4px;
-  background-color: #f0f0f0;
-  cursor: pointer;
-  inline-size: auto;
-  margin-block: 0;
-  margin-inline: 8px;
-  padding-block: 8px;
-  padding-inline: 16px;
-  transition: background-color 0.3s;
-}
-
 .btn.active {
   background-color: #8c57ff;
   color: white;
@@ -776,8 +754,6 @@ button[data-v-ab54f3b8]:hover {
   background-color: #f0f0f0;
   cursor: pointer;
   inline-size: max-content;
-  margin-block: 0;
-  margin-inline: 8px;
   padding-block: 8px;
   padding-inline: 16px;
   transition: background-color 0.3s;
@@ -810,12 +786,6 @@ button[data-v-ab54f3b8]:hover {
   justify-content: space-between;
   gap: 10px;
   margin-block-end: 20px;
-}
-
-.leads-container input {
-  border: 1px solid #8c57ff;
-  border-radius: 5px;
-  margin: 0;
 }
 
 .header .total-leads {
@@ -963,14 +933,17 @@ button[data-v-ab54f3b8]:hover {
 .tag-modal-container > div {
   display: flex;
   gap: 10px;
+  row-gap: 0;
 }
 
 .tag-modal-container > div button.submit-button {
   margin: 0;
+  color: #fff;
   padding-inline: 40px;
 }
 
 .tag-modal-container button.submit-button {
+  color: #fff;
   margin-block: 10px;
   margin-inline: auto;
   padding-block: 10px;
@@ -1098,12 +1071,14 @@ button[data-v-ab54f3b8]:hover {
 
 .stage-modal-container > div {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+  row-gap: 0;
 }
 
 .stage-modal-container > div button.submit-button {
   margin: 0;
-  padding-inline: 40px;
+  color: #fff;
 }
 
 .stage-modal-container button.submit-button {
@@ -1144,10 +1119,6 @@ select.open_modal_drop-box:focus-visible {
   padding-inline: 25px;
 }
 
-button.import-button {
-  background: #8c57ff !important;
-}
-
 .modal-actions button {
   padding: 10px;
   border: none;
@@ -1160,24 +1131,11 @@ button.import-button {
   inline-size: 150px;
 }
 
-.form-overlay {
-  z-index: 99;
-}
-
 .leads-container input {
   border: 1px solid #8c57ff !important;
+  border-radius: 5px;
+  margin: 0;
   padding-inline: 10px;
-}
-
-.custom-checkbox-span {
-  border-radius: 2px;
-}
-
-.custom-checkbox-span::after {
-  block-size: 9px;
-  inline-size: 5px;
-  inset-block-start: 2px;
-  inset-inline-start: 1px;
 }
 
 td.checkbox-col:first-child {
@@ -1206,33 +1164,16 @@ button.import-button {
 /* =============tag-modal-container==================== */
 
 .tag-modal-container > div {
+  justify-content: space-between;
   row-gap: 0;
 }
 
 .modal_tag.selected {
-  /* border-color: #8c57ff; */
   background: transparent;
-}
-
-.tag-modal-container > div {
-  justify-content: space-between;
 }
 
 .tag-modal-container > div input {
   inline-size: 100%;
-}
-
-.tag-modal-container button.submit-button {
-  /* padding-inline: 40px; */
-  color: #fff;
-}
-
-.tag-modal-container > div button.submit-button {
-  color: #fff;
-}
-
-.submit-button,
-.cancel-button {
 }
 
 .tag-modal-container .add-button {
@@ -1247,13 +1188,7 @@ button.import-button {
 
 /* =============stage-modal-container==================== */
 
-.stage-modal-container > div {
-  flex-wrap: wrap;
-  row-gap: 0;
-}
-
-..modal_stage.selected {
-  /* border-color: #8c57ff; */
+.modal_stage.selected {
   background: transparent !important;
 }
 
@@ -1266,11 +1201,6 @@ button.import-button {
 
 .stage-modal-container > .new-stage-input input {
   inline-size: 100%;
-}
-
-.stage-modal-container > div button.submit-button {
-  /* padding-inline: 40px; */
-  color: #fff;
 }
 
 .stage-modal-container .add-button {
