@@ -1,5 +1,21 @@
+#cancel_button {
+  position: absolute;
+  inset-block-start: 25px;
+  inset-inline-end: 25px;
+}
+
 header.layout-navbar {
   background-color: #fff !important;
+}
+
+.create-new-button {
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  background-color: #8c57ff;
+  color: #fff;
+  padding-block: 8px;
+  padding-inline: 16px;
+  transition: 0.4s ease;
 }
 
 .leads-container {
@@ -11,13 +27,6 @@ header.layout-navbar {
   color: red;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-block-end: 20px;
-}
-
 .search-bar {
   padding: 8px;
   inline-size: 50%;
@@ -25,11 +34,6 @@ header.layout-navbar {
 
 .header .search-bar:focus-visible {
   border: 1px solid #8c57ff !Important;
-}
-
-.create-new-button {
-  padding-block: 8px;
-  padding-inline: 16px;
 }
 
 .form-overlay {
@@ -41,6 +45,28 @@ header.layout-navbar {
   background: rgba(0, 0, 0, 50%);
   inset: 0;
   transition: 0.5s ease;
+}
+
+.import-button,
+.submit-button,
+.add-button {
+  border: bisque;
+  border-radius: 5px;
+  background: #a17de1;
+  color: #0e0d0d;
+  cursor: pointer;
+  margin-block: 7px;
+  margin-inline: 0;
+  padding-block: 7px;
+  padding-inline: 25px;
+}
+
+.stage-modal-container button.submit-button {
+  color: #fff;
+  margin-block: 10px;
+  margin-inline: auto;
+  padding-block: 10px;
+  text-align: center;
 }
 
 .form-container {
@@ -82,23 +108,9 @@ input:focus-visible {
   outline: none !important;
 }
 
-.create-new-button {
-  border: 1px solid #8c57ff;
-  border-radius: 5px;
-  background-color: #8c57ff;
-  color: #fff;
-  transition: 0.4s ease;
-}
-
 .create-new-button:hover {
   background-color: transparent;
   color: #8c57ff;
-}
-
-#cancel_button {
-  position: absolute;
-  inset-block-start: 25px;
-  inset-inline-end: 25px;
 }
 
 .form-container button#submit_button {
@@ -134,10 +146,6 @@ input:focus-visible {
   padding-block: 8px;
   padding-inline: 8px;
   transition: 0.4s ease;
-}
-
-.leads-header ul li {
-  position: relative;
 }
 
 .leads-header ul li:hover span {
@@ -194,10 +202,6 @@ input:focus-visible {
   display: flex;
   align-items: center;
   list-style: none;
-}
-
-.leads-header ul li {
-  margin-inline-end: 10px;
 }
 
 #leadsTable_wrapper .dt-search {
@@ -266,26 +270,18 @@ input:focus-visible {
 
 .dataTables_wrapper .dataTables_length {
   float: inline-start;
-
-  /* Align the entries per page dropdown to the left */
 }
 
 .dataTables_wrapper .dataTables_filter {
   float: inline-end;
-
-  /* Align the search box to the right */
 }
 
 .dataTables_wrapper .dataTables_paginate {
   float: inline-end;
-
-  /* Align the pagination controls to the right */
 }
 
 .dataTables_wrapper .dataTables_info {
   float: inline-start;
-
-  /* Align the info text to the left */
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button {
@@ -560,20 +556,6 @@ select.open_modal_drop-box {
   }
 }
 
-.import-button,
-.submit-button,
-.add-button {
-  border: bisque;
-  border-radius: 5px;
-  background: #a17de1;
-  color: #0e0d0d;
-  cursor: pointer;
-  margin-block: 7px;
-  margin-inline: 0;
-  padding-block: 7px;
-  padding-inline: 25px;
-}
-
 .btn.active {
   background-color: #8c57ff;
   color: white;
@@ -760,7 +742,9 @@ button[data-v-ab54f3b8]:hover {
 }
 
 .leads-header ul li {
+  position: relative;
   margin-inline-end: 0;
+  margin-inline-end: 10px;
 }
 
 .leads-header ul {
@@ -899,13 +883,14 @@ button[data-v-ab54f3b8]:hover {
   color: #f00;
 }
 
+/*
 .modal_tags {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
   gap: 10px;
   margin-block: 0;
-}
+} */
 
 .modal_tags .modal_tag {
   display: flex;
@@ -1079,14 +1064,6 @@ button[data-v-ab54f3b8]:hover {
 .stage-modal-container > div button.submit-button {
   margin: 0;
   color: #fff;
-}
-
-.stage-modal-container button.submit-button {
-  color: #fff;
-  margin-block: 10px;
-  margin-inline: auto;
-  padding-block: 10px;
-  text-align: center;
 }
 
 .modal-container h2 {

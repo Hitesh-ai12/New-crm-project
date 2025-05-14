@@ -2267,17 +2267,13 @@ button:hover {
   padding-block: 8px;
   padding-inline: 12px;
   transition: all 0.3s ease;
-  user-select: none; /* Text select na ho */
+  user-select: none;
 }
 
 .modal_stage.selected {
   border-color: #8c57ff;
   background: #f3e8ff;
 }
-
-/* Table Headers */
-
-/* Table Styling */
 
 /* Table Styling */
 .lead_Table {
@@ -2287,17 +2283,6 @@ button:hover {
   table-layout: fixed;
   white-space: nowrap;
 }
-
-/* Table Headers */
-
-/* .lead_Table th {
-  padding: 12px;
-  border: 1px solid #ddd;
-  background: #f8f9fa;
-  font-weight: bold;
-  text-align: start;
-  white-space: nowrap;
-} */
 
 /* Table Data Cells */
 .lead_Table td {
@@ -2335,19 +2320,16 @@ button:hover {
   overflow-y: auto;
 }
 
-/* Table Container for Scrolling */
 .table-container {
   max-inline-size: 100%;
   overflow-x: auto;
 }
 
-/* Make remaining columns scrollable */
 .lead_Table th:nth-child(n+8),
 .lead_Table td:nth-child(n+8) {
   min-inline-size: 150px;
 }
 
-/* Ensure email text does not cut off */
 .lead_Table th:nth-child(3),
 .lead_Table td:nth-child(3) {
   overflow: hidden;
@@ -2356,37 +2338,20 @@ button:hover {
   word-break: break-word;
 }
 
-/* Responsive Scrolling */
 @media (max-width: 768px) {
   .table-container {
     overflow-x: scroll;
   }
 }
 
-/*
-.lead_Table th:nth-child(3) {
-  overflow: hidden;
-  max-inline-size: 300px;
-  text-overflow: ellipsis;
-  word-break: break-word;
-} */
-
 .lead-name-link {
-  color: #8c57ff; /* Blue color */
+  color: #8c57ff;
   text-decoration: underline;
 }
 
 .lead-name-link:hover {
-  color: #8c57ff; /* Darker blue */
+  color: #8c57ff;
 }
-
-/* .lead_Table thead {
-  position: sticky;
-  z-index: 10;
-  display: table-header-group;
-  background: white;
-  inset-block-start: 0;
-} */
 
 .subject-container {
   display: flex;

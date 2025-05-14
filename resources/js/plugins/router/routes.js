@@ -130,7 +130,18 @@ export const routes = [
           component: () => import('@/pages/profile/signature.vue'),
           props: true, // Pass route params as props
         },
-
+        {
+          path: 'pre-listings',
+          name: 'pre-listings',
+          component: () => import('@/pages/listings/pre-const-listings.vue'),
+          props: true, // Pass route params as props
+        },
+        {
+          path: 'listings',
+          name: 'listings',
+          component: () => import('@/pages/listings/property-listing.vue'),
+          props: true, // Pass route params as props
+        },
     ],
   },
 

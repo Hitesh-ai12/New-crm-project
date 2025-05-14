@@ -51,15 +51,15 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
     <VerticalNavLink
       :item="{
         title: 'Property Listings',
-        href: 'https://demos.themeselection.com/materio-vuetify-vuejs-laravel-admin-template/demo-1/front-pages/landing-page',
-        target: '_blank',
+        to: '/listings',
+        icon: 'ri-file-copy-line',
       }"
     />
     <VerticalNavLink
       :item="{
         title: 'Pre-Construction Listings',
-        href: 'https://demos.themeselection.com/materio-vuetify-vuejs-laravel-admin-template/demo-1/front-pages/pricing',
-        target: '_blank',
+        to: '/pre-listings',
+        icon: 'ri-file-copy-line',
       }"
     />
   </VerticalNavGroup>

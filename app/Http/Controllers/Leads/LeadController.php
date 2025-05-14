@@ -43,13 +43,11 @@ class LeadController extends Controller
                 'city' => 'nullable|string|max:255',
                 'tasks' => 'nullable|json',
                 'appointments' => 'nullable|json',
-                'user_id' => 'nullable|exists:users,id', // user_id optional but must exist in users table
+                'user_id' => 'nullable|exists:users,id', 
             ]);
         
-            // Agar `user_id` request se aaya hai to wahi use karein, warna logged-in user ka ID use karein
             $validatedData['user_id'] = $validatedData['user_id'] ?? auth()->id();
         
-            // Ensure user_id is not null (must be a registered user)
             if (!$validatedData['user_id']) {
                 return response()->json([
                     'message' => 'User ID is required and must be a registered user.',
