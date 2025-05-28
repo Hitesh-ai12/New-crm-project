@@ -1,12 +1,12 @@
-#cancel_button {
+/* #cancel_button {
   position: absolute;
   inset-block-start: 25px;
   inset-inline-end: 25px;
-}
+} */
 
-header.layout-navbar {
+/* header.layout-navbar {
   background-color: #fff !important;
-}
+} */
 
 .create-new-button {
   border: 1px solid #8c57ff;
@@ -18,9 +18,9 @@ header.layout-navbar {
   transition: 0.4s ease;
 }
 
-.leads-container {
+/* .leads-container {
   padding: 20px;
-}
+} */
 
 .loading,
 .error {
