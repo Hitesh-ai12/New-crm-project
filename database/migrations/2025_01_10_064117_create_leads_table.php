@@ -30,11 +30,16 @@ return new class extends Migration
             $table->text('real_estate_newsletter')->nullable();
             $table->text('market_updates')->nullable();
             $table->string('city')->nullable();
+            $table->string('house_number')->nullable();   // ✅ added
+            $table->string('street')->nullable();         // ✅ added
+            $table->string('province')->nullable();       // ✅ added
+            $table->string('zip_code')->nullable();       // ✅ added
             $table->json('tasks')->nullable();
             $table->json('appointments')->nullable();
             $table->timestamps(); 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
+        
     }
 
     public function down()

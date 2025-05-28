@@ -32,6 +32,10 @@ class Lead extends Model
             'city',
             'tasks',
             'appointments',
+            'house_number',  
+            'street',     
+            'province',   
+            'zip_code'    
         ];
         
         protected $casts = [

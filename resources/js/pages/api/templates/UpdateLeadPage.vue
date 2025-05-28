@@ -279,13 +279,6 @@
     </div>
 
 
-    <!-- Footer -->
-    <div class="footer">
-      <div class="copyright">
-        Copyright © 2025 <a href="#">Agentroof</a>. All rights reserved.
-      </div>
-    </div>
-
     <!-- Floating Action Button -->
     <div class="fab">
       <button class="fab-btn"><i class="fas fa-plus"></i></button>
@@ -457,33 +450,27 @@ export default {
 <style scoped>
 .fab {
   position: fixed;
-  inset-block-end: 20px;
-  inset-inline-end: 20px;
+  inset-block-end: 30px;
+  inset-inline-end: 30px;
 }
 
 .fab-btn {
   border: none;
   border-radius: 50%;
   background-color: red;
-  block-size: 60px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 30%);
+  background-color: #e40000;
+  block-size: 56px;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 20%);
   color: white;
   cursor: pointer;
   font-size: 24px;
-  inline-size: 60px;
+  inline-size: 56px;
 }
 
 .fab-actions {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
-  margin-block-end: 10px;
-  margin-inline-end: 10px;
-}
-
-.fab-action {
-  display: flex;
   align-items: center;
   border: none;
   border-radius: 50px;
@@ -493,21 +480,19 @@ export default {
   cursor: pointer;
   font-size: 16px;
   gap: 8px;
+  margin-block-end: 10px;
+  margin-inline-end: 10px;
   padding-block: 8px;
   padding-inline: 12px;
 }
 
-.fab-action i {
-  font-size: 18px;
-}
-
 .fade-enter-active,
- .fade-leave-active {
+.fade-leave-active {
   transition: opacity 0.3s;
 }
 
 .fade-enter-from,
- .fade-leave-to {
+.fade-leave-to {
   opacity: 0;
 }
 
@@ -683,7 +668,8 @@ export default {
 
 .main-content {
   flex: 1;
-  padding: 15px;
+  flex-grow: 1;
+  padding: 20px;
   overflow-y: auto;
 }
 
@@ -744,24 +730,6 @@ export default {
   padding-block: 10px;
   padding-inline: 15px;
   text-align: center;
-}
-
-.fab {
-  position: fixed;
-  inset-block-end: 30px;
-  inset-inline-end: 30px;
-}
-
-.fab-btn {
-  border: none;
-  border-radius: 50%;
-  background-color: #e40000;
-  block-size: 56px;
-  box-shadow: 0 3px 5px rgba(0, 0, 0, 20%);
-  color: white;
-  cursor: pointer;
-  font-size: 24px;
-  inline-size: 56px;
 }
 
 /* Form Container */
@@ -878,11 +846,11 @@ textarea:focus {
   display: flex;
 }
 
-.sidebar {
+/* .sidebar {
   padding: 10px;
   background: #f1f1f1;
   inline-size: 200px;
-}
+} */
 
 .sidebar ul {
   padding: 0;
@@ -899,13 +867,9 @@ textarea:focus {
 
 .sidebar li.active {
   background: #8e56f3;
+  background-color: #8e56f3;
   border-inline-start: 5px solid #8e56f3;
   color: white;
-}
-
-.main-content {
-  flex-grow: 1;
-  padding: 20px;
 }
 
 .analytics-content {
@@ -922,18 +886,11 @@ textarea:focus {
   margin-block-end: 20px;
 }
 
-/* Active Tab Indicator */
-.sidebar li.active {
-  background-color: #8e56f3;
-  border-inline-start: 5px solid #8e56f3;
-  color: white;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
-  .sidebar {
+  /* .sidebar {
     inline-size: 100%;
-  }
+  } */
 
   .main-content {
     padding: 15px;

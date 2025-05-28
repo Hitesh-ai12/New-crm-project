@@ -111,8 +111,8 @@ class LeadController extends Controller
             $validatedData = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'nullable|string|max:255',
-                'email' => 'required|email|unique:leads,email,'.$id,
-                'phone' => 'required|regex:/^\d{10}$/|unique:leads,phone,'.$id,
+                'email' => 'required|email|unique:leads,email,' . $id,
+                'phone' => 'required|regex:/^\d{10}$/|unique:leads,phone,' . $id,
                 'tag' => 'nullable|string|max:255',
                 'stage' => 'nullable|string|max:255',             
                 'new_listing_alert' => 'nullable|string',
@@ -128,6 +128,10 @@ class LeadController extends Controller
                 'city' => 'nullable|string|max:255',
                 'tasks' => 'nullable|json',
                 'appointments' => 'nullable|json',
+                'house_number' => 'nullable|string|max:255',
+                'street' => 'nullable|string|max:255',
+                'province' => 'nullable|string|max:255',
+                'zip_code' => 'nullable|string|max:20',
             ]);
         
             $lead->update($validatedData);
@@ -137,6 +141,7 @@ class LeadController extends Controller
                 'data' => $lead,
             ], 200);
         }
+        
         public function show($id) {
             $lead = Lead::find($id);
         

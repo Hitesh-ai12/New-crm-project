@@ -13,41 +13,38 @@ class EmailController extends Controller
 {
     public function sendEmail(Request $request)
     {
-        // Validate the request
         $request->validate([
-            'to' => 'required|array',  // ✅ Accept multiple emails as an array
-            'to.*' => 'email',         // ✅ Validate each email
+            'to' => 'required|array',
+            'to.*' => 'email',
             'subject' => 'required|string',
             'message' => 'required|string',
             'template_id' => 'nullable|exists:templates,id',
+            'attachments.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx',
+            'attachment_paths' => 'nullable|string', // JSON encoded paths from template
         ]);
     
-        // Fetch the template if provided
-        $template = null;
-        if ($request->filled('template_id')) {
-            $template = Template::find($request->template_id);
-        }
+        $from = $request->input('from', 'default@example.com');
+        $to = $request->input('to');
+        $subject = $request->input('subject');
+        $message = $request->input('message');
+        $attachments = $request->file('attachments', []);
+        $attachmentPaths = json_decode($request->input('attachment_paths', '[]'), true) ?? [];
     
-        // Prepare email data
-        $from = $request->input('from', 'hiteshpandey732195@gmail.com');
-        $to = $request->input('to'); // ✅ Now an array of emails
-        $subject = $template ? $template->subject : $request->input('subject');
-        $message = $template ? $template->content : $request->input('message');
-        $attachments = $request->file('attachments') ?? [];
-    
+        // Compose email data
         $emailData = [
             'from' => $from,
             'to' => $to,
             'subject' => $subject,
             'message' => $message,
             'attachments' => $attachments,
+            'attachmentPaths' => $attachmentPaths,
         ];
     
-        // ✅ Send email to multiple recipients
         Mail::to($to)->send(new CrmMailable($emailData));
     
-        return response()->json(['message' => 'Email sent successfully!'], 200);
+        return response()->json(['message' => 'Email sent successfully!']);
     }
+    
     
     
 }

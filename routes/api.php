@@ -12,6 +12,10 @@ use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\Sms\SmsController;
 use App\Http\Controllers\ColumnSettingController;
 use App\Http\Controllers\Leads\LeadController;
+use App\Http\Controllers\Settings\FileUploadController;
+use App\Http\Controllers\Email\TemplateFolderController;
+use App\Http\Controllers\Email\EmailTemplateController;
+use App\Http\Controllers\Email\EditorController;
 
 
 Route::get('/user', function (Request $request) {
@@ -26,24 +30,12 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::post('/send-email', [EmailController::class, 'sendEmail'])->name('send.email');
 Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
+Route::get('/sms-templates', [EmailTemplateController::class, 'getSmsTemplates']);
+Route::post('/upload', [FileUploadController::class, 'upload']);
 
-
-// Fetch all signatures
-Route::get('/signatures', [SignatureController::class, 'index']);
-
-// Store a new signature
-Route::post('/signatures', [SignatureController::class, 'store']);
-
-// Set the default signature
-Route::post('/signatures/set-default', [SignatureController::class, 'setDefault']);
-
-// Delete a signature
-Route::delete('/signatures/{id}', [SignatureController::class, 'destroy']);
-Route::put('/signatures/{id}', [SignatureController::class, 'update']);
-
-
-Route::middleware('auth:sanctum')->post('/generate-api-key', [AuthController::class, 'generateApiKey']);
+// Route::middleware('auth:sanctum')->post('/generate-api-key', [AuthController::class, 'generateApiKey']);
 Route::post('/leads', [LeadController::class, 'store']);
+Route::post('/upload-image', [EditorController::class, 'uploadImage']);
 
 Route::middleware('auth:sanctum')->group(function () {
     //Route::get('/templates', [TemplateController::class, 'index']);
@@ -58,7 +50,36 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/columns-order', [ColumnSettingController::class, 'saveColumnOrderSettings']);
     Route::put('/leads/{id}', [LeadController::class, 'update']);
     Route::get('/leads/{id}', [LeadController::class, 'show']);
+ 
+    // Fetch all signatures
+    Route::get('/signatures', [SignatureController::class, 'index']);
+
+    // Store a new signature
+    Route::post('/signatures', [SignatureController::class, 'store']);
+
+    // Set the default signature
+    Route::post('/signatures/set-default', [SignatureController::class, 'setDefault']);
+
+    // Delete a signature
+    Route::delete('/signatures/{id}', [SignatureController::class, 'destroy']);
+    Route::put('/signatures/{id}', [SignatureController::class, 'update']);
+
+    Route::get('/folders', [TemplateFolderController::class, 'index']);
+    Route::post('/folders', [TemplateFolderController::class, 'store']);
     
+    Route::delete('/folders/{id}', [TemplateFolderController::class, 'destroy']);
+
+    Route::get('/folders/{id}/templates', [EmailTemplateController::class, 'getByFolder']);
+    Route::post('/templates', [EmailTemplateController::class, 'store']);
+    Route::put('/email-templates/{id}', [EmailTemplateController::class, 'update']);
+    Route::delete('/email-templates/{id}', [EmailTemplateController::class, 'destroy']);
+    
+    Route::get('/sms-folders', [TemplateFolderController::class, 'index']);
+    Route::post('/sms-folders', [TemplateFolderController::class, 'store']); // <-- Add this
+    Route::delete('/sms-folders/{id}', [TemplateFolderController::class, 'destroy']);
+    Route::get('/sms-templates/{id}', [TemplateController::class, 'showSmsTemplate']);
+  
+
 });
 
 
