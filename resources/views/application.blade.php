@@ -12,7 +12,7 @@
   <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
   
-  @vite(['resources/js/main.js'])
+@vite('resources/js/main.js')
 </head>
 
 <body>
