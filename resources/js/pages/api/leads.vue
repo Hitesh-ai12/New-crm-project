@@ -1393,9 +1393,9 @@ const sendEmail = async () => {
       });
     };
 
-
+ 
     const sendSms = async () => {
-      const userId = parseInt(localStorage.getItem('user_id')) // ✅ Ensure integer
+      const userId = parseInt(localStorage.getItem('user_id')) 
 
       if (!userId || isNaN(userId)) {
         Swal.fire('Missing User ID', 'Please log in again.', 'error');
