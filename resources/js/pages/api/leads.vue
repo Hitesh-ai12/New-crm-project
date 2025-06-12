@@ -112,25 +112,6 @@
 
         <!-- TinyMCE Editor -->
         <textarea id="email-editor"></textarea>
-        <div class="form-group">
-          <label for="signature">Select Signature:</label>
-                <select
-        id="signature"
-        v-model="selectedSignature"
-        @change="addSignatureToBody"
-        @focus="fetchSignatures"
-      >
-        <option value="">Select Signature</option>
-        <option 
-          v-for="sig in signatures" 
-          :key="sig.id" 
-          :value="sig.content"
-        >
-          {{ sig.name }}
-        </option>
-      </select>
-
-        </div>
 
         <!-- Attachments -->
         <div class="form-group">
@@ -147,7 +128,6 @@
             </div>
           </div>
         </div>
-
 
         <!-- Preview and Schedule -->
         <div class="form-actions">
@@ -255,26 +235,16 @@
 
       <!-- Merge Tags -->
       <div class="form-group">
-        <label for="merge-tags">Insert Merge Tag:</label>
+        <label for="merge-tags">Merge Field</label>
         <select id="merge-tags" @change="insertMergeTag($event)">
           <option value="">Select Tag</option>
-          <option v-for="tag in mergeTags" :key="tag" :value="tag">{{ tag }}</option>
+          <option v-for="tag in mergeFields" :key="tag" :value="tag">{{ tag }}</option>
         </select>
       </div>
 
      <!-- Message Body (Textarea with Character Counter inside) -->
-      <div class="form-group textarea-container">
-        <label for="sms-message">Message:</label>
-        <textarea
-          id="sms-message"
-          v-model="smsData.message"
-          placeholder="Type your message here..."
-          rows="5"
-          maxlength="300"
-          @input="countCharacters"
-        ></textarea>
-        <span class="char-counter">{{ smsData.message.length }}/300</span>
-      </div>
+        <!-- TinyMCE Editor -->
+        <textarea id="sms-editor"></textarea>
       <!-- Schedule SMS -->
       <div class="form-group">
         <label for="sms-schedule">Schedule SMS:</label>
@@ -747,8 +717,6 @@ export default {
   name: 'LeadsPage',
    components: { draggable },
   setup() {
-  
-
     const activeLeadType = ref('all');
     const leads = ref([]);
     const loading = ref(true);
@@ -770,7 +738,10 @@ export default {
     const tags = ref([]);
     const stages = ref([]);
     const sources = ref([]);
-    
+    const allSelected = ref(false);
+    const activeColomType = ref('default');
+
+
     // Modal states
     const showModal = ref(false);
     const modalTitle = ref('');
@@ -797,6 +768,8 @@ export default {
 
     const showEmailModal = ref(false); 
     const tinymceEditor = ref(null);
+    const smsTinyEditor = ref(null);       // for SMS
+
     const emailMessage = ref('');
 
     const showSmsModal = ref(false);
@@ -888,16 +861,13 @@ export default {
        .map((lead) => lead.email);
 
      emailData.value.to = selectedEmails.value.join(', ');
-     console.log('Updated To Field:', emailData.value.to);
     });
 
     watch(selectedEmails, (newSelectedEmails) => {
       emailData.value.to = newSelectedEmails.join(', ');
-      console.log('Updated To Field from Modal:', emailData.value.to);
     });
 
     const openLeadModal = async () => {
-        console.log('Lead modal opening...')
         showLeadModal.value = true
         await getMyLeads()
       }
@@ -919,13 +889,13 @@ export default {
     const selectedSignature = ref("");
 
     const mergeFields = ref([
-      '{{firstName}}',
-      '{{lastName}}',
+      '{{first_name}}',
+      '{{last_name}}',
       '{{email}}',
-      '{{company}}',
+      '{{city}}',
       '{{phone}}',
     ]);
-     
+
     const addMergeFieldToSubject = () => {
         if (selectedMergeField.value) {
           emailData.value.subject += ' ' + selectedMergeField.value; 
@@ -944,7 +914,6 @@ export default {
 
             templates.value = response.data.data ?? response.data;  
           } catch (error) {
-            console.error('Error fetching templates:', error);
 
             if (error.response && error.response.status === 401) {
               alert('Session expired. Please log in again.');
@@ -1051,7 +1020,6 @@ export default {
           // ✅ Fix: set attachment using correct key
           if (selectedTemplate.attachment_path) {
             emailData.value.attachments = [selectedTemplate.attachment_path];
-            console.log('Mapped attachment:', selectedTemplate.attachment_path);
           } else {
             emailData.value.attachments = [];
           }
@@ -1080,18 +1048,40 @@ export default {
       alert('Feature not implemented yet. Add scheduling logic here!');
     };
 
+    
   // Handle email sending
-  const sendEmail = async () => {
-  const message = tinymceEditor.value.getContent();
 
-  if (!emailData.value.to) {
+const sendEmail = async () => {
+  const userId = parseInt(localStorage.getItem('user_id'))  // ✅ Ensure integer
+  if (!userId || isNaN(userId)) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Missing User ID',
+      text: 'Please log in again. User ID is missing or invalid.',
+    })
+    return
+  }
+
+  // Selected leads
+  const selectedLeadEmails = leads.value
+    .filter(lead => selectedLeads.value.includes(lead.id))
+    .map(lead => lead.email)
+
+  const selectedLeadIds = leads.value
+    .filter(lead => selectedLeads.value.includes(lead.id))
+    .map(lead => lead.id)
+
+  if (!selectedLeadEmails.length) {
     Swal.fire({
       icon: 'error',
       title: 'No Recipients',
-      text: 'Please add at least one recipient.',
-    });
-    return;
+      text: 'Please select at least one lead.',
+    })
+    return
   }
+
+  emailData.value.to = selectedLeadEmails.join(',')
+  const message = tinymceEditor.value.getContent()
 
   Swal.fire({
     title: 'Are you sure?',
@@ -1103,44 +1093,56 @@ export default {
   }).then(async (result) => {
     if (result.isConfirmed) {
       try {
-        // Create FormData
-        const formData = new FormData();
-        formData.append('from', emailData.value.from);
-        emailData.value.to.split(',').map(email => email.trim()).forEach(email => {
-          formData.append('to[]', email);
-        });
-        formData.append('subject', emailData.value.subject);
-        formData.append('message', message);
-        formData.append('template_id', emailData.value.template);
+        const formData = new FormData()
+        formData.append('from', emailData.value.from)
+        formData.append('subject', emailData.value.subject)
+        formData.append('message', message)
+        formData.append('template_id', emailData.value.template)
+        formData.append('user_id', userId) // ✅ Correctly parsed
 
-        // Append attachments (assuming attachments are File objects)
-        emailData.value.attachments.forEach((file, index) => {
-          formData.append('attachments[]', file);
-        });
+        // Append lead IDs
+        selectedLeadIds.forEach(id => {
+          formData.append('lead_ids[]', id)
+        })
 
+        // Append each email
+        selectedLeadEmails.forEach(email => {
+          formData.append('to[]', email)
+        })
+
+        // Append attachments
+        emailData.value.attachments.forEach(file => {
+          formData.append('attachments[]', file)
+        })
+
+        // ✅ Send request
         await axios.post('/api/send-email', formData, {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,  // Optional: Sanctum
           }
-        });
+        })
 
         Swal.fire({
           icon: 'success',
           title: 'Email Sent!',
           text: 'Your email has been successfully sent.',
-        });
+        })
 
-        closeEmailModal();
+        closeEmailModal()
       } catch (error) {
+        console.error('Email Send Error:', error)
         Swal.fire({
           icon: 'error',
           title: 'Failed to Send',
           text: 'Something went wrong. Please try again later.',
-        });
+        })
       }
     }
-  });
-};
+  })
+}
+
+
 
 
 
@@ -1149,6 +1151,7 @@ export default {
     const selectedPhones = ref([]); 
     const selectedNames = ref([]); 
     const selectedLeadsList = ref([]); 
+
 
     // SMS Modal Data
     const smsData = ref({
@@ -1160,8 +1163,6 @@ export default {
         template: '',
         schedule: '',
       });
-
-    const mergeTags = ref(['{name}', '{email}', '{phone}']);
 
     // ✅ Update "To" field dynamically
     const updateSmsToField = () => {
@@ -1181,6 +1182,70 @@ export default {
       }
       updateSmsToField();
     };
+
+
+    const initializesmsTinyMCE = () => {
+      nextTick(() => {
+        if (!tinymce.get("sms-editor")) {
+          tinymce.init({
+            selector: "#sms-editor",
+            plugins: 'link lists image code',
+            toolbar: "undo redo | aligncenter alignright alignjustify | mergeFieldButton",
+            menubar: "file edit view insert format tools table help",
+            height: 500,
+            setup: (editor) => {
+              smsTinyEditor.value = editor;
+
+              // Custom Merge Field Button
+              editor.ui.registry.addMenuButton("mergeFieldButton", {
+                text: "Merge Fields",
+                fetch: (callback) => {
+                  const items = mergeFields.value.map((field) => ({
+                    type: "menuitem",
+                    text: field,
+                    onAction: () => {
+                      editor.insertContent(field);
+                    },
+                  }));
+                  callback(items);
+                },
+              });
+            },
+            image_title: true,
+            automatic_uploads: true,
+            file_picker_types: "image",
+            file_picker_callback: (callback, value, meta) => {
+              const input = document.createElement("input");
+              input.setAttribute("type", "file");
+              input.setAttribute("accept", "image/*");
+
+              input.onchange = function () {
+                const file = this.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function () {
+                  const base64 = reader.result;
+                  callback(base64, { title: file.name });
+                };
+                reader.readAsDataURL(file);
+              };
+
+              input.click();
+            },
+          });
+        }
+      });
+    };
+
+
+
+    const destroysmsTinyMCE = () => {
+      if (tinymce.get("sms-editor")) { 
+        tinymce.get("sms-editor").remove();
+      }
+    };
+
+
 
 
     // ✅ Check if a lead is selected
@@ -1207,7 +1272,6 @@ export default {
 
     // ✅ Open SMS Lead Selection Modal
     const openSmsLeadModal = () => {
-      console.log("Opening SMS Lead Modal");
       showSmsLeadModal.value = true;
     };
 
@@ -1244,10 +1308,8 @@ export default {
       loadingTemplates.value = true;
       try {
         const response = await axios.get('/api/sms-templates');
-        console.log('Fetched templates:', response.data);
-        smsTemplates.value = response.data.templates; // 👈 make sure you're accessing the correct property
+        smsTemplates.value = response.data.templates;
       } catch (error) {
-        console.error('Failed to load SMS templates:', error);
         Swal.fire('Error', 'Could not load SMS templates.', 'error');
       } finally {
         loadingTemplates.value = false;
@@ -1277,13 +1339,20 @@ export default {
     };
 
 
-    const openSmsModal = () => {
-      if (selectedLeads.value.length === 0) {
-        Swal.fire('No leads selected!', 'Please select leads before sending an SMS.', 'warning');
-        return;
-      }
-      showSmsModal.value = true;
-    };
+  const openSmsModal = () => {
+    if (selectedLeads.value.length === 0) {
+      Swal.fire('No leads selected!', 'Please select leads before sending an SMS.', 'warning');
+      return;
+    }
+
+    showSmsModal.value = true;
+
+    nextTick(() => {
+      destroysmsTinyMCE();     
+      initializesmsTinyMCE();   
+    });
+  };
+
 
     const expandSmsModal = () => {
       isFullscreen.value = !isFullscreen.value;
@@ -1326,30 +1395,45 @@ export default {
 
 
     const sendSms = async () => {
-        if (!smsData.value.from || selectedLeadsList.value.length === 0 || !smsData.value.message.trim()) {
-          Swal.fire('Missing Information', 'Sender, recipient, and message cannot be empty.', 'error');
-          return;
-        }
+      const userId = parseInt(localStorage.getItem('user_id')) // ✅ Ensure integer
 
-        try {
-        
-          const selectedPhones = selectedLeadsList.value.map(lead => lead.phone);
+      if (!userId || isNaN(userId)) {
+        Swal.fire('Missing User ID', 'Please log in again.', 'error');
+        return;
+      }
 
-          await axios.post('/api/send-sms', {
-            lead_ids: selectedLeads.value,
-            from: smsData.value.from,
-            to: selectedPhones.join(', '),
-            subject: smsData.value.subject,
-            message: smsData.value.message,
-            schedule: smsData.value.schedule || null,
-          });
+      if (!smsData.value.from || selectedLeadsList.value.length === 0 || !smsData.value.message.trim()) {
+        Swal.fire('Missing Information', 'Sender, recipient, and message cannot be empty.', 'error');
+        return;
+      }
 
-          Swal.fire('Success', 'SMS sent successfully.', 'success');
-          closeSmsModal();
-        } catch (err) {
-          Swal.fire('Error', 'Failed to send SMS.', 'error');
-        }
-      };
+      try {
+        // Extract phone numbers
+        const selectedPhones = selectedLeadsList.value.map(lead => lead.phone);
+
+        // Extract lead IDs (same as in email function)
+        const selectedLeadIds = leads.value
+          .filter(lead => selectedLeads.value.includes(lead.id))
+          .map(lead => lead.id);
+
+        await axios.post('/api/send-sms', {
+          lead_ids: selectedLeadIds,
+          user_id: userId, // ✅ Include user ID
+          from: smsData.value.from,
+          to: selectedPhones.join(', '),
+          subject: smsData.value.subject,
+          message: smsData.value.message,
+          schedule: smsData.value.schedule || null,
+        });
+
+        Swal.fire('Success', 'SMS sent successfully.', 'success');
+        closeSmsModal();
+      } catch (err) {
+        console.error('SMS Send Error:', err);
+        Swal.fire('Error', 'Failed to send SMS.', 'error');
+      }
+    };
+
 
    // End -- Send Email And Sms On Selected Leads Functionlity...
 
@@ -1367,7 +1451,6 @@ export default {
     const getAllLeads = async () => {
       try {
         const response = await axios.get('/leads');
-        console.log(response);
         leads.value = Array.isArray(response.data) ? response.data : [];
       } catch (err) {
         error.value = 'Failed to fetch leads.';
@@ -1394,7 +1477,6 @@ export default {
         stages.value = response.data.stages;
         sources.value = response.data.sources;
       } catch (error) {
-        console.error('Failed to fetch items:', error);
       }
     };
 
@@ -1428,7 +1510,6 @@ export default {
           showAddTagInput.value = false;
           Swal.fire('Success', 'Tag added successfully', 'success');
         } catch (error) {
-          console.error('Failed to add tag:', error);
           Swal.fire('Error', 'Failed to add tag', 'error');
         }
       }
@@ -1446,7 +1527,6 @@ export default {
           showAddStageInput.value = false;
           Swal.fire('Success', 'Stage added successfully', 'success');
         } catch (error) {
-          console.error('Failed to add stage:', error);
           Swal.fire('Error', 'Failed to add stage', 'error');
         }
       }
@@ -1635,7 +1715,6 @@ export default {
         return;
       }
  
-      console.log('CSV file selected:', selectedFile.value);
       closeImportModal();
     };
 
@@ -1811,12 +1890,10 @@ export default {
           },
         });
         
-    console.log('API Response:', response);         // Logs full response
-    console.log('Signature Data:', response.data);  // Logs only the data
+
         signatures.value = response.data;
         hasFetchedSignatures.value = true;
       } catch (error) {
-        console.error('Error fetching signatures:', error);
         if (error.response?.status === 401) {
           alert('Session expired. Please log in again.');
         }
@@ -1839,7 +1916,6 @@ export default {
       try {
         await destroyTinyMCE(); 
       } catch (error) {
-        console.warn("TinyMCE destruction failed:", error);
       }
        fetchSmsTemplates();
       await fetchTemplates();
@@ -1847,6 +1923,8 @@ export default {
     });
 
     return {
+      activeColomType,
+      allSelected,
       removeAttachment,
       fetchSignatures,
       removeEmail,
@@ -1863,7 +1941,6 @@ export default {
       selectedLeads,
       smsData,
       smsTemplates,
-      mergeTags,
       openSmsModal,
       closeSmsModal,
       loadSmsTemplate,

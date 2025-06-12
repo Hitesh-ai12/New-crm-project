@@ -32,6 +32,7 @@ const login = async () => {
   try {
     const response = await axios.post('/api/login', form.value);
     localStorage.setItem('auth_token', response.data.token);
+    localStorage.setItem('user_id', response.data.user.id) ;
 
     Swal.fire({
       icon: 'success',

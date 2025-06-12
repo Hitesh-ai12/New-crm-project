@@ -25,9 +25,25 @@ class CrmMailable extends Mailable
 
     public function build()
     {
-        return $this->view('emails.email_template')
+        $email = $this->from($this->data['from'])
+                    ->replyTo($this->data['from']) 
+                    ->subject($this->data['subject'])
+                    ->view('emails.email_template')
                     ->with(['data' => $this->data]);
+
+        // Attachments (optional)
+        if (!empty($this->data['attachments'])) {
+            foreach ($this->data['attachments'] as $attachment) {
+                $email->attach($attachment->getRealPath(), [
+                    'as' => $attachment->getClientOriginalName(),
+                    'mime' => $attachment->getMimeType(),
+                ]);
+            }
+        }
+
+        return $email;
     }
+
 
     /**
      * Get the message envelope.
@@ -35,7 +51,7 @@ class CrmMailable extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Crm Mailable',
+            subject: $this->data['subject'] ?? 'No Subject',
         );
     }
 

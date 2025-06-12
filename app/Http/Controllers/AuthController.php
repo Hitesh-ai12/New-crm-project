@@ -24,7 +24,7 @@ class AuthController extends Controller
             'email' => 'required|email|max:255',
             'password' => 'required|string|min:6',
         ]);
-    
+
         // Check user credentials
         $credentials = [
             'email' => $validatedData['email'],
@@ -34,16 +34,24 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             $token = $user->createToken('auth_token')->plainTextToken;
+
             return response()->json([
                 'token' => $token,
+                'user' => [
+                    'id' => $user->id, // ✅ Include user ID here
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    // Add other user fields if needed
+                ],
                 'message' => 'Login successful',
             ], 200);
         }
-    
+
         return response()->json([
             'message' => 'Invalid credentials',
         ], 401);
     }
+
 
     public function getRole()
     {

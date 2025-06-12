@@ -56,11 +56,15 @@ export const routes = [
         component: () => import('@/pages/settings/tags-stages-sources.vue'),
         meta: { requiresAuth: true }
       },
+
       {
-        path: 'settings/signature',
+        path: '/settings/signature',
+        name: 'signature', 
         component: () => import('@/pages/settings/signature.vue'),
         meta: { requiresAuth: true }
+
       },
+ 
       {
         path: 'admin/my-profile',
         name: 'admin-my-profile',  // Added name here
@@ -112,24 +116,14 @@ export const routes = [
           component: () => import('@/pages/settings/CreateEmailTemplates.vue'),
           props: true, // Pass route params as props
         },
-        {
-          path: '/settings/signature',
-          name: 'signature',
-          component: () => import('@/pages/settings/CreateSignaturesTemplates.vue'),
-          props: true, // Pass route params as props
-        },
+
         {
           path: 'settings/sms-templates',
           name: 'sms-templates',
           component: () => import('@/pages/settings/CreateSmsTemplates.vue'),
           props: true, // Pass route params as props
         },
-        {
-          path: 'signature',
-          name: 'setsignature',
-          component: () => import('@/pages/profile/signature.vue'),
-          props: true, // Pass route params as props
-        },
+  
         {
           path: 'pre-listings',
           name: 'pre-listings',

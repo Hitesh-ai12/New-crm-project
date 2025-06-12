@@ -49,4 +49,10 @@ class Lead extends Model
         {
             return $this->belongsTo(User::class);
         }
+
+        public function emailLogs()
+        {
+            return $this->hasMany(EmailLog::class);
+        }
+
 }

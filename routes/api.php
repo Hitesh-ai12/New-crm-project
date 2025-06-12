@@ -16,6 +16,8 @@ use App\Http\Controllers\Settings\FileUploadController;
 use App\Http\Controllers\Email\TemplateFolderController;
 use App\Http\Controllers\Email\EmailTemplateController;
 use App\Http\Controllers\Email\EditorController;
+use App\Http\Controllers\Signature\SignatureFolderController;
+use App\Http\Controllers\Signature\SignatureTemplateController;
 
 
 Route::get('/user', function (Request $request) {
@@ -32,6 +34,7 @@ Route::post('/send-email', [EmailController::class, 'sendEmail'])->name('send.em
 Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
 Route::get('/sms-templates', [EmailTemplateController::class, 'getSmsTemplates']);
 Route::post('/upload', [FileUploadController::class, 'upload']);
+Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
 // Route::middleware('auth:sanctum')->post('/generate-api-key', [AuthController::class, 'generateApiKey']);
 Route::post('/leads', [LeadController::class, 'store']);
@@ -66,6 +69,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/folders', [TemplateFolderController::class, 'index']);
     Route::post('/folders', [TemplateFolderController::class, 'store']);
+    Route::put('/folders/{id}', [TemplateFolderController::class, 'update']);
+
     
     Route::delete('/folders/{id}', [TemplateFolderController::class, 'destroy']);
 
@@ -79,6 +84,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/sms-folders/{id}', [TemplateFolderController::class, 'destroy']);
     Route::get('/sms-templates/{id}', [TemplateController::class, 'showSmsTemplate']);
   
+    Route::get('/signature-folders', [SignatureFolderController::class, 'index']);
+    Route::post('/signature-folders', [SignatureFolderController::class, 'store']);
+    Route::get('/signature-folders/{id}/templates', [SignatureFolderController::class, 'templates']);
+
+    Route::post('/signature-templates', [SignatureTemplateController::class, 'store']); 
+    Route::put('/signature-templates/{id}', [SignatureTemplateController::class, 'update']); 
+    Route::delete('/signature-templates/{id}', [SignatureTemplateController::class, 'destroy']); 
+    Route::get('/signature-templates/{id}', [SignatureTemplateController::class, 'show']);   
+
+    // Featch signature by type
+    Route::get('/signature-templates-email/email', [SignatureTemplateController::class, 'getEmailTemplates']);
+    Route::get('/signature-templates/whatsapp', [SignatureTemplateController::class, 'getWhatsappTemplates']);
+    Route::get('/signature-templates-sms/sms', [SignatureTemplateController::class, 'getSmsTemplates']);
+
+    Route::get('/emails/replies/{leadEmail}', [EmailController::class, 'getReplies']);
+    Route::get('/leads/{email}/emails', [EmailController::class, 'getEmailTimeline']);
+    Route::get('/api/leads/{lead}/email-logs', [LeadController::class, 'getEmailLogs']);
+    Route::get('/sent-emails', [EmailController::class, 'getSentEmails']);
+
+    Route::get('/received-emails', [EmailController::class, 'getReceivedEmails']);
+    Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
+    Route::get('/sent-sms', [SmsController::class, 'getSentSms']);
 
 });
 

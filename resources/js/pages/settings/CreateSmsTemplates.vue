@@ -1,16 +1,11 @@
 <template>
   <div class="container py-4">
+
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>SMS Templates</h2>
       <div>
-        <button
-          v-if="currentView === 'folders'"
-          @click="showFolderModal = true"
-          class="btn btn-success me-2"
-        >
-          <i class="fas fa-plus me-1"></i> Create Folder
-        </button>
+        <button @click="openCreateFolderModal" class="btn btn-success"><i class="fas fa-plus me-1"></i> Create Folder</button>
         <button @click="showTemplateModal = true" class="btn btn-success">
           <i class="fas fa-sms me-1"></i> Add SMS Template
         </button>
@@ -44,8 +39,11 @@
             <td>{{ folder.template_count }}</td>
             <td>{{ folder.created_by_name }}</td>
             <td>
-              <button class="btn btn-link text-success p-0" @click.stop="openAddTemplateInFolder(folder.id)">
-                Add SMS Template
+              <!-- Edit Button -->
+              <button @click="openEditFolderModal(folder)" class="btn btn-warning">Edit</button>
+              <!-- Delete Button -->
+              <button @click="deleteFolder(folder.id)" class="bg-red-600 text-white px-2 py-1 rounded">
+                <i class="fas fa-trash"></i> Delete
               </button>
             </td>
           </tr>
@@ -127,20 +125,55 @@
     </div>
 
     <!-- Create Folder Modal -->
-    <div class="modal fade show d-block" tabindex="-1" v-if="showFolderModal">
+    <div class="modal fade show d-block" v-if="showCreateFolderModal" tabindex="-1">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Create Folder</h5>
-            <button type="button" class="btn-close" @click="showFolderModal = false"></button>
+            <button type="button" class="btn-close" @click="showCreateFolderModal = false"></button>
           </div>
           <div class="modal-body">
             <label class="form-label">* Folder Name</label>
-            <input v-model="newFolder.name" type="text" class="form-control" placeholder="Folder Name" />
+            <input
+              v-model="newFolder.name"
+              type="text"
+              class="form-control"
+              placeholder="Enter folder name"
+              required
+            />
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" @click="showFolderModal = false">Cancel</button>
-            <button class="btn btn-danger" @click="createFolder">Save</button>
+            <button class="btn btn-secondary" @click="showCreateFolderModal = false">Cancel</button>
+            <button class="btn btn-primary" @click="createFolder">
+              Create Folder
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Update Folder Modal -->
+    <div class="modal fade show d-block" v-if="showEditFolderModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Folder</h5>
+            <button type="button" class="btn-close" @click="showEditFolderModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <label class="form-label">* Folder Name</label>
+            <input
+              v-model="activeFolder.name"
+              type="text"
+              class="form-control"
+              placeholder="Enter new folder name"
+              required
+            />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="showEditFolderModal = false">Cancel</button>
+            <button class="btn btn-primary" @click="updateFolder">
+              Save Changes
+            </button>
           </div>
         </div>
       </div>
@@ -158,12 +191,24 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">* Template Name</label>
-                <input v-model="newTemplate.title" type="text" class="form-control" placeholder="Template Name" />
+                <input
+                  v-model="newTemplate.title"
+                  type="text"
+                  class="form-control"
+                  placeholder="Template Name"
+                  :class="{ 'is-invalid': errors.title }"
+                />
+                <div class="invalid-feedback" v-if="errors.title">{{ errors.title }}</div>
               </div>
+
               <div class="col-md-6">
                 <label class="form-label">* Folder</label>
                 <div class="input-group">
-                  <select v-model="newTemplate.folder_id" class="form-select">
+                  <select
+                    v-model="newTemplate.folder_id"
+                    class="form-select"
+                    :class="{ 'is-invalid': errors.folder_id }"
+                  >
                     <option value="">Choose Folder</option>
                     <option v-for="folder in folders" :key="folder.id" :value="folder.id">
                       {{ folder.name }}
@@ -171,20 +216,37 @@
                   </select>
                   <button class="btn btn-outline-success" type="button" @click="showFolderModal = true">+</button>
                 </div>
+                <div class="invalid-feedback" v-if="errors.folder_id">{{ errors.folder_id }}</div>
               </div>
 
               <div class="col-12">
-                <label class="form-label">Body</label>
+                <label class="form-label">* Body</label>
                 <Editor
                   :init="editorInit"
                   :modelValue="newTemplate.content"
                   @update:modelValue="newTemplate.content = $event"
                 />
+                <div class="text-danger mt-1" v-if="errors.content">{{ errors.content }}</div>
               </div>
-              <div class="col-12">
-                <label class="form-label">Attachment</label>
-                <input type="file" class="form-control" @change="handleFileUpload" />
-              </div>
+
+                  <!-- Attachment -->
+                  <div class="col-12">
+                    <label for="attachment" class="form-label">Attachment</label>
+                    <input
+                      id="attachment"
+                      type="file"
+                      class="form-control"
+                      @change="handleFileUpload"
+                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.xls"
+                      :class="{ 'is-invalid': errors.attachment }"
+                    />
+                    <small class="text-muted d-block">
+                      Allowed types: PDF, DOC, DOCX, TXT, JPG, JPEG, PNG, XLS (Max: 300KB)
+                    </small>
+                    <div v-if="errors.attachment" class="text-danger small mt-1">
+                      {{ errors.attachment }}
+                    </div>
+                  </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -207,12 +269,24 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">* Template Name</label>
-              <input v-model="editForm.title" type="text" class="form-control" placeholder="Template Name" />
+              <input
+                v-model="editForm.title"
+                type="text"
+                class="form-control"
+                placeholder="Template Name"
+                :class="{ 'is-invalid': errors.title }"
+              />
+              <div class="invalid-feedback" v-if="errors.title">{{ errors.title }}</div>
             </div>
+
             <div class="col-md-6">
               <label class="form-label">* Folder</label>
               <div class="input-group">
-                <select v-model="editForm.folder_id" class="form-select">
+                <select
+                  v-model="editForm.folder_id"
+                  class="form-select"
+                  :class="{ 'is-invalid': errors.folder_id }"
+                >
                   <option value="">Choose Folder</option>
                   <option v-for="folder in folders" :key="folder.id" :value="folder.id">
                     {{ folder.name }}
@@ -220,15 +294,19 @@
                 </select>
                 <button class="btn btn-outline-success" type="button" @click="showFolderModal = true">+</button>
               </div>
+              <div class="invalid-feedback" v-if="errors.folder_id">{{ errors.folder_id }}</div>
             </div>
+
             <div class="col-12">
-              <label class="form-label">Body</label>
+              <label class="form-label">* Body</label>
               <Editor
                 :init="editorInit"
                 :modelValue="editForm.content"
                 @update:modelValue="editForm.content = $event"
               />
+              <div class="text-danger mt-1" v-if="errors.content">{{ errors.content }}</div>
             </div>
+
             <div class="col-12">
               <label class="form-label">Attachment</label>
               <input type="file" class="form-control" @change="handleEditFileUpload" />
@@ -266,6 +344,10 @@ import { computed, onMounted, ref } from 'vue'
     const folderTemplates = ref([])
     const openedFolderId = ref(null)
     const search = ref('')
+
+    const smsSignatures = ref([]);
+    const showCreateFolderModal = ref(false);
+    const showEditFolderModal = ref(false);
 
     // Form Models
     const newFolder = ref({ name: '' })
@@ -309,21 +391,44 @@ import { computed, onMounted, ref } from 'vue'
       menubar: false,
       plugins: 'link lists image code',
       toolbar:
-        'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist numlist outdent indent | image link code | mergefields',
+        'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist numlist outdent indent | image link code | mergefields signatures',
       branding: false,
       resize: true,
       automatic_uploads: true,
       images_upload_handler: handleImageUpload,
 
-      setup(editor) {
-        editor.ui.registry.addMenuButton('mergefields', {
-          text: 'Merge Fields',
+    setup(editor) {
+      // Merge Fields
+      editor.ui.registry.addMenuButton('mergefields', {
+        text: 'Merge Fields',
+        fetch(callback) {
+          const items = mergeFields.map(field => ({
+            type: 'menuitem',
+            text: field,
+            onAction: () => {
+              editor.insertContent(`{{${field}}}`);
+            }
+          }));
+          callback(items);
+        }
+      });
+
+        // Signatures with Title, Content, and Attachment
+        editor.ui.registry.addMenuButton('signatures', {
+          text: 'Signatures',
           fetch(callback) {
-            const items = mergeFields.map(field => ({
+            const items = smsSignatures.value.map(sig => ({
               type: 'menuitem',
-              text: field,
+              text: sig.title,
               onAction: () => {
-                editor.insertContent(`{{${field}}}`);
+                const titleHtml = `<h4>${sig.title}</h4>`;
+                const contentHtml = sig.content || '';
+                const attachmentHtml = sig.attachment
+                  ? `<p><a href="${sig.attachment}" target="_blank">📎 Attachment</a></p>`
+                  : '';
+
+                const fullContent = `${titleHtml}\n${contentHtml}\n${attachmentHtml}`;
+                editor.insertContent(fullContent);
               }
             }));
             callback(items);
@@ -344,7 +449,36 @@ import { computed, onMounted, ref } from 'vue'
         folder.name.toLowerCase().includes(search.value.toLowerCase())
       )
     )
+    const handleFileUpload = (event) => {
+      const file = event.target.files[0];
 
+      if (!file) return;
+
+      const allowedFileTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'text/plain',
+        'image/jpeg',
+        'image/png',
+        'image/jpg'
+      ];
+
+      if (!allowedFileTypes.includes(file.type)) {
+        Swal.fire('Invalid File', 'Allowed file types: PDF, DOC, DOCX, TXT, JPG, PNG, XLS', 'warning');
+        event.target.value = ''; 
+        return;
+      }
+
+      if (file.size > 300 * 1024) {
+        Swal.fire('File Too Large', 'Max allowed size is 300KB.', 'warning');
+        event.target.value = ''; 
+        return;
+      }
+
+      newTemplate.value.attachment = file;
+    };
     // Fetch folders
     const fetchFolders = async () => {
         try {
@@ -354,14 +488,36 @@ import { computed, onMounted, ref } from 'vue'
           Swal.fire('Error', 'Failed to load folders', 'error')
         }
       }
+    const errors = ref({});
 
+    function validateTemplateForm(form) {
+      errors.value = {};
+      let isValid = true;
+
+      if (!form.title || form.title.trim() === '') {
+        errors.value.title = 'Template name is required.';
+        isValid = false;
+      }
+
+      if (!form.folder_id) {
+        errors.value.folder_id = 'Please choose a folder.';
+        isValid = false;
+      }
+
+      if (!form.content || form.content.trim() === '') {
+        errors.value.content = 'Content is required.';
+        isValid = false;
+      }
+
+      return isValid;
+    }
 
     // Open Folder and Load Templates
     const openFolder = async (folderId) => {
       try {
         const res = await axios.get(`/api/folders/${folderId}/templates`, {
           params: {
-            type: 'sms' // 👈 This sends ?type=sms in the request
+            type: 'sms'
           }
         });
 
@@ -376,39 +532,42 @@ import { computed, onMounted, ref } from 'vue'
     };
 
 
-    // Create Folder
+    // Method to create folder
     const createFolder = async () => {
-    if (currentView.value !== 'folders') {
-      Swal.fire('Warning', 'You can only create folders from the main view.', 'warning')
-      return
-    }
+      if (!newFolder.value.name.trim()) {
+        Swal.fire('Error', 'Folder name is required', 'error');
+        return;
+      }
 
-    const duplicate = folders.value.some(folder =>
-      folder.name.trim().toLowerCase() === newFolder.value.name.trim().toLowerCase()
-    )
+      const duplicate = folders.value.some(folder =>
+        folder.name.trim().toLowerCase() === newFolder.value.name.trim().toLowerCase()
+      );
 
-    if (duplicate) {
-      Swal.fire('Warning', 'A folder with this name already exists.', 'warning')
-      return
-    }
+      if (duplicate) {
+        Swal.fire('Warning', 'A folder with this name already exists.', 'warning');
+        return;
+      }
 
-    try {
+      try {
         const res = await axios.post('/api/folders', {
           name: newFolder.value.name,
-          type: 'sms' // 👈 Include type
-        })
-        folders.value.push(res.data)
-        newFolder.value.name = ''
-        showFolderModal.value = false
-        Swal.fire('Success', 'Folder created successfully.', 'success')
+          type: 'sms',
+        });
+
+        folders.value.push(res.data.folder);
+        showCreateFolderModal.value = false;
+        newFolder.value.name = '';
+        Swal.fire('Success', 'Folder created successfully.', 'success');
       } catch (err) {
-        Swal.fire('Error', 'Could not create folder', 'error')
+        Swal.fire('Error', 'Could not create folder', 'error');
       }
-    }
+    };
 
 
   // Save sms Template
   const saveTemplate = async () => {
+      if (!validateTemplateForm(newTemplate.value)) return;
+
   try {
     const formData = new FormData()
     formData.append('title', newTemplate.value.title)
@@ -495,6 +654,8 @@ const startEdit = (template) => {
 
 
 const updateTemplate = async () => {
+    if (!validateTemplateForm(newTemplate.value)) return;
+
   try {
     const formData = new FormData();
     formData.append('title', editForm.value.title);
@@ -548,42 +709,109 @@ const updateTemplate = async () => {
     }
   }
 
+  // Corrected function with /api/ prefix
+  const fetchSmsSignatures = async () => {
+    try {
+      const response = await axios.get('/api/signature-templates-sms/sms');
+      smsSignatures.value = response.data;
+    } catch (error) {
+    }
+  };
 
-const mergeFields = [
-  'first_name', 'last_name', 'email', 'phone',
-  'city', 'zip_code', 'province', 'street',
-  'house_number', 'tag', 'stage', 'created_at'
-]
+  // Method to update folder
+  const updateFolder = async () => {
+    if (!activeFolder.value.name.trim()) {
+      Swal.fire('Error', 'Folder name is required', 'error');
+      return;
+    }
 
-const insertMergeFieldToSubject = (field) => {
-  if (!field) return
-  newTemplate.value.subject += ` {{${field}}} `
-}
+    try {
+      const res = await axios.put(`/api/folders/${activeFolder.value.id}`, {
+        name: activeFolder.value.name,
+      });
 
-const insertMergeFieldToEditor = (field) => {
-  if (!field) return
-  tinymce.activeEditor.execCommand('mceInsertContent', false, `{{${field}}}`)
-}
+      const index = folders.value.findIndex(folder => folder.id === activeFolder.value.id);
+      if (index !== -1) {
+        folders.value[index] = res.data.folder;
+      }
+
+      showEditFolderModal.value = false;
+      activeFolder.value = null;
+
+      Swal.fire('Success', 'Folder updated successfully.', 'success');
+
+        fetchFolders();
+
+
+    } catch (err) {
+
+      Swal.fire('Error', 'Could not update folder', 'error');
+
+    }
+  };
+
+  const mergeFields = [
+    'first_name', 'last_name', 'email', 'phone',
+    'city', 'zip_code', 'province', 'street',
+    'house_number', 'tag', 'stage', 'created_at'
+  ]
+
+  const deleteFolder = (folderId) => {
+    // Show confirmation dialog
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'This folder and all its templates will be deleted!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`/api/folders/${folderId}`);
+
+          folders.value = folders.value.filter(folder => folder.id !== folderId);
+
+          Swal.fire('Deleted!', 'The folder and its templates have been deleted.', 'success');
+
+        } catch (err) {
+          Swal.fire('Error', 'Could not delete the folder.', 'error');
+        }
+      } else {
+        Swal.fire('Cancelled', 'The folder is safe :)', 'info');
+      }
+    });
+  };
+
+  // Method to open Create Folder Modal
+  const openCreateFolderModal = () => {
+    newFolder.value.name = ''; 
+    showCreateFolderModal.value = true;
+  };
+  // Method to open Edit Folder Modal
+  const openEditFolderModal = (folder) => {
+    activeFolder.value = { ...folder }; 
+    showEditFolderModal.value = true;
+  };
 
 const handleEditFileUpload = (event) => {
   editForm.value.attachment = event.target.files[0]
 }
 
-// File Input Handler
-const handleFileUpload = (event) => {
-  newTemplate.value.attachment = event.target.files[0]
-}
 
 // Open Modal to Add Template to Folder
 const openAddTemplateInFolder = (folderId) => {
   newTemplate.value.folder_id = folderId
   showTemplateModal.value = true
 }
+onMounted(() => {
+  fetchFolders();
+  fetchSmsSignatures();
+});
 
-onMounted(fetchFolders)
 </script>
-
-
 
 <style scoped>
 .modal {

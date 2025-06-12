@@ -169,17 +169,17 @@ const logout = () => {
             <VListItemTitle>Change Password</VListItemTitle>
           </VListItem>
           <!-- 👉 Change passwrod -->
-          <VListItem :to="{ name: 'setsignature' }">
+          <!-- <VListItem :to="{ name: 'setsignature' }">
             <template #prepend>
               <VIcon
                 class="me-2"
                 icon="ri-money-dollar-circle-line"
                 size="22"
               />
-            </template>
+            </template> -->
 
-            <VListItemTitle>Email Signature</VListItemTitle>
-          </VListItem>
+            <!-- <VListItemTitle>Email Signature</VListItemTitle>
+          </VListItem> -->
           <!-- 👉 FAQ -->
           <VListItem :to="{ name: 'authentication' }">
             <template #prepend>

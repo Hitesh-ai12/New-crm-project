@@ -47,13 +47,13 @@ class TemplateFolderController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'nullable|in:email,sms', // Accept optional type
+            'type' => 'nullable|in:email,sms',
         ]);
 
         $folder = TemplateFolder::create([
             'name' => $validated['name'],
-            'type' => $validated['type'] ?? 'email', // Default to 'email'
-            'user_id' => auth()->id(),  // changed here
+            'type' => $validated['type'] ?? 'email',
+            'user_id' => auth()->id(),  
         ]);
 
         return response()->json([
@@ -68,11 +68,36 @@ class TemplateFolderController extends Controller
     public function destroy($id)
     {
         $folder = TemplateFolder::where('id', $id)
-            ->where('user_id', auth()->id())  // changed here
+            ->where('user_id', auth()->id()) 
             ->firstOrFail();
+
+        $folder->templates()->delete();  
 
         $folder->delete();
 
-        return response()->json(['message' => 'Folder deleted']);
+        return response()->json(['message' => 'Folder and its templates deleted']);
     }
+
+    /**
+     * Rename the specified folder.
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $folder = TemplateFolder::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $folder->name = $validated['name'];
+        $folder->save();
+
+        return response()->json([
+            'message' => 'Folder updated successfully',
+            'folder' => $folder,
+        ]);
+    }
+
 }
