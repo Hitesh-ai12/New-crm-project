@@ -140,10 +140,10 @@ return [
     */
     'options' => [
         'delimiter' => '/',
-        // 'fetch' => \Webklex\PHPIMAP\IMAP::FT_PEEK,
-        // 'sequence' => \Webklex\PHPIMAP\IMAP::ST_UID,
-            'fetch' => \FT_PEEK,         // ✅ corrected
-    'sequence' => \ST_UID,       // ✅ corrected
+        'fetch' => \Webklex\PHPIMAP\IMAP::FT_PEEK,
+        'sequence' => \Webklex\PHPIMAP\IMAP::ST_UID,
+    //         'fetch' => \FT_PEEK,         // ✅ corrected
+    // 'sequence' => \ST_UID,       // ✅ corrected
         'fetch_body' => true,
         'fetch_flags' => true,
         'soft_fail' => false,
