@@ -8,52 +8,57 @@ import { defineConfig } from 'vite'
 import vuetify from 'vite-plugin-vuetify'
 import svgLoader from 'vite-svg-loader'
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/build/' : '/',
+  // ❌ Remove '/build/' to prevent wrong base path in production
+  base: '/',
 
-  plugins: [vue({
-    template: {
-      transformAssetUrls: {
-        base: '/',
-        includeAbsolute: false,
+  plugins: [
+    vue({
+      template: {
+        transformAssetUrls: {
+          base: '/',
+          includeAbsolute: false,
+        },
       },
-    },
-  }),
-  vueJsx(),
-  laravel({
-    input: ['resources/js/main.js'],
-    refresh: true,
-  }), // Docs: https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin
-  vuetify({
-    styles: {
-      configFile: 'resources/styles/variables/_vuetify.scss',
-    },
-  }),
-  Components({
-    dirs: ['resources/js/@core/components', 'resources/js/components'],
-    dts: true,
-    resolvers: [
-      componentName => {
-        // Auto import `VueApexCharts`
-        if (componentName === 'VueApexCharts')
-          return { name: 'default', from: 'vue3-apexcharts', as: 'VueApexCharts' }
+    }),
+    vueJsx(),
+    laravel({
+      input: ['resources/js/main.js'],
+      refresh: true,
+      buildDirectory: 'assets', // ✅ tells Laravel to look for /assets, not /build
+    }),
+    vuetify({
+      styles: {
+        configFile: 'resources/styles/variables/_vuetify.scss',
       },
-    ],
-  }), // Docs: https://github.com/antfu/unplugin-auto-import#unplugin-auto-import
-  AutoImport({
-    imports: ['vue', 'vue-router', '@vueuse/core', '@vueuse/math', 'pinia'],
-    vueTemplate: true,
+    }),
+    Components({
+      dirs: ['resources/js/@core/components', 'resources/js/components'],
+      dts: true,
+      resolvers: [
+        componentName => {
+          if (componentName === 'VueApexCharts') {
+            return { name: 'default', from: 'vue3-apexcharts', as: 'VueApexCharts' }
+          }
+        },
+      ],
+    }),
+    AutoImport({
+      imports: ['vue', 'vue-router', '@vueuse/core', '@vueuse/math', 'pinia'],
+      vueTemplate: true,
+      ignore: ['useCookies', 'useStorage'],
+      eslintrc: {
+        enabled: true,
+        filepath: './.eslintrc-auto-import.json',
+      },
+    }),
+    svgLoader()
+  ],
 
-    // ℹ️ Disabled to avoid confusion & accidental usage
-    ignore: ['useCookies', 'useStorage'],
-    eslintrc: {
-      enabled: true,
-      filepath: './.eslintrc-auto-import.json',
-    },
-  }),
-  svgLoader()],
-  define: { 'process.env': {} },
+  define: {
+    'process.env': {},
+  },
+
   resolve: {
     alias: {
       '@core-scss': fileURLToPath(new URL('./resources/styles/@core', import.meta.url)),
@@ -65,16 +70,16 @@ export default defineConfig({
       '@configured-variables': fileURLToPath(new URL('./resources/styles/variables/_template.scss', import.meta.url)),
     },
   },
+
   build: {
     chunkSizeWarningLimit: 5000,
-    outDir: 'public/assets',    
-    assetsDir: '', 
+    outDir: 'public/assets',  // ✅ build output folder
+    assetsDir: '',            // ✅ avoids nested dirs like /assets/assets
     emptyOutDir: false,
   },
+
   optimizeDeps: {
     exclude: ['vuetify'],
-    entries: [
-      './resources/js/**/*.vue',
-    ],
+    entries: ['./resources/js/**/*.vue'],
   },
 })
