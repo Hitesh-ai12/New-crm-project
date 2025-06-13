@@ -7,7 +7,7 @@ use App\Http\Controllers\Integration\FacebookController;
 use App\Http\Controllers\Leads\LeadController;
 
 
-Route::middleware('auth:sanctum')->post('/leads', [LeadController::class, 'store']);  
+Route::post('/leads', [LeadController::class, 'store']);  
 Route::get('/leads', [LeadController::class, 'index']);
 
 Route::post('/leads/delete', [LeadController::class, 'deleteLeads']);
