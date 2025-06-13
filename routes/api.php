@@ -17,6 +17,7 @@ use App\Http\Controllers\Email\TemplateFolderController;
 use App\Http\Controllers\Email\EmailTemplateController;
 use App\Http\Controllers\Email\EditorController;
 use App\Http\Controllers\Signature\SignatureFolderController;
+use App\Http\Controllers\Settings\ItemController;
 use App\Http\Controllers\Signature\SignatureTemplateController;
 
 
@@ -107,6 +108,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
     Route::get('/sent-sms', [SmsController::class, 'getSentSms']);
 
+    Route::get('/items', [ItemController::class, 'index']);
+
+    Route::post('/api/items', [ItemController::class, 'store']);
+    Route::put('/api/items/{id}', [ItemController::class, 'update']);
+
+    // Delete an item by ID
+    Route::delete('/items/{id}', [ItemController::class, 'destroy']);
 });
 
 

@@ -2,6 +2,15 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { onMounted, ref } from 'vue';
 
+// ✅ Add token to all axios requests
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export default function useTagsStagesSources() {
   const tags = ref([]);
   const stages = ref([]);
@@ -16,7 +25,7 @@ export default function useTagsStagesSources() {
 
   const fetchItems = async () => {
     try {
-      const response = await axios.get('/items');
+      const response = await axios.get('/api/items');
       const data = response.data;
       tags.value = data.tags || [];
       stages.value = data.stages || [];
@@ -56,13 +65,7 @@ export default function useTagsStagesSources() {
           name: inputValue.value,
         });
         const updatedItem = response.data.item;
-        if (modalType.value === 'tag') {
-          tags.value = tags.value.map(item => item.id === updatedItem.id ? updatedItem : item);
-        } else if (modalType.value === 'stage') {
-          stages.value = stages.value.map(item => item.id === updatedItem.id ? updatedItem : item);
-        } else if (modalType.value === 'source') {
-          sources.value = sources.value.map(item => item.id === updatedItem.id ? updatedItem : item);
-        }
+        updateList(modalType.value, updatedItem);
         showToastMessage(`${modalType.value} updated successfully!`);
       } else {
         const response = await axios.post('/api/items', {
@@ -70,19 +73,33 @@ export default function useTagsStagesSources() {
           type: modalType.value,
         });
         const newItem = response.data.item;
-        if (modalType.value === 'tag') {
-          tags.value.push(newItem);
-        } else if (modalType.value === 'stage') {
-          stages.value.push(newItem);
-        } else if (modalType.value === 'source') {
-          sources.value.push(newItem);
-        }
+        addItemToList(modalType.value, newItem);
         showToastMessage(`${modalType.value} added successfully!`);
       }
       closeModal();
     } catch (error) {
       console.error('Error saving item:', error);
       alert('There was an error saving your data.');
+    }
+  };
+
+  const updateList = (type, updatedItem) => {
+    if (type === 'tag') {
+      tags.value = tags.value.map(item => item.id === updatedItem.id ? updatedItem : item);
+    } else if (type === 'stage') {
+      stages.value = stages.value.map(item => item.id === updatedItem.id ? updatedItem : item);
+    } else if (type === 'source') {
+      sources.value = sources.value.map(item => item.id === updatedItem.id ? updatedItem : item);
+    }
+  };
+
+  const addItemToList = (type, newItem) => {
+    if (type === 'tag') {
+      tags.value.push(newItem);
+    } else if (type === 'stage') {
+      stages.value.push(newItem);
+    } else if (type === 'source') {
+      sources.value.push(newItem);
     }
   };
 
@@ -102,7 +119,7 @@ export default function useTagsStagesSources() {
 
   const deleteItemConfirmed = async (item) => {
     try {
-      await axios.delete(`/items/${item.id}`);
+      await axios.delete(`/api/items/${item.id}`);
       if (item.type === 'tag') {
         tags.value = tags.value.filter(i => i.id !== item.id);
       } else if (item.type === 'stage') {
@@ -120,7 +137,7 @@ export default function useTagsStagesSources() {
   const showToastMessage = (message) => {
     toastMessage.value = message;
     showToast.value = true;
-    setTimeout(() => showToast.value = false, 3000);
+    setTimeout(() => (showToast.value = false), 3000);
   };
 
   onMounted(() => {
