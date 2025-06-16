@@ -18,20 +18,21 @@
   <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
   {{-- ✅ Vite Assets --}}
-  @php
-      $manifest = json_decode(file_get_contents(public_path('assets/manifest.json')), true);
-      $viteEntry = $manifest['resources/js/main.js'] ?? null;
-  @endphp
+@php
+    $manifest = json_decode(file_get_contents(public_path('assets/manifest.json')), true);
+    $viteEntry = $manifest['resources/js/main.js'] ?? null;
+@endphp
 
-  @if ($viteEntry)
-    {{-- CSS --}}
-    @foreach ($viteEntry['css'] ?? [] as $css)
-      <link rel="stylesheet" href="{{ asset('assets/' . $css) }}">
-    @endforeach
+@if ($viteEntry)
+  {{-- CSS --}}
+  @foreach ($viteEntry['css'] ?? [] as $css)
+    <link rel="stylesheet" href="{{ asset('assets/' . $css) }}">
+  @endforeach
 
-    {{-- JS --}}
-    <script type="module" src="{{ asset('assets/' . $viteEntry['file']) }}"></script>
-  @endif
+  {{-- JS --}}
+  <script type="module" src="{{ asset('assets/' . $viteEntry['file']) }}"></script>
+@endif
+
 </head>
 
 
