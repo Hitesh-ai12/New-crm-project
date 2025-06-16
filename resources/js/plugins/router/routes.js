@@ -42,7 +42,7 @@ export const routes = [
         meta: { requiresAuth: true }
       },
       {
-        path: 'api/leads',
+        path: '/leads',
         component: () => import('@/pages/api/leads.vue'),
         meta: { requiresAuth: true }
       },

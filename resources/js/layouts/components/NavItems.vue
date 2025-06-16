@@ -20,7 +20,7 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
     <VerticalNavLink
       :item="{
         title: 'CRM',
-        to: '/api/leads', 
+        to: '/leads', 
       }"
     />
   </VerticalNavGroup>

@@ -64,7 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/columns-settings', [ColumnSettingController::class, 'saveColumnSettings']);
     Route::post('/columns-order', [ColumnSettingController::class, 'saveColumnOrderSettings']);
 
- Route::get('/lead/{id}/sms', [SmsController::class, 'getLeadSms']);
+    Route::get('/lead/{id}/sms', [SmsController::class, 'getLeadSms']);
+
     // Fetch all signatures
     Route::get('/signatures', [SignatureController::class, 'index']);
 
@@ -73,9 +74,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Set the default signature
     Route::post('/signatures/set-default', [SignatureController::class, 'setDefault']);
-
     // Delete a signature
     Route::delete('/signatures/{id}', [SignatureController::class, 'destroy']);
+    
     Route::put('/signatures/{id}', [SignatureController::class, 'update']);
 
     Route::get('/folders', [TemplateFolderController::class, 'index']);
@@ -91,7 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/email-templates/{id}', [EmailTemplateController::class, 'destroy']);
     
     Route::get('/sms-folders', [TemplateFolderController::class, 'index']);
-    Route::post('/sms-folders', [TemplateFolderController::class, 'store']); // <-- Add this
+    Route::post('/sms-folders', [TemplateFolderController::class, 'store']);
     Route::delete('/sms-folders/{id}', [TemplateFolderController::class, 'destroy']);
     Route::get('/sms-templates/{id}', [TemplateController::class, 'showSmsTemplate']);
   
@@ -122,8 +123,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/items', [ItemController::class, 'store']);
     Route::put('/items/{id}', [ItemController::class, 'update']);
 
-    // Delete an item by ID
     Route::delete('/items/{id}', [ItemController::class, 'destroy']);
+
 });
 
 
