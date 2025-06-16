@@ -1493,7 +1493,7 @@ const sendEmail = async () => {
 
     const fetchItems = async () => {
       try {
-        const response = await axios.get('/items');
+        const response = await axios.get('/api/items');
         tags.value = response.data.tags;
         stages.value = response.data.stages;
         sources.value = response.data.sources;
