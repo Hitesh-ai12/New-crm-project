@@ -1449,10 +1449,20 @@ const sendEmail = async () => {
       };
 
     const getAllLeads = async () => {
+      loading.value = true;
+      error.value = null;
+
       try {
-        const response = await axios.get('/leads');
+        const authToken = localStorage.getItem('auth_token');
+        const response = await axios.get('/api/leads', {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
         leads.value = Array.isArray(response.data) ? response.data : [];
       } catch (err) {
+        console.error('Error fetching all leads:', err);
         error.value = 'Failed to fetch leads.';
       } finally {
         loading.value = false;
@@ -1460,15 +1470,26 @@ const sendEmail = async () => {
     };
 
     const getMyLeads = async () => {
+      loading.value = true;
+      error.value = null;
+
       try {
-        const response = await axios.get('/leads'); 
+        const authToken = localStorage.getItem('auth_token');
+        const response = await axios.get('/api/leads/my', {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
         leads.value = Array.isArray(response.data) ? response.data : [];
       } catch (err) {
+        console.error('Error fetching my leads:', err);
         error.value = 'Failed to fetch my leads.';
       } finally {
         loading.value = false;
       }
     };
+
 
     const fetchItems = async () => {
       try {
@@ -1579,15 +1600,18 @@ const sendEmail = async () => {
 
       if (result.isConfirmed) {
         try {
-          const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-          const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+          const authToken = localStorage.getItem('auth_token');
 
-          await axios.post('/leads/delete', { lead_ids: selectedLeads.value }, {
+          await axios.post('/api/leads/delete', {
+            lead_ids: selectedLeads.value,
+          }, {
             headers: {
-              'X-CSRF-TOKEN': csrfToken,
+              Authorization: `Bearer ${authToken}`,
+              'Content-Type': 'application/json',
             },
           });
 
+          // Remove deleted leads from UI
           leads.value = leads.value.filter(lead => !selectedLeads.value.includes(lead.id));
           selectedLeads.value = [];
 
@@ -1597,6 +1621,7 @@ const sendEmail = async () => {
             'success'
           );
         } catch (err) {
+          console.error('Delete error:', err);
           Swal.fire(
             'Error!',
             'Failed to delete leads.',
@@ -1605,6 +1630,7 @@ const sendEmail = async () => {
         }
       }
     };
+
 
     const changePage = (page) => {
       if (page >= 1 && page <= totalPages.value) {
@@ -1730,40 +1756,48 @@ const sendEmail = async () => {
       }, 5000);
     };
 
-    const submitForm = async () => {
-        if (!validateForm()) {
-          return;
-        }
+  const submitForm = async () => {
+    if (!validateForm()) {
+      return;
+    }
 
-        try {
-          const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-          const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
-          const authToken = localStorage.getItem('auth_token');  
+    try {
+      const authToken = localStorage.getItem('auth_token');
 
-          const response = await axios.post('/leads', {
-            first_name: newLead.value.first_name,
-            last_name: newLead.value.last_name,
-            email: newLead.value.email,
-            phone: newLead.value.phone,
-            tag: String(newLead.value.tag), 
-            stage: String(newLead.value.stage),
-          }, {
-            headers: {
-              'X-CSRF-TOKEN': csrfToken,
-              'Authorization': `Bearer ${authToken}`, 
-            },
-          });
+      const response = await axios.post('/api/leads', {
+        first_name: newLead.value.first_name,
+        last_name: newLead.value.last_name,
+        email: newLead.value.email,
+        phone: newLead.value.phone,
+        tag: String(newLead.value.tag),
+        stage: String(newLead.value.stage),
+      }, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-          newLead.value = { id: 0, first_name: '', last_name: '', email: '', phone: '', tag: '', stage: '' };
-          showForm.value = false;
-
-          leads.value.push(response.data);
-
-          showToast('Lead created successfully!', 'success');
-        } catch (err) {
-          showToast('Failed to create lead.', 'error');
-        }
+      // Reset the form
+      newLead.value = {
+        id: 0,
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        tag: '',
+        stage: ''
       };
+
+      showForm.value = false;
+      leads.value.push(response.data);
+      showToast('Lead created successfully!', 'success');
+    } catch (err) {
+      console.error('Error creating lead:', err);
+      showToast('Failed to create lead.', 'error');
+    }
+  };
+
 
    // Column selection modal
     const showColumnsModal = ref(false);

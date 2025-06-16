@@ -7,12 +7,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Crm Dashboard</title>
+
+  {{-- Loader CSS --}}
   <link rel="stylesheet" type="text/css" href="{{ asset('loader.css') }}" />
+
+  {{-- Font Awesome --}}
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+  {{-- TinyMCE CDN --}}
   <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
-  
-@vite('resources/js/main.js')
+  {{-- ✅ Dynamically loaded Vite CSS --}}
+  @php
+    $viteCssFiles = viteCss('resources/js/main.js');
+  @endphp
+
+  @foreach ($viteCssFiles as $css)
+    <link rel="stylesheet" href="{{ $css }}">
+  @endforeach
+
+  {{-- ✅ Vite-compiled JS --}}
+  <script type="module" src="{{ viteAsset('resources/js/main.js') }}"></script>
 </head>
 
 <body>

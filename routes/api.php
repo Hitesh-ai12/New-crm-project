@@ -36,24 +36,27 @@ Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
 Route::get('/sms-templates', [EmailTemplateController::class, 'getSmsTemplates']);
 Route::post('/upload', [FileUploadController::class, 'upload']);
 Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
-
+ Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
 // Route::middleware('auth:sanctum')->post('/generate-api-key', [AuthController::class, 'generateApiKey']);
-Route::post('/leads', [LeadController::class, 'store']);
+// 
 Route::post('/upload-image', [EditorController::class, 'uploadImage']);
 
 Route::middleware('auth:sanctum')->group(function () {
     //Route::get('/templates', [TemplateController::class, 'index']);
-    Route::middleware('auth:sanctum')->get('/templates', [TemplateController::class, 'index']);
+    Route::get('/templates', [TemplateController::class, 'index']);
+
+    Route::post('/leads', [LeadController::class, 'store']);
+    Route::put('/leads/{id}', [LeadController::class, 'update']);
+    Route::get('/leads/{id}', [LeadController::class, 'show']);
 
     Route::post('/templates', [TemplateController::class, 'store']);
     Route::put('/templates/{id}', [TemplateController::class, 'update']);
     Route::delete('/templates/{id}', [TemplateController::class, 'destroy']);
     Route::post('/templates/bulk-delete', [TemplateController::class, 'bulkDelete']);
-    Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
+   
     Route::post('/columns-settings', [ColumnSettingController::class, 'saveColumnSettings']);
     Route::post('/columns-order', [ColumnSettingController::class, 'saveColumnOrderSettings']);
-    Route::put('/leads/{id}', [LeadController::class, 'update']);
-    Route::get('/leads/{id}', [LeadController::class, 'show']);
+
  
     // Fetch all signatures
     Route::get('/signatures', [SignatureController::class, 'index']);
