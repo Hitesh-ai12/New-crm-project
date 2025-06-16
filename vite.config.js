@@ -9,14 +9,14 @@ import vuetify from 'vite-plugin-vuetify'
 import svgLoader from 'vite-svg-loader'
 
 export default defineConfig({
-  // ✅ IMPORTANT for production (matches Laravel's public path)
-  base: '/assets/',
+  // ✅ Leave default so Laravel correctly serves assets from /build
+  base: '/',
 
   plugins: [
     vue({
       template: {
         transformAssetUrls: {
-          base: null, // ✅ Let Vue use Vite base
+          base: null,
           includeAbsolute: false,
         },
       },
@@ -25,16 +25,18 @@ export default defineConfig({
     laravel({
       input: ['resources/js/main.js'],
       refresh: true,
-      buildDirectory: 'assets', // ✅ Laravel will look in public/assets
+      // ✅ REMOVE buildDirectory – defaults to /build (correct)
     }),
     vuetify({
-      styles: { configFile: 'resources/styles/variables/_vuetify.scss' },
+      styles: {
+        configFile: 'resources/styles/variables/_vuetify.scss',
+      },
     }),
     Components({
       dirs: ['resources/js/@core/components', 'resources/js/components'],
       dts: true,
       resolvers: [
-        componentName => {
+        (componentName) => {
           if (componentName === 'VueApexCharts') {
             return {
               name: 'default',
@@ -58,7 +60,7 @@ export default defineConfig({
   ],
 
   define: {
-    'process.env': {}, // ✅ Required to avoid warnings
+    'process.env': {},
   },
 
   resolve: {
@@ -76,10 +78,9 @@ export default defineConfig({
   },
 
   build: {
-    chunkSizeWarningLimit: 5000,
-    outDir: 'public/assets',
-    assetsDir: '', // ✅ Prevents /assets/assets duplication
-    emptyOutDir: false,
+    outDir: 'public/build',       // ✅ back to default Laravel folder
+    emptyOutDir: true,            // ✅ cleans previous build
+    chunkSizeWarningLimit: 5000,  // optional: suppress large chunk warnings
   },
 
   optimizeDeps: {

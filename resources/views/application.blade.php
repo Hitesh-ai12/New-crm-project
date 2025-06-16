@@ -7,33 +7,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Crm Dashboard</title>
-
-  {{-- Loader CSS --}}
   <link rel="stylesheet" type="text/css" href="{{ asset('loader.css') }}" />
-
-  {{-- Font Awesome --}}
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-  {{-- TinyMCE --}}
   <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
-  {{-- ✅ Vite Assets --}}
-  @php
-      $manifest = json_decode(file_get_contents(public_path('assets/manifest.json')), true);
-      $viteEntry = $manifest['resources/js/main.js'] ?? null;
-  @endphp
-
-  @if ($viteEntry)
-    {{-- CSS --}}
-    @foreach ($viteEntry['css'] ?? [] as $css)
-      <link rel="stylesheet" href="{{ asset('assets/' . $css) }}">
-    @endforeach
-
-    {{-- JS --}}
-    <script type="module" src="{{ asset('assets/' . $viteEntry['file']) }}"></script>
-  @endif
+  
+@vite('resources/js/main.js')
 </head>
-
 
 <body>
   <div id="app">
