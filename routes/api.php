@@ -33,7 +33,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
     Route::get('/items', [ItemController::class, 'index']);
 
-    
+
 Route::post('/send-email', [EmailController::class, 'sendEmail'])->name('send.email');
 Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
 Route::get('/sms-templates', [EmailTemplateController::class, 'getSmsTemplates']);
@@ -47,6 +47,7 @@ Route::post('/upload-image', [EditorController::class, 'uploadImage']);
 Route::middleware('auth:sanctum')->group(function () {
     //Route::get('/templates', [TemplateController::class, 'index']);
     Route::get('/templates', [TemplateController::class, 'index']);
+    Route::get('/leads', [LeadController::class, 'index']);
 
     Route::post('/leads', [LeadController::class, 'store']);
     Route::put('/leads/{id}', [LeadController::class, 'update']);

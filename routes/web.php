@@ -6,10 +6,6 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Integration\FacebookController;
 use App\Http\Controllers\Leads\LeadController;
 
-
-// Route::post('/leads', [LeadController::class, 'store']);  
-// Route::get('/leads', [LeadController::class, 'index']);
-
 Route::post('/leads/delete', [LeadController::class, 'deleteLeads']);
 Route::post('/leads/export', [LeadController::class, 'exportLeads']);
 
