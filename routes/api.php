@@ -31,6 +31,9 @@ Route::post('form-submit', [FormController::class, 'store']);
 Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'login']);
 
+    Route::get('/items', [ItemController::class, 'index']);
+
+    
 Route::post('/send-email', [EmailController::class, 'sendEmail'])->name('send.email');
 Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
 Route::get('/sms-templates', [EmailTemplateController::class, 'getSmsTemplates']);
@@ -111,7 +114,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
     Route::get('/sent-sms', [SmsController::class, 'getSentSms']);
 
-    Route::get('/items', [ItemController::class, 'index']);
 
     Route::post('/items', [ItemController::class, 'store']);
     Route::put('/items/{id}', [ItemController::class, 'update']);
