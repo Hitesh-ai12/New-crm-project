@@ -106,6 +106,14 @@
           >
             View
           </button>
+        <button
+        v-if="activity.type === 'sms'"
+        class="btn btn-sm btn-info ms-2"
+        @click="viewSmsContent(activity)"
+        >
+        View
+        </button>
+
         </div>
       </div>
       <div v-if="showEmailModal" class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0, 0, 0, 50%);">
@@ -143,19 +151,50 @@
           </div>
         </div>
       </div>
+
+
+      <div
+        v-if="showSmsModal"
+        class="modal fade show d-block"
+        tabindex="-1"
+        role="dialog"
+        style="background-color: rgba(0, 0, 0, 50%);"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">{{ selectedSms.title }}</h5>
+              <button type="button" class="btn-close" @click="showSmsModal = false"></button>
+            </div>
+            <div class="modal-body">
+              <p><strong>From:</strong> {{ selectedSms.direction === 'received' ? selectedSms.phone : 'You' }}</p>
+              <p><strong>To:</strong> {{ selectedSms.direction === 'sent' ? selectedSms.phone : 'You' }}</p>
+              <p><strong>Message:</strong></p>
+              <div class="border p-2 rounded bg-light">{{ selectedSms.description }}</div>
+              <p class="text-muted mt-2 small">{{ selectedSms.date }} {{ selectedSms.time }}</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" @click="showSmsModal = false">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import axios from 'axios'
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import axios from 'axios';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
+const showSmsModal = ref(false);
 const activeMenuItem = ref('all')
 const messageFilter = ref('all')
 const route = useRoute()
-
+const leadId = ref(route.params.id)
+const selectedSms = ref({});
 // State for modal
 const showEmailModal = ref(false);
 const selectedEmail = ref({});
@@ -168,10 +207,40 @@ const formatDateTime = (dateTimeStr) => {
   }
 }
 
+
+const leadSms = ref([])
+
+onMounted(async () => {
+  const token = localStorage.getItem('auth_token')
+  const headers = { Authorization: `Bearer ${token}` }
+
+  try {
+    const response = await axios.get(`/api/lead/${leadId.value}/sms`, { headers })
+    leadSms.value = response.data.map(sms => {
+      const { date, time } = formatDateTime(sms.sent_at || sms.received_at)
+      return {
+        id: sms.id,
+        direction: sms.direction,
+        phone: sms.direction === 'sent' ? sms.to : sms.from,
+        message: sms.message,
+        date,
+        time
+      }
+    })
+  } catch (e) {
+    console.error('Failed to load SMS for lead', e)
+  }
+})
+
+const viewSmsContent = (sms) => {
+  selectedSms.value = sms
+  showSmsModal.value = true
+}
+
 const activities = ref([
-  // Initial hardcoded activities (you might remove these later if all data comes from API)
+
   {
-    id: 'web-1', // Add unique IDs for initial data
+    id: 'web-1',
     type: 'webActivity',
     title: 'Visited Website',
     description: 'User visited homepage',

@@ -124,4 +124,38 @@ class SmsController extends Controller
         return response()->json($incoming);
     }
 
+    public function getLeadSms($id)
+    {
+        try {
+            $user = auth()->user(); // ⛔ may be null if auth fails
+
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $incoming = IncomingSms::where('lead_id', $id)
+                ->where('user_id', $user->id)
+                ->get()
+                ->map(function ($sms) {
+                    $sms->direction = 'received';
+                    return $sms;
+                });
+
+            $sent = SentSms::where('lead_id', $id)
+                ->where('user_id', $user->id)
+                ->get()
+                ->map(function ($sms) {
+                    $sms->direction = 'sent';
+                    return $sms;
+                });
+
+            $merged = $incoming->merge($sent)->sortByDesc('created_at')->values();
+
+            return response()->json($merged);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching lead SMS: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error'], 500);
+        }
+    }
+
 }

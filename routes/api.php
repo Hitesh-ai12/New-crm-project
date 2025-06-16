@@ -31,18 +31,21 @@ Route::post('form-submit', [FormController::class, 'store']);
 Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'login']);
 
-    Route::get('/items', [ItemController::class, 'index']);
+Route::get('/items', [ItemController::class, 'index']);
 
 
 Route::post('/send-email', [EmailController::class, 'sendEmail'])->name('send.email');
 Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
 Route::get('/sms-templates', [EmailTemplateController::class, 'getSmsTemplates']);
 Route::post('/upload', [FileUploadController::class, 'upload']);
-Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
- Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
+Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
 // Route::middleware('auth:sanctum')->post('/generate-api-key', [AuthController::class, 'generateApiKey']);
 // 
 Route::post('/upload-image', [EditorController::class, 'uploadImage']);
+
+
+Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
+
 
 Route::middleware('auth:sanctum')->group(function () {
     //Route::get('/templates', [TemplateController::class, 'index']);
@@ -61,7 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/columns-settings', [ColumnSettingController::class, 'saveColumnSettings']);
     Route::post('/columns-order', [ColumnSettingController::class, 'saveColumnOrderSettings']);
 
- 
+ Route::get('/lead/{id}/sms', [SmsController::class, 'getLeadSms']);
     // Fetch all signatures
     Route::get('/signatures', [SignatureController::class, 'index']);
 

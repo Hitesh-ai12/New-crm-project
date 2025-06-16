@@ -38,9 +38,11 @@
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { ref } from 'vue'
+
 import AnalyticsTab from './tabs/AnalyticsTab.vue'
 import ProfileTab from './tabs/ProfileTab.vue'
 import TimelineTab from './tabs/TimelineTab.vue'
+
 
 const activeTab = ref('timeline')
 
