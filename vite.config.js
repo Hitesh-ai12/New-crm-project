@@ -9,14 +9,14 @@ import vuetify from 'vite-plugin-vuetify'
 import svgLoader from 'vite-svg-loader'
 
 export default defineConfig({
-  // ❌ Remove '/build/' to prevent wrong base path in production
-  base: '/',
+  // ✅ IMPORTANT for production (matches Laravel's public path)
+  base: '/assets/',
 
   plugins: [
     vue({
       template: {
         transformAssetUrls: {
-          base: '/assets/',
+          base: null, // ✅ Let Vue use Vite base
           includeAbsolute: false,
         },
       },
@@ -25,12 +25,10 @@ export default defineConfig({
     laravel({
       input: ['resources/js/main.js'],
       refresh: true,
-      buildDirectory: 'assets', // ✅ tells Laravel to look for /assets, not /build
+      buildDirectory: 'assets', // ✅ Laravel will look in public/assets
     }),
     vuetify({
-      styles: {
-        configFile: 'resources/styles/variables/_vuetify.scss',
-      },
+      styles: { configFile: 'resources/styles/variables/_vuetify.scss' },
     }),
     Components({
       dirs: ['resources/js/@core/components', 'resources/js/components'],
@@ -38,7 +36,11 @@ export default defineConfig({
       resolvers: [
         componentName => {
           if (componentName === 'VueApexCharts') {
-            return { name: 'default', from: 'vue3-apexcharts', as: 'VueApexCharts' }
+            return {
+              name: 'default',
+              from: 'vue3-apexcharts',
+              as: 'VueApexCharts',
+            }
           }
         },
       ],
@@ -52,11 +54,11 @@ export default defineConfig({
         filepath: './.eslintrc-auto-import.json',
       },
     }),
-    svgLoader()
+    svgLoader(),
   ],
 
   define: {
-    'process.env': {},
+    'process.env': {}, // ✅ Required to avoid warnings
   },
 
   resolve: {
@@ -67,14 +69,16 @@ export default defineConfig({
       '@layouts': fileURLToPath(new URL('./resources/js/@layouts', import.meta.url)),
       '@images': fileURLToPath(new URL('./resources/images/', import.meta.url)),
       '@styles': fileURLToPath(new URL('./resources/styles/', import.meta.url)),
-      '@configured-variables': fileURLToPath(new URL('./resources/styles/variables/_template.scss', import.meta.url)),
+      '@configured-variables': fileURLToPath(
+        new URL('./resources/styles/variables/_template.scss', import.meta.url),
+      ),
     },
   },
 
   build: {
     chunkSizeWarningLimit: 5000,
-    outDir: 'public/assets',  // ✅ build output folder
-    assetsDir: '',            // ✅ avoids nested dirs like /assets/assets
+    outDir: 'public/assets',
+    assetsDir: '', // ✅ Prevents /assets/assets duplication
     emptyOutDir: false,
   },
 
