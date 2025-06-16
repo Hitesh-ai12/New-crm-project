@@ -10,7 +10,7 @@ import svgLoader from 'vite-svg-loader'
 
 export default defineConfig({
   // ✅ IMPORTANT for production (matches Laravel's public path)
-  base: '/assets/',
+  base: '/',
 
   plugins: [
     vue({

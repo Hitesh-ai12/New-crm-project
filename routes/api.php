@@ -104,7 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/emails/replies/{leadEmail}', [EmailController::class, 'getReplies']);
     Route::get('/leads/{email}/emails', [EmailController::class, 'getEmailTimeline']);
-    Route::get('/api/leads/{lead}/email-logs', [LeadController::class, 'getEmailLogs']);
+    Route::get('/leads/{lead}/email-logs', [LeadController::class, 'getEmailLogs']);
     Route::get('/sent-emails', [EmailController::class, 'getSentEmails']);
 
     Route::get('/received-emails', [EmailController::class, 'getReceivedEmails']);
@@ -113,8 +113,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/items', [ItemController::class, 'index']);
 
-    Route::post('/api/items', [ItemController::class, 'store']);
-    Route::put('/api/items/{id}', [ItemController::class, 'update']);
+    Route::post('/items', [ItemController::class, 'store']);
+    Route::put('/items/{id}', [ItemController::class, 'update']);
 
     // Delete an item by ID
     Route::delete('/items/{id}', [ItemController::class, 'destroy']);
