@@ -14,21 +14,26 @@
   {{-- Font Awesome --}}
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
-  {{-- TinyMCE CDN --}}
+  {{-- TinyMCE --}}
   <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
-  {{-- ✅ Dynamically loaded Vite CSS --}}
+  {{-- ✅ Vite Assets --}}
   @php
-    $viteCssFiles = viteCss('resources/js/main.js');
+      $manifest = json_decode(file_get_contents(public_path('assets/manifest.json')), true);
+      $viteEntry = $manifest['resources/js/main.js'] ?? null;
   @endphp
 
-  @foreach ($viteCssFiles as $css)
-    <link rel="stylesheet" href="{{ $css }}">
-  @endforeach
+  @if ($viteEntry)
+    {{-- CSS --}}
+    @foreach ($viteEntry['css'] ?? [] as $css)
+      <link rel="stylesheet" href="{{ asset('assets/' . $css) }}">
+    @endforeach
 
-  {{-- ✅ Vite-compiled JS --}}
-  <script type="module" src="{{ viteAsset('resources/js/main.js') }}"></script>
+    {{-- JS --}}
+    <script type="module" src="{{ asset('assets/' . $viteEntry['file']) }}"></script>
+  @endif
 </head>
+
 
 <body>
   <div id="app">
