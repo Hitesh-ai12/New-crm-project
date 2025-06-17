@@ -26,28 +26,31 @@ class GmailWebhookController extends Controller
         return response()->json(['status' => 'ok']);
     }
 
-        public function redirectToGoogle()
+     public function redirectToGoogle()
     {
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('credentials.json'));
+        $client->setClientId(env('GOOGLE_CLIENT_ID'));
+        $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
+        $client->setRedirectUri(env('GOOGLE_REDIRECT_URI'));
+
         $client->addScope([
             'https://www.googleapis.com/auth/gmail.readonly',
             'https://www.googleapis.com/auth/gmail.modify'
         ]);
-        $client->setRedirectUri(route('gmail.callback'));
+
         $client->setAccessType('offline');
         $client->setPrompt('consent');
 
         $authUrl = $client->createAuthUrl();
-
         return redirect($authUrl);
     }
 
     public function handleGoogleCallback(Request $request)
     {
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('credentials.json'));
-        $client->setRedirectUri(route('gmail.callback'));
+        $client->setClientId(env('GOOGLE_CLIENT_ID'));
+        $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
+        $client->setRedirectUri(env('GOOGLE_REDIRECT_URI'));
 
         if ($request->has('code')) {
             $accessToken = $client->fetchAccessTokenWithAuthCode($request->get('code'));
@@ -56,7 +59,6 @@ class GmailWebhookController extends Controller
                 return response()->json(['error' => $accessToken['error']], 500);
             }
 
-            // Save token to a file
             File::put(storage_path('gmail-token.json'), json_encode($accessToken));
             return response()->json(['message' => '✅ Gmail token saved successfully!']);
         }
