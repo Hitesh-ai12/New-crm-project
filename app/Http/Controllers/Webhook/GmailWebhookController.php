@@ -61,7 +61,8 @@ class GmailWebhookController extends Controller
                 return response()->json(['error' => $accessToken['error']], 500);
             }
 
-            File::put(storage_path('gmail-token.json'), json_encode($accessToken));
+            Storage::put('gmail/token.json', json_encode($accessToken));
+
             return response()->json(['message' => '✅ Gmail token saved successfully!']);
         }
 
