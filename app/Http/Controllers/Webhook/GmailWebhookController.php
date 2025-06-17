@@ -21,16 +21,15 @@ class GmailWebhookController extends Controller
 
         Log::info('📬 Pub/Sub Data:', $decoded);
 
-        // Example: Pull historyId
         $historyId = $decoded['historyId'] ?? null;
         Log::info("🔁 Gmail history ID: $historyId");
 
         return response()->json(['status' => 'ok']);
     }
 
-     public function redirectToGoogle()
+    public function redirectToGoogle()
     {
-        $client = new Google_Client();
+        $client = new \Google_Client();
         $client->setClientId(env('GOOGLE_CLIENT_ID'));
         $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
         $client->setRedirectUri(env('GOOGLE_REDIRECT_URI'));
@@ -49,7 +48,7 @@ class GmailWebhookController extends Controller
 
     public function handleGoogleCallback(Request $request)
     {
-        $client = new Google_Client();
+        $client = new \Google_Client();
         $client->setClientId(env('GOOGLE_CLIENT_ID'));
         $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
         $client->setRedirectUri(env('GOOGLE_REDIRECT_URI'));
@@ -69,23 +68,25 @@ class GmailWebhookController extends Controller
         return response()->json(['error' => 'No code returned'], 400);
     }
 
-        public function fetchLatestEmail()
+   public function fetchLatestEmail()
     {
-        // Load access token from storage (file or DB — you should adjust as needed)
-        $accessToken = json_decode(file_get_contents(storage_path('app/gmail/token.json')), true);
+        if (!Storage::exists('gmail/token.json')) {
+            return response()->json(['error' => '❌ Token file not found.'], 404);
+        }
 
-        $client = new Google_Client();
+        $accessToken = json_decode(Storage::get('gmail/token.json'), true);
+
+        $client = new \Google_Client();
         $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
-        $client->addScope(Google_Service_Gmail::GMAIL_READONLY);
+        $client->addScope(\Google_Service_Gmail::GMAIL_READONLY);
         $client->setAccessToken($accessToken);
 
         if ($client->isAccessTokenExpired()) {
             return response()->json(['error' => 'Access token expired, refresh token required.'], 401);
         }
 
-        $gmail = new Google_Service_Gmail($client);
+        $gmail = new \Google_Service_Gmail($client);
 
-        // Fetch the most recent message
         $messages = $gmail->users_messages->listUsersMessages('me', [
             'labelIds' => ['INBOX'],
             'maxResults' => 1,

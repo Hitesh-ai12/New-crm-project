@@ -10,6 +10,7 @@
   <link rel="stylesheet" type="text/css" href="{{ asset('loader.css') }}" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+   <link href="/build/assets/main.css" rel="stylesheet">
 
   
 @vite('resources/js/main.js')
