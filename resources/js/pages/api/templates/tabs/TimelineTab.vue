@@ -247,23 +247,7 @@ const activities = ref([
     date: '2025-06-09',
     time: '10:30 AM',
   },
-  {
-    id: 'email-received-1',
-    type: 'email',
-    direction: 'received',
-    title: 'Replied Email',
-    description: 'User replied to your email.',
-    date: '2025-06-08',
-    time: '6:10 PM',
-  },
-  {
-    id: 'sms-1',
-    type: 'sms',
-    title: 'Received SMS',
-    description: 'User received an SMS about a new listing',
-    date: '2025-06-07',
-    time: '1:15 PM',
-  },
+
 ])
 
 onMounted(async () => {

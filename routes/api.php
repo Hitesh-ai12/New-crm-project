@@ -19,6 +19,7 @@ use App\Http\Controllers\Email\EditorController;
 use App\Http\Controllers\Signature\SignatureFolderController;
 use App\Http\Controllers\Settings\ItemController;
 use App\Http\Controllers\Signature\SignatureTemplateController;
+use App\Http\Controllers\Webhook\GmailWebhookController;
 
 
 Route::get('/user', function (Request $request) {
@@ -46,7 +47,15 @@ Route::post('/upload-image', [EditorController::class, 'uploadImage']);
 
 Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
+// Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);
 
+Route::get('/gmail/auth', [GmailWebhookController::class, 'redirectToGoogle']);
+Route::get('/gmail/callback', [GmailWebhookController::class, 'handleGoogleCallback']);
+
+Route::post('/gmail/webhook', function (\Illuminate\Http\Request $request) {
+    \Log::info('📬 Gmail webhook received', $request->all());
+    return response()->json(['status' => 'received']);
+});
 Route::middleware('auth:sanctum')->group(function () {
     //Route::get('/templates', [TemplateController::class, 'index']);
     Route::get('/templates', [TemplateController::class, 'index']);
@@ -76,7 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/signatures/set-default', [SignatureController::class, 'setDefault']);
     // Delete a signature
     Route::delete('/signatures/{id}', [SignatureController::class, 'destroy']);
-    
+
     Route::put('/signatures/{id}', [SignatureController::class, 'update']);
 
     Route::get('/folders', [TemplateFolderController::class, 'index']);
