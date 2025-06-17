@@ -9,7 +9,6 @@ import vuetify from 'vite-plugin-vuetify'
 import svgLoader from 'vite-svg-loader'
 
 export default defineConfig({
-  // ✅ Leave default so Laravel correctly serves assets from /build
   base: '/',
 
   plugins: [
@@ -25,7 +24,6 @@ export default defineConfig({
     laravel({
       input: ['resources/js/main.js'],
       refresh: true,
-      // ✅ REMOVE buildDirectory – defaults to /build (correct)
     }),
     vuetify({
       styles: {
@@ -78,9 +76,12 @@ export default defineConfig({
   },
 
   build: {
-    outDir: 'public/build',       // ✅ back to default Laravel folder
-    emptyOutDir: true,            // ✅ cleans previous build
-    chunkSizeWarningLimit: 5000,  // optional: suppress large chunk warnings
+    outDir: 'public/build',
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 5000,
+
+    // ✅ Add this line to remove /assets folder
+    assetsDir: '',
   },
 
   optimizeDeps: {
