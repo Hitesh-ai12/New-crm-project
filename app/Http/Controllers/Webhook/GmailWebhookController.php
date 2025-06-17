@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Webhook;
 
 use App\Http\Controllers\Controller;
 use Google_Client;
+use Google_Service_Gmail;
+use Google_Service_Gmail_Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
@@ -64,5 +66,49 @@ class GmailWebhookController extends Controller
         }
 
         return response()->json(['error' => 'No code returned'], 400);
+    }
+
+        public function fetchLatestEmail()
+    {
+        // Load access token from storage (file or DB — you should adjust as needed)
+        $accessToken = json_decode(file_get_contents(storage_path('app/gmail/token.json')), true);
+
+        $client = new Google_Client();
+        $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
+        $client->addScope(Google_Service_Gmail::GMAIL_READONLY);
+        $client->setAccessToken($accessToken);
+
+        if ($client->isAccessTokenExpired()) {
+            return response()->json(['error' => 'Access token expired, refresh token required.'], 401);
+        }
+
+        $gmail = new Google_Service_Gmail($client);
+
+        // Fetch the most recent message
+        $messages = $gmail->users_messages->listUsersMessages('me', [
+            'labelIds' => ['INBOX'],
+            'maxResults' => 1,
+        ]);
+
+        if (count($messages->getMessages()) === 0) {
+            return response()->json(['message' => 'No new emails.']);
+        }
+
+        $msgId = $messages->getMessages()[0]->getId();
+        $fullMessage = $gmail->users_messages->get('me', $msgId, ['format' => 'full']);
+
+        $payload = $fullMessage->getPayload();
+        $headers = collect($payload->getHeaders());
+
+        $from = optional($headers->firstWhere('name', 'From'))->value;
+        $subject = optional($headers->firstWhere('name', 'Subject'))->value;
+
+        $body = base64_decode($payload->getBody()->getData() ?? '');
+
+        return response()->json([
+            'from' => $from,
+            'subject' => $subject,
+            'body' => $body,
+        ]);
     }
 }

@@ -51,11 +51,14 @@ Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
 Route::get('/gmail/auth', [GmailWebhookController::class, 'redirectToGoogle']);
 Route::get('/gmail/callback', [GmailWebhookController::class, 'handleGoogleCallback']);
+Route::get('/gmail/fetch', [GmailWebhookController::class, 'fetchLatestEmail']);
+Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']); 
 
-Route::post('/gmail/webhook', function (\Illuminate\Http\Request $request) {
-    \Log::info('📬 Gmail webhook received', $request->all());
-    return response()->json(['status' => 'received']);
-});
+// Route::post('/gmail/webhook', function (\Illuminate\Http\Request $request) {
+//     \Log::info('📬 Gmail webhook received', $request->all());
+//     return response()->json(['status' => 'received']);
+// });
+
 Route::middleware('auth:sanctum')->group(function () {
     //Route::get('/templates', [TemplateController::class, 'index']);
     Route::get('/templates', [TemplateController::class, 'index']);

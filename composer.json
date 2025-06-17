@@ -10,6 +10,7 @@
     "require": {
         "php": "^8.2",
         "facebook/graph-sdk": "^5.1",
+        "google/apiclient": "2.13",
         "guzzlehttp/guzzle": "^7.9",
         "laravel/framework": "^11.9",
         "laravel/sanctum": "^4.0",
