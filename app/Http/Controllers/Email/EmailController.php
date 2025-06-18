@@ -18,91 +18,96 @@ use App\Models\EmailReply;
 
 class EmailController extends Controller
 {
-    public function sendEmail(Request $request)
-    {
-        $request->validate([
-            'to' => 'required|array',
-            'to.*' => 'email',
-            'subject' => 'required|string',
-            'message' => 'required|string',
-            'template_id' => 'nullable|exists:templates,id',
-            'attachments.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx',
-            'user_id' => 'required|integer',
-            'lead_ids' => 'required|array',
-        ]);
+public function sendEmail(Request $request)
+{
+    $request->validate([
+        'to' => 'required|array',
+        'to.*' => 'email',
+        'subject' => 'required|string',
+        'message' => 'required|string',
+        'template_id' => 'nullable|exists:templates,id',
+        'attachments.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx',
+        'user_id' => 'required|integer',
+        'lead_ids' => 'required|array',
+    ]);
 
-        $from = $request->input('from', config('mail.from.address'));
-        $userId = $request->input('user_id');
-        $leadIdMap = array_flip($request->input('lead_ids'));
+    $from = $request->input('from', config('mail.from.address'));
+    $userId = $request->input('user_id');
+    $leadIdMap = array_flip($request->input('lead_ids'));
 
-        $subjectTemplate = $request->input('subject');
-        $messageTemplate = $request->input('message');
-        $attachments = $request->file('attachments', []);
-        $attachmentPaths = [];
+    $subjectTemplate = $request->input('subject');
+    $messageTemplate = $request->input('message');
+    $attachments = $request->file('attachments', []);
+    $attachmentPaths = [];
 
-        // Upload attachments
-        foreach ($attachments as $file) {
-            $path = $file->store('email_attachments', 'public');
-            $attachmentPaths[] = $path;
-        }
-
-        // Loop through each recipient
-        foreach ($request->input('to') as $email) {
-            $lead = Lead::where('email', $email)->first();
-
-            if (!$lead || !isset($leadIdMap[$lead->id])) {
-                continue; // skip unmatched or unselected leads
-            }
-
-            $placeholders = [
-                '{{first_name}}' => $lead->first_name,
-                '{{last_name}}' => $lead->last_name ?? '',
-                '{{email}}' => $lead->email,
-                '{{phone}}' => $lead->phone,
-                '{{city}}' => $lead->city ?? '',
-            ];
-
-            $personalizedSubject = strtr($subjectTemplate, $placeholders);
-            $personalizedMessage = strtr($messageTemplate, $placeholders);
-
-            try {
-                Mail::to($email)->send(new CrmMailable([
-                    'from' => $from,
-                    'to' => $email,
-                    'subject' => $personalizedSubject,
-                    'message' => $personalizedMessage,
-                    'attachments' => $attachments,
-                    'attachmentPaths' => $attachmentPaths,
-                ]));
-
-                // Save to email_logs
-                EmailLog::create([
-                    'lead_id' => $lead->id,
-                    'user_id' => $userId,
-                    'direction' => 'sent',
-                    'subject' => $personalizedSubject,
-                    'message' => $personalizedMessage,
-                    'attachments' => json_encode($attachmentPaths),
-                ]);
-
-                // Save to sent_emails
-                SentEmail::create([
-                    'user_id' => $userId,
-                    'lead_id' => $lead->id,
-                    'from' => $from,
-                    'to' => $email,
-                    'subject' => $personalizedSubject,
-                    'message' => $personalizedMessage,
-                    'attachments' => json_encode($attachmentPaths), // ✅ MUST be JSON
-                ]);
-            } catch (\Exception $e) {
-                \Log::error("Failed to send email to {$email}: " . $e->getMessage());
-                continue;
-            }
-        }
-
-        return response()->json(['message' => 'Emails sent and stored successfully!']);
+    // Upload attachments
+    foreach ($attachments as $file) {
+        $path = $file->store('email_attachments', 'public');
+        $attachmentPaths[] = $path;
     }
+
+    // Send to each recipient
+    foreach ($request->input('to') as $email) {
+        $lead = Lead::where('email', $email)->first();
+
+        if (!$lead || !isset($leadIdMap[$lead->id])) {
+            continue;
+        }
+
+        $placeholders = [
+            '{{first_name}}' => $lead->first_name,
+            '{{last_name}}' => $lead->last_name ?? '',
+            '{{email}}' => $lead->email,
+            '{{phone}}' => $lead->phone ?? '',
+            '{{city}}' => $lead->city ?? '',
+        ];
+
+        $personalizedSubject = strtr($subjectTemplate, $placeholders);
+        $personalizedMessage = strtr($messageTemplate, $placeholders);
+
+        try {
+            // Send email
+            Mail::to($email)->send(new CrmMailable([
+                'from' => $from,
+                'to' => $email,
+                'subject' => $personalizedSubject,
+                'message' => $personalizedMessage,
+                'attachments' => $attachments,
+                'attachmentPaths' => $attachmentPaths,
+            ]));
+
+            // Log in email_logs
+            EmailLog::create([
+                'lead_id' => $lead->id,
+                'user_id' => $userId,
+                'to' => $email,
+                'from' => $from,
+                'subject' => $personalizedSubject,
+                'message' => $personalizedMessage,
+                'direction' => 'sent',
+                'sent_at' => now(),
+                'attachments' => json_encode($attachmentPaths),
+            ]);
+
+            // Log in sent_emails
+            SentEmail::create([
+                'user_id' => $userId,
+                'lead_id' => $lead->id,
+                'from' => $from,
+                'to' => $email,
+                'subject' => $personalizedSubject,
+                'message' => $personalizedMessage,
+                'attachments' => json_encode($attachmentPaths),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("❌ Failed to send email to {$email}: " . $e->getMessage());
+            continue;
+        }
+    }
+
+    return response()->json(['message' => '✅ Emails sent and stored successfully!']);
+}
+
 
 
     public function getSentEmails(Request $request)

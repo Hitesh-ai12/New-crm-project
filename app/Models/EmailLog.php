@@ -9,13 +9,17 @@ class EmailLog extends Model
 {
     use HasFactory;
     
-    protected $fillable = [
-        'to',
-        'from',
-        'subject',
-        'body',
-        'sent_at',
-    ];
+        protected $fillable = [
+            'to',
+            'from',
+            'subject',
+            'message', // or 'body' if your column is named that
+            'sent_at',
+            'lead_id',
+            'user_id',
+            'direction',
+            'attachments',
+        ];
 
     protected $dates = ['sent_at'];
 }
