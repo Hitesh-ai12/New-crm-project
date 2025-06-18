@@ -146,51 +146,80 @@ class GmailWebhookController extends Controller
     }
 
 
-   public function fetchLatestEmail()
-    {
-        if (!Storage::exists('gmail/token.json')) {
-            return response()->json(['error' => '❌ Token file not found.'], 404);
-        }
-
-        $accessToken = json_decode(Storage::get('gmail/token.json'), true);
-
-        $client = new \Google_Client();
-        $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
-        $client->addScope(\Google_Service_Gmail::GMAIL_READONLY);
-        $client->setAccessToken($accessToken);
-
-        if ($client->isAccessTokenExpired()) {
-            return response()->json(['error' => 'Access token expired, refresh token required.'], 401);
-        }
-
-        $gmail = new \Google_Service_Gmail($client);
-
-        $messages = $gmail->users_messages->listUsersMessages('me', [
-            'labelIds' => ['INBOX'],
-            'maxResults' => 1,
-        ]);
-
-        if (count($messages->getMessages()) === 0) {
-            return response()->json(['message' => 'No new emails.']);
-        }
-
-        $msgId = $messages->getMessages()[0]->getId();
-        $fullMessage = $gmail->users_messages->get('me', $msgId, ['format' => 'full']);
-
-        $payload = $fullMessage->getPayload();
-        $headers = collect($payload->getHeaders());
-
-        $from = optional($headers->firstWhere('name', 'From'))->value;
-        $subject = optional($headers->firstWhere('name', 'Subject'))->value;
-
-        $body = base64_decode($payload->getBody()->getData() ?? '');
-
-        return response()->json([
-            'from' => $from,
-            'subject' => $subject,
-            'body' => $body,
-        ]);
+public function fetchLatestEmail()
+{
+    if (!Storage::exists('gmail/token.json')) {
+        return response()->json(['error' => '❌ Token file not found.'], 404);
     }
+
+    $accessToken = json_decode(Storage::get('gmail/token.json'), true);
+
+    $client = new \Google_Client();
+    $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
+    $client->addScope([
+        \Google_Service_Gmail::GMAIL_READONLY,
+        \Google_Service_Gmail::GMAIL_MODIFY,
+    ]);
+    $client->setAccessType('offline');
+    $client->setPrompt('consent');
+    $client->setAccessToken($accessToken);
+
+    // 🔄 Refresh token if expired
+    if ($client->isAccessTokenExpired()) {
+        if ($client->getRefreshToken()) {
+            $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+
+            if (isset($newToken['error'])) {
+                return response()->json(['error' => '🔒 Failed to refresh access token.'], 401);
+            }
+
+            Storage::put('gmail/token.json', json_encode($client->getAccessToken()));
+        } else {
+            return response()->json(['error' => '🔒 No refresh token available. Please re-authenticate.'], 401);
+        }
+    }
+
+    $gmail = new \Google_Service_Gmail($client);
+
+    // 📨 Get latest message
+    $messages = $gmail->users_messages->listUsersMessages('me', [
+        'labelIds' => ['INBOX'],
+        'maxResults' => 1,
+    ]);
+
+    if (count($messages->getMessages()) === 0) {
+        return response()->json(['message' => '📭 No new emails.']);
+    }
+
+    $msgId = $messages->getMessages()[0]->getId();
+    $fullMessage = $gmail->users_messages->get('me', $msgId, ['format' => 'full']);
+
+    $payload = $fullMessage->getPayload();
+    $headers = collect($payload->getHeaders());
+
+    $from = optional($headers->firstWhere('name', 'From'))->value;
+    $subject = optional($headers->firstWhere('name', 'Subject'))->value;
+
+    // 📝 Extract plain text content
+    $body = '';
+    $parts = $payload->getParts();
+    if ($parts && count($parts)) {
+        foreach ($parts as $part) {
+            if ($part->getMimeType() === 'text/plain') {
+                $body = base64_decode(strtr($part->getBody()->getData(), '-_', '+/'));
+                break;
+            }
+        }
+    } else {
+        $body = base64_decode(strtr($payload->getBody()->getData(), '-_', '+/'));
+    }
+
+    return response()->json([
+        'from' => $from,
+        'subject' => $subject,
+        'body' => $body,
+    ]);
+}
 
     public function startWatch()
     {
