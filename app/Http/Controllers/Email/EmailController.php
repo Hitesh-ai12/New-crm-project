@@ -33,18 +33,20 @@ class EmailController extends Controller
 
         $from = $request->input('from', config('mail.from.address'));
         $userId = $request->input('user_id');
-        $leadIdMap = array_flip($request->input('lead_ids')); // for fast lookup
+        $leadIdMap = array_flip($request->input('lead_ids'));
 
         $subjectTemplate = $request->input('subject');
         $messageTemplate = $request->input('message');
         $attachments = $request->file('attachments', []);
         $attachmentPaths = [];
 
+        // Upload attachments
         foreach ($attachments as $file) {
             $path = $file->store('email_attachments', 'public');
             $attachmentPaths[] = $path;
         }
 
+        // Loop through each recipient
         foreach ($request->input('to') as $email) {
             $lead = Lead::where('email', $email)->first();
 
@@ -72,15 +74,18 @@ class EmailController extends Controller
                     'attachments' => $attachments,
                     'attachmentPaths' => $attachmentPaths,
                 ]));
-                // 🆕 Save Email Log
+
+                // Save to email_logs
                 EmailLog::create([
                     'lead_id' => $lead->id,
-                    'user_id' => auth()->id(), // current login user
+                    'user_id' => $userId,
                     'direction' => 'sent',
                     'subject' => $personalizedSubject,
                     'message' => $personalizedMessage,
                     'attachments' => json_encode($attachmentPaths),
                 ]);
+
+                // Save to sent_emails
                 SentEmail::create([
                     'user_id' => $userId,
                     'lead_id' => $lead->id,
@@ -88,7 +93,7 @@ class EmailController extends Controller
                     'to' => $email,
                     'subject' => $personalizedSubject,
                     'message' => $personalizedMessage,
-                    'attachments' => $attachmentPaths,
+                    'attachments' => json_encode($attachmentPaths), // ✅ MUST be JSON
                 ]);
             } catch (\Exception $e) {
                 \Log::error("Failed to send email to {$email}: " . $e->getMessage());
@@ -98,6 +103,7 @@ class EmailController extends Controller
 
         return response()->json(['message' => 'Emails sent and stored successfully!']);
     }
+
 
     public function getSentEmails(Request $request)
         {
