@@ -48,7 +48,7 @@ class GmailWebhookController extends Controller
 
     public function handleGoogleCallback(Request $request)
     {
-        $client = new \Google_Client();
+        $client = new Google_Client();
         $client->setClientId(env('GOOGLE_CLIENT_ID'));
         $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
         $client->setRedirectUri(env('GOOGLE_REDIRECT_URI'));
@@ -60,6 +60,15 @@ class GmailWebhookController extends Controller
                 return response()->json(['error' => $accessToken['error']], 500);
             }
 
+            // Preserve refresh_token if already stored
+            $tokenPath = storage_path('app/gmail/token.json');
+            if (Storage::exists('gmail/token.json')) {
+                $existingToken = json_decode(Storage::get('gmail/token.json'), true);
+                if (!isset($accessToken['refresh_token']) && isset($existingToken['refresh_token'])) {
+                    $accessToken['refresh_token'] = $existingToken['refresh_token'];
+                }
+            }
+
             Storage::put('gmail/token.json', json_encode($accessToken));
 
             return response()->json(['message' => '✅ Gmail token saved successfully!']);
@@ -67,6 +76,7 @@ class GmailWebhookController extends Controller
 
         return response()->json(['error' => 'No code returned'], 400);
     }
+
 
    public function fetchLatestEmail()
     {
@@ -114,34 +124,41 @@ class GmailWebhookController extends Controller
         ]);
     }
 
-public function startWatch()
-{
-    $accessToken = json_decode(Storage::get('gmail/token.json'), true);
+    public function startWatch()
+    {
+        $accessToken = json_decode(Storage::get('gmail/token.json'), true);
 
-    $client = new \Google_Client();
-    $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
-    $client->addScope([
-        Google_Service_Gmail::GMAIL_READONLY,
-        Google_Service_Gmail::GMAIL_MODIFY
-    ]);
-    $client->setAccessToken($accessToken);
+        $client = new \Google_Client();
+        $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
+        $client->addScope([
+            Google_Service_Gmail::GMAIL_READONLY,
+            Google_Service_Gmail::GMAIL_MODIFY
+        ]);
+        $client->setAccessToken($accessToken);
 
-    if ($client->isAccessTokenExpired()) {
-        return response()->json(['error' => 'Token expired'], 401);
+        // Refresh token if needed
+        if ($client->isAccessTokenExpired()) {
+            if (isset($accessToken['refresh_token'])) {
+                $client->fetchAccessTokenWithRefreshToken($accessToken['refresh_token']);
+                Storage::put('gmail/token.json', json_encode($client->getAccessToken()));
+            } else {
+                return response()->json(['error' => 'No refresh token available'], 401);
+            }
+        }
+
+        try {
+            $gmail = new Google_Service_Gmail($client);
+
+            $watchRequest = new Google_Service_Gmail_WatchRequest([
+                'labelIds' => ['INBOX'],
+                'topicName' => 'projects/crm-mail-setup/topics/gmail-push-topic',
+            ]);
+
+            $watchResponse = $gmail->users->watch('me', $watchRequest);
+            return response()->json(['success' => true, 'data' => $watchResponse]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
-    $gmail = new Google_Service_Gmail($client);
-
-    $watchRequest = new Google_Service_Gmail_WatchRequest([
-        'labelIds' => ['INBOX'],
-        'topicName' => 'projects/crm-mail-setup/topics/gmail-push-topic',
-    ]);
-
-    try {
-        $watchResponse = $gmail->users->watch('me', $watchRequest);
-        return response()->json(['success' => true, 'data' => $watchResponse]);
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
-}
 }
