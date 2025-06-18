@@ -151,7 +151,7 @@ class GmailWebhookController extends Controller
 
             $watchRequest = new Google_Service_Gmail_WatchRequest([
                 'labelIds' => ['INBOX'],
-                'topicName' => 'projects/crm-mail-setup-463308/topics/gmail-push-topic',
+                'topicName' => 'projects/crm-mail-setup/topics/gmail-notify',
             ]);
 
             $watchResponse = $gmail->users->watch('me', $watchRequest);
