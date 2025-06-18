@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-
+use Google_Service_Gmail_WatchRequest;
 
 class GmailWebhookController extends Controller
 {
@@ -113,4 +113,35 @@ class GmailWebhookController extends Controller
             'body' => $body,
         ]);
     }
+
+public function startWatch()
+{
+    $accessToken = json_decode(Storage::get('gmail/token.json'), true);
+
+    $client = new \Google_Client();
+    $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
+    $client->addScope([
+        Google_Service_Gmail::GMAIL_READONLY,
+        Google_Service_Gmail::GMAIL_MODIFY
+    ]);
+    $client->setAccessToken($accessToken);
+
+    if ($client->isAccessTokenExpired()) {
+        return response()->json(['error' => 'Token expired'], 401);
+    }
+
+    $gmail = new Google_Service_Gmail($client);
+
+    $watchRequest = new Google_Service_Gmail_WatchRequest([
+        'labelIds' => ['INBOX'],
+        'topicName' => 'projects/crm-mail-setup/topics/gmail-push-topic',
+    ]);
+
+    try {
+        $watchResponse = $gmail->users->watch('me', $watchRequest);
+        return response()->json(['success' => true, 'data' => $watchResponse]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
 }
