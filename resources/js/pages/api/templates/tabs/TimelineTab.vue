@@ -239,14 +239,6 @@ const viewSmsContent = (sms) => {
 
 const activities = ref([
 
-  {
-    id: 'web-1',
-    type: 'webActivity',
-    title: 'Visited Website',
-    description: 'User visited homepage',
-    date: '2025-06-09',
-    time: '10:30 AM',
-  },
 
 ])
 

@@ -1296,9 +1296,9 @@ const sendEmail = async () => {
 
     // Prevent exceeding 300 characters
     const countCharacters = () => {
-      if (smsData.value.message.length > 300) {
-        smsData.value.message = smsData.value.message.slice(0, 300);
-      }
+          if (smsData.value.message.length > 300) {
+            smsData.value.message = smsData.value.message.slice(0, 300);
+          }
         };
         
     const smsTemplates = ref([]);
@@ -1370,8 +1370,14 @@ const sendEmail = async () => {
       );
       if (selectedTemplate) {
         smsData.value.message = selectedTemplate.content;
+
+        // ✅ Set content inside TinyMCE
+        if (tinymce.get("sms-editor")) {
+          tinymce.get("sms-editor").setContent(selectedTemplate.content);
+        }
       }
     };
+
 
   const insertMergeTag = (event) => {
     const tag = event.target.value;
@@ -1422,7 +1428,7 @@ const sendEmail = async () => {
           from: smsData.value.from,
           to: selectedPhones.join(', '),
           subject: smsData.value.subject,
-          message: smsData.value.message,
+          message: tinymce.get("sms-editor")?.getContent() || smsData.value.message,
           schedule: smsData.value.schedule || null,
         });
 
@@ -1475,7 +1481,7 @@ const sendEmail = async () => {
 
       try {
         const authToken = localStorage.getItem('auth_token');
-        const response = await axios.get('/api/leads/my', {
+        const response = await axios.get('/api/leads', {
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
@@ -1756,47 +1762,49 @@ const sendEmail = async () => {
       }, 5000);
     };
 
-  const submitForm = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    const submitForm = async () => {
+      if (!validateForm()) return;
 
-    try {
-      const authToken = localStorage.getItem('auth_token');
+      try {
+        const authToken = localStorage.getItem('auth_token');
 
-      const response = await axios.post('/api/leads', {
-        first_name: newLead.value.first_name,
-        last_name: newLead.value.last_name,
-        email: newLead.value.email,
-        phone: newLead.value.phone,
-        tag: String(newLead.value.tag),
-        stage: String(newLead.value.stage),
-      }, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await axios.post('/api/leads', {
+          first_name: newLead.value.first_name,
+          last_name: newLead.value.last_name,
+          email: newLead.value.email,
+          phone: newLead.value.phone,
+          tag: String(newLead.value.tag),
+          stage: String(newLead.value.stage),
+        }, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
 
-      // Reset the form
-      newLead.value = {
-        id: 0,
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        tag: '',
-        stage: ''
-      };
+        // Clear form
+        newLead.value = {
+          id: 0,
+          first_name: '',
+          last_name: '',
+          email: '',
+          phone: '',
+          tag: '',
+          stage: ''
+        };
 
-      showForm.value = false;
-      leads.value.push(response.data);
-      showToast('Lead created successfully!', 'success');
-    } catch (err) {
-      console.error('Error creating lead:', err);
-      showToast('Failed to create lead.', 'error');
-    }
-  };
+        showForm.value = false;
+
+        // ✅ PERFECT: Go to first page & reload leads
+        currentPage.value = 1;
+        await getAllLeads();
+
+        showToast('Lead created successfully!', 'success');
+      } catch (err) {
+        console.error('Error creating lead:', err);
+        showToast('Failed to create lead.', 'error');
+      }
+    };
 
 
    // Column selection modal

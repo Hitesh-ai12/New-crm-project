@@ -26,10 +26,10 @@ class CrmMailable extends Mailable
     public function build()
     {
         $email = $this->from($this->data['from'])
-                    ->replyTo($this->data['from']) 
-                    ->subject($this->data['subject'])
-                    ->view('emails.email_template')
-                    ->with(['data' => $this->data]);
+                      ->replyTo($this->data['from'])
+                      ->subject($this->data['subject'])
+                      ->view('emails.email_template')
+                      ->with(['data' => $this->data]);
 
         // Attachments (optional)
         if (!empty($this->data['attachments'])) {

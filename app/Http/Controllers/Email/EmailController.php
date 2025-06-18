@@ -31,7 +31,7 @@ class EmailController extends Controller
             'lead_ids' => 'required|array',
         ]);
 
-        $from = $request->input('from', 'default@example.com');
+        $from = $request->input('from', config('mail.from.address'));
         $userId = $request->input('user_id');
         $leadIdMap = array_flip($request->input('lead_ids')); // for fast lookup
 
