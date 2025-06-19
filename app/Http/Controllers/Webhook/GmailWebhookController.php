@@ -17,41 +17,44 @@ use Carbon\Carbon;
 
 class GmailWebhookController extends Controller
 {
+
     public function handle(Request $request)
     {
+        // Decode the incoming message
         $data = $request->input('message.data');
         $decoded = json_decode(base64_decode($data), true);
 
         Log::info('📬 Pub/Sub Data:', $decoded);
         $historyId = $decoded['historyId'] ?? null;
-
         Log::info("🔁 Gmail history ID: $historyId");
 
-        // Load access token
+        // Load saved access token
         $accessToken = json_decode(Storage::get('gmail/token.json'), true);
 
+        // Setup Google Client
         $client = new \Google_Client();
         $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
         $client->addScope([
-            Google_Service_Gmail::GMAIL_READONLY,
-            Google_Service_Gmail::GMAIL_MODIFY
+            \Google_Service_Gmail::GMAIL_READONLY,
+            \Google_Service_Gmail::GMAIL_MODIFY
         ]);
         $client->setAccessToken($accessToken);
 
         if ($client->isAccessTokenExpired()) {
-            Log::error('Token expired');
+            Log::error('❌ Token expired');
             return response()->json(['error' => 'Token expired'], 401);
         }
 
         $gmail = new \Google_Service_Gmail($client);
 
+        // Fetch latest inbox message
         $messages = $gmail->users_messages->listUsersMessages('me', [
             'labelIds' => ['INBOX'],
             'maxResults' => 1
         ]);
 
         if (count($messages->getMessages()) === 0) {
-            Log::info('No new email found.');
+            Log::info('📭 No new email found.');
             return response()->json(['message' => 'No new email found.']);
         }
 
@@ -60,12 +63,13 @@ class GmailWebhookController extends Controller
         $payload = $message->getPayload();
         $headers = collect($payload->getHeaders());
 
+        // Extract email headers
         $from = optional($headers->firstWhere('name', 'From'))->value;
         $to = optional($headers->firstWhere('name', 'To'))->value;
         $subject = optional($headers->firstWhere('name', 'Subject'))->value;
         $receivedAt = Carbon::createFromTimestamp($message->getInternalDate() / 1000);
 
-        // Decode message body (may be in parts)
+        // Decode email body
         $body = '';
         if ($payload->getBody()->getSize() > 0) {
             $body = base64_decode(strtr($payload->getBody()->getData(), '-_', '+/'));
@@ -78,13 +82,19 @@ class GmailWebhookController extends Controller
             }
         }
 
-        // Search lead by email (you may adjust this logic)
-        $lead = Lead::where('email', $from)->first();
+        // Normalize and match 'from' email with lead
+        $fromEmail = trim(strtolower($from));
+        $lead = Lead::whereRaw('LOWER(email) = ?', [$fromEmail])->first();
 
-        // Store in DB
+        if (!$lead) {
+            Log::warning("❌ No matching lead found for email: $fromEmail");
+            return response()->json(['message' => 'No matching lead found.'], 404);
+        }
+
+        // Store email reply only if lead matched
         EmailReply::create([
-            'user_id' => $lead->user_id ?? null,
-            'lead_id' => $lead->id ?? null,
+            'user_id' => $lead->user_id,
+            'lead_id' => $lead->id,
             'from' => $from,
             'to' => $to,
             'subject' => $subject,
@@ -92,8 +102,11 @@ class GmailWebhookController extends Controller
             'received_at' => $receivedAt,
         ]);
 
+        Log::info("✅ Email stored for lead ID: {$lead->id}, user ID: {$lead->user_id}");
+
         return response()->json(['status' => 'saved']);
     }
+
 
     public function redirectToGoogle()
     {
@@ -146,80 +159,80 @@ class GmailWebhookController extends Controller
     }
 
 
-public function fetchLatestEmail()
-{
-    if (!Storage::exists('gmail/token.json')) {
-        return response()->json(['error' => '❌ Token file not found.'], 404);
-    }
+    public function fetchLatestEmail()
+    {
+        if (!Storage::exists('gmail/token.json')) {
+            return response()->json(['error' => '❌ Token file not found.'], 404);
+        }
 
-    $accessToken = json_decode(Storage::get('gmail/token.json'), true);
+        $accessToken = json_decode(Storage::get('gmail/token.json'), true);
 
-    $client = new \Google_Client();
-    $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
-    $client->addScope([
-        \Google_Service_Gmail::GMAIL_READONLY,
-        \Google_Service_Gmail::GMAIL_MODIFY,
-    ]);
-    $client->setAccessType('offline');
-    $client->setPrompt('consent');
-    $client->setAccessToken($accessToken);
+        $client = new \Google_Client();
+        $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
+        $client->addScope([
+            \Google_Service_Gmail::GMAIL_READONLY,
+            \Google_Service_Gmail::GMAIL_MODIFY,
+        ]);
+        $client->setAccessType('offline');
+        $client->setPrompt('consent');
+        $client->setAccessToken($accessToken);
 
-    // 🔄 Refresh token if expired
-    if ($client->isAccessTokenExpired()) {
-        if ($client->getRefreshToken()) {
-            $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+        // 🔄 Refresh token if expired
+        if ($client->isAccessTokenExpired()) {
+            if ($client->getRefreshToken()) {
+                $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
 
-            if (isset($newToken['error'])) {
-                return response()->json(['error' => '🔒 Failed to refresh access token.'], 401);
+                if (isset($newToken['error'])) {
+                    return response()->json(['error' => '🔒 Failed to refresh access token.'], 401);
+                }
+
+                Storage::put('gmail/token.json', json_encode($client->getAccessToken()));
+            } else {
+                return response()->json(['error' => '🔒 No refresh token available. Please re-authenticate.'], 401);
             }
+        }
 
-            Storage::put('gmail/token.json', json_encode($client->getAccessToken()));
+        $gmail = new \Google_Service_Gmail($client);
+
+        // 📨 Get latest message
+        $messages = $gmail->users_messages->listUsersMessages('me', [
+            'labelIds' => ['INBOX'],
+            'maxResults' => 1,
+        ]);
+
+        if (count($messages->getMessages()) === 0) {
+            return response()->json(['message' => '📭 No new emails.']);
+        }
+
+        $msgId = $messages->getMessages()[0]->getId();
+        $fullMessage = $gmail->users_messages->get('me', $msgId, ['format' => 'full']);
+
+        $payload = $fullMessage->getPayload();
+        $headers = collect($payload->getHeaders());
+
+        $from = optional($headers->firstWhere('name', 'From'))->value;
+        $subject = optional($headers->firstWhere('name', 'Subject'))->value;
+
+        // 📝 Extract plain text content
+        $body = '';
+        $parts = $payload->getParts();
+        if ($parts && count($parts)) {
+            foreach ($parts as $part) {
+                if ($part->getMimeType() === 'text/plain') {
+                    $body = base64_decode(strtr($part->getBody()->getData(), '-_', '+/'));
+                    break;
+                }
+            }
         } else {
-            return response()->json(['error' => '🔒 No refresh token available. Please re-authenticate.'], 401);
+            $body = base64_decode(strtr($payload->getBody()->getData(), '-_', '+/'));
         }
+
+        return response()->json([
+            'from' => $from,
+            'subject' => $subject,
+            'body' => $body,
+        ]);
     }
-
-    $gmail = new \Google_Service_Gmail($client);
-
-    // 📨 Get latest message
-    $messages = $gmail->users_messages->listUsersMessages('me', [
-        'labelIds' => ['INBOX'],
-        'maxResults' => 1,
-    ]);
-
-    if (count($messages->getMessages()) === 0) {
-        return response()->json(['message' => '📭 No new emails.']);
-    }
-
-    $msgId = $messages->getMessages()[0]->getId();
-    $fullMessage = $gmail->users_messages->get('me', $msgId, ['format' => 'full']);
-
-    $payload = $fullMessage->getPayload();
-    $headers = collect($payload->getHeaders());
-
-    $from = optional($headers->firstWhere('name', 'From'))->value;
-    $subject = optional($headers->firstWhere('name', 'Subject'))->value;
-
-    // 📝 Extract plain text content
-    $body = '';
-    $parts = $payload->getParts();
-    if ($parts && count($parts)) {
-        foreach ($parts as $part) {
-            if ($part->getMimeType() === 'text/plain') {
-                $body = base64_decode(strtr($part->getBody()->getData(), '-_', '+/'));
-                break;
-            }
-        }
-    } else {
-        $body = base64_decode(strtr($payload->getBody()->getData(), '-_', '+/'));
-    }
-
-    return response()->json([
-        'from' => $from,
-        'subject' => $subject,
-        'body' => $body,
-    ]);
-}
 
     public function startWatch()
     {
@@ -257,40 +270,41 @@ public function fetchLatestEmail()
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-public function fetchEmailsSince($historyId)
-{
-    $accessToken = json_decode(Storage::get('gmail/token.json'), true);
 
-    $client = new \Google_Client();
-    $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
-    $client->addScope([
-        \Google_Service_Gmail::GMAIL_READONLY,
-        \Google_Service_Gmail::GMAIL_MODIFY,
-    ]);
-    $client->setAccessToken($accessToken);
+    public function fetchEmailsSince($historyId)
+    {
+        $accessToken = json_decode(Storage::get('gmail/token.json'), true);
 
-    if ($client->isAccessTokenExpired()) {
-        Log::error('Token expired while fetching history');
-        return;
-    }
-
-    $gmail = new \Google_Service_Gmail($client);
-
-    try {
-        $historyResponse = $gmail->users_history->listUsersHistory('me', [
-            'startHistoryId' => $historyId,
+        $client = new \Google_Client();
+        $client->setAuthConfig(storage_path('app/gmail/credentials.json'));
+        $client->addScope([
+            \Google_Service_Gmail::GMAIL_READONLY,
+            \Google_Service_Gmail::GMAIL_MODIFY,
         ]);
+        $client->setAccessToken($accessToken);
 
-        foreach ($historyResponse->getHistory() as $history) {
-            foreach ($history->getMessages() as $message) {
-                $msgId = $message->getId();
-                $fullMessage = $gmail->users_messages->get('me', $msgId, ['format' => 'full']);
-                // Parse headers/body here
-                Log::info("📨 New Message ID: $msgId");
-            }
+        if ($client->isAccessTokenExpired()) {
+            Log::error('Token expired while fetching history');
+            return;
         }
-    } catch (\Exception $e) {
-        Log::error("Failed to fetch history: " . $e->getMessage());
+
+        $gmail = new \Google_Service_Gmail($client);
+
+        try {
+            $historyResponse = $gmail->users_history->listUsersHistory('me', [
+                'startHistoryId' => $historyId,
+            ]);
+
+            foreach ($historyResponse->getHistory() as $history) {
+                foreach ($history->getMessages() as $message) {
+                    $msgId = $message->getId();
+                    $fullMessage = $gmail->users_messages->get('me', $msgId, ['format' => 'full']);
+                    // Parse headers/body here
+                    Log::info("📨 New Message ID: $msgId");
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to fetch history: " . $e->getMessage());
+        }
     }
-}
 }

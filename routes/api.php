@@ -49,13 +49,8 @@ Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
 // Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);
 Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);
-Route::get('/gmail/fetch', [GmailWebhookController::class, 'fetchLatestEmail']); // optional if used programmatically
+Route::get('/gmail/fetch', [GmailWebhookController::class, 'fetchLatestEmail']); 
 
-
-// Route::post('/gmail/webhook', function (\Illuminate\Http\Request $request) {
-//     \Log::info('📬 Gmail webhook received', $request->all());
-//     return response()->json(['status' => 'received']);
-// });
 
 Route::middleware('auth:sanctum')->group(function () {
     //Route::get('/templates', [TemplateController::class, 'index']);

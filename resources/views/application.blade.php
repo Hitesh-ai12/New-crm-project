@@ -6,20 +6,13 @@
   <meta name="csrf-token" content="{{ csrf_token() }}" />
   <title>Crm Dashboard</title>
 
-  <!-- Favicon -->
   <link rel="icon" href="{{ asset('favicon.ico') }}" />
 
-  <!-- Loader CSS (Optional Preload Styles) -->
   <link rel="stylesheet" type="text/css" href="{{ asset('loader.css') }}" />
 
   <!-- FontAwesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-  <!-- Vite (includes compiled app CSS & JS) -->
-  <!-- @vite('resources/js/main.js') -->
-  <!-- <link rel="stylesheet" href="{{ asset('build/main--2B0PaiH.css') }}"> -->
-
-  <!-- TinyMCE -->
      @vite(['resources/js/main.js'])
 
   <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
@@ -64,8 +57,7 @@
     if (primaryColor)
       document.documentElement.style.setProperty('--initial-loader-color', primaryColor)
   </script>
-    {{-- ✅ Manually include compiled JS --}}
-  <!-- <script type="module" src="{{ asset('build/main-DnAIlqcI.js') }}"></script> -->
+
 </body>
 
 </html>
