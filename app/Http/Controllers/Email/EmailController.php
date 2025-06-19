@@ -110,16 +110,16 @@ public function sendEmail(Request $request)
 
 
 
-    public function getSentEmails(Request $request)
-        {
-            $userId = $request->user()->id; // uses auth()
+public function getSentEmails(Request $request)
+    {
+        $userId = $request->user()->id; // uses auth()
 
-            $emails = SentEmail::where('user_id', $userId)
-                ->orderBy('created_at', 'desc')
-                ->get(['id', 'lead_id', 'to', 'subject', 'message', 'created_at']);
+        $emails = SentEmail::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'lead_id', 'to', 'subject', 'message', 'created_at']);
 
-            return response()->json($emails);
-        }
+        return response()->json($emails);
+    }
 
     public function fetchReplies()
     {
@@ -184,71 +184,73 @@ public function sendEmail(Request $request)
 
         return response()->json($replies);
     }
-// app/Http/Controllers/EmailController.php
 
-public function getEmailTimeline(Request $request, $leadEmail)
-{
-    $sentEmails = SentEmail::where('to', $leadEmail)
-        ->get()
-        ->map(function ($email) {
-            return [
-                'type' => 'email',
-                'direction' => 'sent',
-                'title' => 'Sent Email',
-                'description' => $email->subject,
-                'date' => $email->created_at->format('Y-m-d'),
-                'time' => $email->created_at->format('h:i A'),
-            ];
-        });
+    public function getEmailTimeline(Request $request, $leadEmail)
+    {
+        $sentEmails = SentEmail::where('to', $leadEmail)
+            ->get()
+            ->map(function ($email) {
+                return [
+                    'type' => 'email',
+                    'direction' => 'sent',
+                    'title' => 'Sent Email',
+                    'description' => $email->subject,
+                    'date' => $email->created_at->format('Y-m-d'),
+                    'time' => $email->created_at->format('h:i A'),
+                ];
+            });
 
-    $replies = EmailReply::where('from', $leadEmail)
-        ->get()
-        ->map(function ($reply) {
-            return [
-                'type' => 'email',
-                'direction' => 'received',
-                'title' => 'Reply',
-                'description' => $reply->subject,
-                'date' => Carbon::parse($reply->received_at)->format('Y-m-d'),
-                'time' => Carbon::parse($reply->received_at)->format('h:i A'),
-            ];
-        });
+        $replies = EmailReply::where('from', $leadEmail)
+            ->get()
+            ->map(function ($reply) {
+                return [
+                    'type' => 'email',
+                    'direction' => 'received',
+                    'title' => 'Reply',
+                    'description' => $reply->subject,
+                    'date' => Carbon::parse($reply->received_at)->format('Y-m-d'),
+                    'time' => Carbon::parse($reply->received_at)->format('h:i A'),
+                ];
+            });
 
-    $combined = $sentEmails->merge($replies)->sortByDesc('date')->values();
+        $combined = $sentEmails->merge($replies)->sortByDesc('date')->values();
 
-    return response()->json($combined->isNotEmpty() ? $combined : [['title' => 'No emails found']]);
-}
+        return response()->json($combined->isNotEmpty() ? $combined : [['title' => 'No emails found']]);
+    }
 
-public function getEmailLogs(Lead $lead)
-{
-    $logs = $lead->emailLogs()->latest()->get();
+    public function getEmailLogs(Lead $lead)
+    {
+        $logs = $lead->emailLogs()->latest()->get();
 
-    return response()->json($logs);
-}
+        return response()->json($logs);
+    }
 
     public function getReceivedEmails(Request $request)
     {
-        // For now, let's fetch all replies.
-        // In a real app, you'd likely filter by lead_id or user_id.
         $receivedReplies = EmailReply::orderBy('received_at', 'desc')->get();
 
         $formattedReplies = $receivedReplies->map(function ($reply) {
+            $receivedAt = $reply->received_at ? Carbon::parse($reply->received_at) : null;
+
             return [
                 'id' => $reply->id,
                 'type' => 'email',
                 'direction' => 'received',
-                'title' => 'Reply Received', // A generic title for all replies
-                'description' => $reply->subject, // Subject as description
-                'body_plain' => $reply->body_plain, // Full text body
-                'body_html' => $reply->body_html, // Full HTML body
-                'from' => $reply->from,
-                'to' => $reply->to,
-                'date' => Carbon::parse($reply->received_at)->format('Y-m-d'),
-                'time' => Carbon::parse($reply->received_at)->format('h:i A'),
-                'attachments' => $reply->attachments, // Paths to saved attachments
+                'title' => 'Reply Received',
+                'description' => $reply->subject ?? '(No Subject)',
+                'body_plain' => $reply->body_plain ?? '',
+                'body_html' => $reply->body_html ?? '',
+                'from' => $reply->from ?? '',
+                'to' => $reply->to ?? '',
+                'date' => $receivedAt ? $receivedAt->format('Y-m-d') : '',
+                'time' => $receivedAt ? $receivedAt->format('h:i A') : '',
+                'attachments' => is_string($reply->attachments)
+                    ? json_decode($reply->attachments, true) ?? []
+                    : ($reply->attachments ?? []),
             ];
         });
 
         return response()->json($formattedReplies);
     }
+    
 }
