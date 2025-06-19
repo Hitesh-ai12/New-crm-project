@@ -230,7 +230,7 @@ public function getSentEmails(Request $request)
         $receivedReplies = EmailReply::orderBy('received_at', 'desc')->get();
 
         $formattedReplies = $receivedReplies->map(function ($reply) {
-            $receivedAt = $reply->received_at ? Carbon::parse($reply->received_at) : null;
+            $receivedAt = $reply->received_at ? \Carbon\Carbon::parse($reply->received_at) : null;
 
             return [
                 'id' => $reply->id,
@@ -238,19 +238,18 @@ public function getSentEmails(Request $request)
                 'direction' => 'received',
                 'title' => 'Reply Received',
                 'description' => $reply->subject ?? '(No Subject)',
-                'body_plain' => $reply->body_plain ?? '',
-                'body_html' => $reply->body_html ?? '',
+                'body_plain' => strip_tags($reply->message ?? ''),
+                'body_html' => $reply->message ?? '',
                 'from' => $reply->from ?? '',
                 'to' => $reply->to ?? '',
                 'date' => $receivedAt ? $receivedAt->format('Y-m-d') : '',
                 'time' => $receivedAt ? $receivedAt->format('h:i A') : '',
-                'attachments' => is_string($reply->attachments)
-                    ? json_decode($reply->attachments, true) ?? []
-                    : ($reply->attachments ?? []),
+                'attachments' => $reply->attachments ?? [],
             ];
         });
 
         return response()->json($formattedReplies);
     }
-    
+
+
 }
