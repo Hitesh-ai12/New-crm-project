@@ -14,6 +14,7 @@ use Google_Service_Gmail_WatchRequest;
 use App\Models\Lead;
 use App\Models\EmailReply;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class GmailWebhookController extends Controller
 {
@@ -25,7 +26,9 @@ class GmailWebhookController extends Controller
         $decoded = json_decode(base64_decode($data), true);
 
         Log::info('📬 Pub/Sub Data:', $decoded);
+
         $historyId = $decoded['historyId'] ?? null;
+
         Log::info("🔁 Gmail history ID: $historyId");
 
         // Load saved access token
@@ -65,6 +68,12 @@ class GmailWebhookController extends Controller
 
         // Extract email headers
         $from = optional($headers->firstWhere('name', 'From'))->value;
+        // Extract email from "Name <email>" format
+        preg_match('/<(.+)>/', $from, $matches);
+        $fromEmail = isset($matches[1]) ? $matches[1] : $from;
+        // Normalize
+        $fromEmail = trim(strtolower($fromEmail));
+
         $to = optional($headers->firstWhere('name', 'To'))->value;
         $subject = optional($headers->firstWhere('name', 'Subject'))->value;
         $receivedAt = Carbon::createFromTimestamp($message->getInternalDate() / 1000);
@@ -82,8 +91,6 @@ class GmailWebhookController extends Controller
             }
         }
 
-        // Normalize and match 'from' email with lead
-        $fromEmail = trim(strtolower($from));
         $lead = Lead::whereRaw('LOWER(email) = ?', [$fromEmail])->first();
 
         if (!$lead) {
