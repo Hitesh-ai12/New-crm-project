@@ -8,11 +8,12 @@ use Twilio\Rest\Client;
 use App\Models\SentSms;
 use App\Models\Lead;
 use App\Models\IncomingSms;
-
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class SmsController extends Controller
-{
+{   
+
     public function sendSms(Request $request)
     {
         try {
@@ -34,15 +35,34 @@ class SmsController extends Controller
                 return response()->json(['success' => false, 'error' => 'Lead IDs and phone numbers count mismatch.'], 400);
             }
 
+            $messageTemplate = $request->message;
+
             foreach ($leadIds as $index => $leadId) {
                 $to = trim($toNumbers[$index]);
+
+                $lead = Lead::find($leadId);
+                if (!$lead) {
+                    continue;
+                }
+
+                // Placeholder setup
+                $placeholders = [
+                    '{{first_name}}' => $lead->first_name,
+                    '{{last_name}}' => $lead->last_name ?? '',
+                    '{{email}}' => $lead->email ?? '',
+                    '{{phone}}' => $lead->phone ?? '',
+                    '{{city}}' => $lead->city ?? '',
+                ];
+
+                // Replace placeholders
+                $personalizedMessage = strtr($messageTemplate, $placeholders);
 
                 // Send SMS via Twilio
                 $twilio->messages->create(
                     $to,
                     [
                         'from' => $twilioPhoneNumber,
-                        'body' => $request->message,
+                        'body' => $personalizedMessage,
                     ]
                 );
 
@@ -52,7 +72,7 @@ class SmsController extends Controller
                     'lead_id' => $leadId,       
                     'from' => $twilioPhoneNumber,
                     'to' => $to,
-                    'message' => $request->message,
+                    'message' => $personalizedMessage,
                     'sent_at' => now(),
                 ]);
             }
@@ -62,6 +82,7 @@ class SmsController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
 
     public function incomingSms(Request $request)
     {
@@ -114,9 +135,11 @@ class SmsController extends Controller
 
         return response()->json($sentSms);
     }
-    
+        
     public function getIncomingSms()
     {
+        Log::info('getIncomingSms() method called by user ID: ' . Auth::id());
+
         $incoming = IncomingSms::where('user_id', Auth::id())
             ->orderBy('received_at', 'desc')
             ->get();
@@ -127,7 +150,7 @@ class SmsController extends Controller
     public function getLeadSms($id)
     {
         try {
-            $user = auth()->user(); // ⛔ may be null if auth fails
+            $user = auth()->user(); 
 
             if (!$user) {
                 return response()->json(['error' => 'Unauthorized'], 401);

@@ -36,7 +36,8 @@ Route::get('/items', [ItemController::class, 'index']);
 
 
 Route::post('/send-email', [EmailController::class, 'sendEmail'])->name('send.email');
-Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
+
+
 Route::get('/sms-templates', [EmailTemplateController::class, 'getSmsTemplates']);
 Route::post('/upload', [FileUploadController::class, 'upload']);
 Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
@@ -44,7 +45,7 @@ Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSetti
 // 
 Route::post('/upload-image', [EditorController::class, 'uploadImage']);
 
-
+Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
 Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
 // Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);

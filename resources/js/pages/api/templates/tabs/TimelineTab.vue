@@ -237,10 +237,7 @@ const viewSmsContent = (sms) => {
   showSmsModal.value = true
 }
 
-const activities = ref([
-
-
-])
+const activities = ref([])
 
 onMounted(async () => {
   try {
@@ -278,11 +275,8 @@ onMounted(async () => {
       }
     })
 
-
     // ✅ Push into the main activities timeline
     activities.value.push(...recSms, ...sentSms)
-
-
     // Fetch Sent Emails
     const sentResponse = await axios.get('/api/sent-emails', {
       headers: {
@@ -317,9 +311,6 @@ onMounted(async () => {
         Authorization: `Bearer ${token}`,
       },
     })
-
-    console.log('--- RECEIVED REPLIES (from DB) ---')
-    console.log('Raw Received Emails API Response:', receivedResponse.data)
 
     const receivedEmails = receivedResponse.data.map(reply => {
         const receivedAt = new Date(reply.received_at)
@@ -359,74 +350,38 @@ onMounted(async () => {
 
 
   // 💡 Computed: Filtered list based on menu
-const filteredActivities = computed(() => {
-  if (activeMenuItem.value === 'all') return activities.value
+  const filteredActivities = computed(() => {
+    if (activeMenuItem.value === 'all') return activities.value
 
-  if (activeMenuItem.value === 'email' || activeMenuItem.value === 'sms') {
-    return activities.value.filter((a) => {
-      if (a.type !== activeMenuItem.value) return false
-      if (messageFilter.value === 'all') return true
-      return a.direction === messageFilter.value && a.type === activeMenuItem.value
-    })
+      if (activeMenuItem.value === 'email' || activeMenuItem.value === 'sms') {
+        return activities.value.filter((a) => {
+          if (a.type !== activeMenuItem.value) return false
+          if (messageFilter.value === 'all') return true
+          return a.direction === messageFilter.value && a.type === activeMenuItem.value
+        })
+      }
+
+    return activities.value.filter((a) => a.type === activeMenuItem.value)
+  })
+
+
+  // Action when user clicks reply
+  const replyToEmail = (activity) => {
+    alert(`Replying to: ${activity.title} from ${activity.from}. Full subject: ${activity.description}`);
   }
 
-  return activities.value.filter((a) => a.type === activeMenuItem.value)
-})
+  // Function to view full email content in a modal
+  const viewEmailContent = (activity) => {
+    selectedEmail.value = activity;
+    showEmailModal.value = true;
+  };
 
-
-// Action when user clicks reply
-const replyToEmail = (activity) => {
-  alert(`Replying to: ${activity.title} from ${activity.from}. Full subject: ${activity.description}`);
-}
-
-// Function to view full email content in a modal
-const viewEmailContent = (activity) => {
-  selectedEmail.value = activity;
-  showEmailModal.value = true;
-};
-
-// Helper to extract file name from path
-const getFileNameFromPath = (path) => {
-  return path.substring(path.lastIndexOf('/') + 1);
-};
+  // Helper to extract file name from path
+  const getFileNameFromPath = (path) => {
+    return path.substring(path.lastIndexOf('/') + 1);
+  };
 
 </script>
-
-<style scoped>
-.container {
-  display: flex;
-}
-
-.sidebar {
-  padding: 10px;
-  border-radius: 8px;
-  background: #f8f9fa;
-  inline-size: 180px;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-block-end: 6px;
-}
-
-.menu-item .icon {
-  margin-inline-end: 8px;
-}
-
-.menu-item.active {
-  background-color: #007bff;
-  color: white;
-}
-
-.main-content {
-  flex-grow: 1;
-}
-</style>
-
 
 <style scoped>
 .container {

@@ -1424,7 +1424,7 @@ const sendEmail = async () => {
 
         await axios.post('/api/send-sms', {
           lead_ids: selectedLeadIds,
-          user_id: userId, // ✅ Include user ID
+          user_id: userId,
           from: smsData.value.from,
           to: selectedPhones.join(', '),
           subject: smsData.value.subject,
