@@ -87,6 +87,13 @@ class SmsController extends Controller
     public function incomingSms(Request $request)
     {
         try {
+            // Log incoming raw data into custom log file
+            Log::channel('twilio_sms')->info('Incoming SMS Webhook Hit', [
+                'From' => $request->input('From'),
+                'To' => $request->input('To'),
+                'Body' => $request->input('Body'),
+            ]);
+
             $from = $request->input('From');
             $to = $request->input('To');
             $message = $request->input('Body');
@@ -95,6 +102,7 @@ class SmsController extends Controller
             $lead = Lead::where('phone', $from)->first();
 
             if (!$lead) {
+                Log::channel('twilio_sms')->warning("No matching lead found for number: $from");
                 return response('No matching lead found', 200); 
             }
 
@@ -107,11 +115,28 @@ class SmsController extends Controller
                 'received_at' => $receivedAt,
             ]);
 
+            Log::channel('twilio_sms')->info("SMS saved for Lead ID: " . $lead->id);
+
             return response('Message received and stored', 200);
+
         } catch (\Exception $e) {
+            Log::channel('twilio_sms')->error('Error processing SMS', [
+                'error' => $e->getMessage()
+            ]);
             return response('Error processing SMS', 500);
         }
     }
+    public function getIncomingSms()
+    {
+        Log::info('getIncomingSms() method called by user ID: ' . Auth::id());
+
+        $incoming = IncomingSms::where('user_id', Auth::id())
+            ->orderBy('received_at', 'desc')
+            ->get();
+
+        return response()->json($incoming);
+    }
+
 
     public function smsStatus(Request $request)
     {
@@ -129,18 +154,9 @@ class SmsController extends Controller
 
 
         
-    public function getIncomingSms()
-    {
-        Log::info('getIncomingSms() method called by user ID: ' . Auth::id());
 
-        $incoming = IncomingSms::where('user_id', Auth::id())
-            ->orderBy('received_at', 'desc')
-            ->get();
 
-        return response()->json($incoming);
-    }
 
-    
     public function getSentSms(Request $request)
     {
         $sentSms = SentSms::where('user_id', Auth::id())

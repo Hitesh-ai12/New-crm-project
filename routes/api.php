@@ -51,6 +51,7 @@ Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 // Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);
 Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);
 Route::get('/gmail/fetch', [GmailWebhookController::class, 'fetchLatestEmail']); 
+Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -122,7 +123,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sent-emails', [EmailController::class, 'getSentEmails']);
 
     Route::get('/received-emails', [EmailController::class, 'getReceivedEmails']);
-    Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
     Route::get('/sent-sms', [SmsController::class, 'getSentSms']);
 
 
