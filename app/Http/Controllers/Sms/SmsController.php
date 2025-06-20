@@ -127,14 +127,7 @@ class SmsController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function getSentSms(Request $request)
-    {
-        $sentSms = SentSms::where('user_id', Auth::id())
-            ->orderBy('sent_at', 'desc')
-            ->get();
 
-        return response()->json($sentSms);
-    }
         
     public function getIncomingSms()
     {
@@ -146,6 +139,17 @@ class SmsController extends Controller
 
         return response()->json($incoming);
     }
+
+    
+    public function getSentSms(Request $request)
+    {
+        $sentSms = SentSms::where('user_id', Auth::id())
+            ->orderBy('sent_at', 'desc')
+            ->get();
+
+        return response()->json($sentSms);
+    }
+
 
     public function getLeadSms($id)
     {
