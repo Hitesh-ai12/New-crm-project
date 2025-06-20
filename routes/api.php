@@ -46,12 +46,13 @@ Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSetti
 Route::post('/upload-image', [EditorController::class, 'uploadImage']);
 
 Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
-Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
+
 
 // Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);
 Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);
 Route::get('/gmail/fetch', [GmailWebhookController::class, 'fetchLatestEmail']); 
-Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
+Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
+
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -70,8 +71,6 @@ Route::middleware('auth:sanctum')->group(function () {
    
     Route::post('/columns-settings', [ColumnSettingController::class, 'saveColumnSettings']);
     Route::post('/columns-order', [ColumnSettingController::class, 'saveColumnOrderSettings']);
-
-    Route::get('/lead/{id}/sms', [SmsController::class, 'getLeadSms']);
 
     // Fetch all signatures
     Route::get('/signatures', [SignatureController::class, 'index']);
@@ -124,6 +123,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/received-emails', [EmailController::class, 'getReceivedEmails']);
     Route::get('/sent-sms', [SmsController::class, 'getSentSms']);
+    Route::get('/lead/{id}/sms', [SmsController::class, 'getLeadSms']);
 
 
     Route::post('/items', [ItemController::class, 'store']);
@@ -131,6 +131,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::delete('/items/{id}', [ItemController::class, 'destroy']);
 
+    Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
 });
 
 

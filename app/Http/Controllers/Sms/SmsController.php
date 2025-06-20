@@ -10,6 +10,7 @@ use App\Models\Lead;
 use App\Models\IncomingSms;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class SmsController extends Controller
 {   
@@ -126,16 +127,37 @@ class SmsController extends Controller
             return response('Error processing SMS', 500);
         }
     }
-    public function getIncomingSms()
-    {
-        Log::info('getIncomingSms() method called by user ID: ' . Auth::id());
 
-        $incoming = IncomingSms::where('user_id', Auth::id())
-            ->orderBy('received_at', 'desc')
-            ->get();
+        public function getIncomingSms()
+        {
+            try {
+                $userId = Auth::id();
+                Log::info('Fetching incoming SMS for user ID: ' . $userId);
 
-        return response()->json($incoming);
-    }
+                $smsList = \App\Models\IncomingSms::where('user_id', $userId)
+                    ->orderBy('received_at', 'desc')
+                    ->get()
+                    ->map(function ($s) {
+                        $dt = Carbon::parse($s->received_at);
+                        return [
+                            'id' => 'sms-rec-' . $s->id,
+                            'type' => 'sms',
+                            'direction' => 'received',
+                            'phone' => $s->from,
+                            'title' => 'Received SMS',
+                            'description' => $s->message,
+                            'leadId' => $s->lead_id,
+                            'date' => $dt->format('Y-m-d'),
+                            'time' => $dt->format('H:i'),
+                        ];
+                    });
+
+                return response()->json($smsList);
+            } catch (\Exception $e) {
+                Log::error('Error fetching incoming SMS', ['error' => $e->getMessage()]);
+                return response()->json(['error' => 'Failed to fetch SMS'], 500);
+            }
+        }
 
 
     public function smsStatus(Request $request)

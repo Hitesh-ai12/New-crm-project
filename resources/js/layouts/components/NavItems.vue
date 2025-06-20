@@ -120,6 +120,7 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
         to: '/settings/tags-stages-sources',
       }"
     />
+    
     <VerticalNavLink
       :item="{
         title: 'Signature',
