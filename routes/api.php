@@ -122,16 +122,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sent-emails', [EmailController::class, 'getSentEmails']);
 
     Route::get('/received-emails', [EmailController::class, 'getReceivedEmails']);
-    Route::get('/sent-sms', [SmsController::class, 'getSentSms']);
-    Route::get('/lead/{id}/sms', [SmsController::class, 'getLeadSms']);
+    // Route::get('/sent-sms', [SmsController::class, 'getSentSms']);
+    // Route::get('/lead/{id}/sms', [SmsController::class, 'getLeadSms']);
 
 
     Route::post('/items', [ItemController::class, 'store']);
     Route::put('/items/{id}', [ItemController::class, 'update']);
 
     Route::delete('/items/{id}', [ItemController::class, 'destroy']);
-
-    Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
+    Route::get('/lead/{lead}/sms', [SmsController::class, 'getSmsByLead']);
+    Route::get('/sms/leads', [SmsController::class, 'getLeadList']);
+    Route::get('/sms/lead/{leadId}', [SmsController::class, 'getSmsByLead']);
+    // Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
 });
 
 

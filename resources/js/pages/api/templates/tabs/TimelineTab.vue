@@ -244,39 +244,31 @@ onMounted(async () => {
     const token = localStorage.getItem('auth_token')
     const headers = { Authorization: `Bearer ${token}` }
 
-    const sentSmsRes = await axios.get('/api/sent-sms', { headers })
-    const sentSms = sentSmsRes.data.map(s => {
-      const { date, time } = formatDateTime(s.sent_at)
-      return {
-        id: `sms-sent-${s.id}`, 
-        type: 'sms',
-        direction: 'sent',
-        phone: s.to,
-        title: 'Sent SMS',
-        description: s.message,
-        leadId: s.lead_id,
-        date, time
-      }
-    })
+    // Optional: formatDateTime helper must handle both sent_at or received_at or timestamp
+    const mapSms = (smsList) => {
+      return smsList.map(s => {
+        const { date, time } = formatDateTime(s.timestamp)  // 👈 timestamp from backend
+        return {
+          id: s.id,                // already comes as 'sms-sent-xx' or 'sms-received-xx'
+          type: 'sms',
+          direction: s.direction,  // sent or received
+          phone: s.phone,
+          title: s.title,
+          description: s.description,
+          leadId: s.leadId,
+          date: s.date,         
+          time: s.time,       
+        }
+      })
+    }
 
+    const res = await axios.get(`/api/lead/${leadId}/sms`, { headers })
 
-    const recSmsRes = await axios.get('/api/incoming-sms', { headers })
-    const recSms = recSmsRes.data.map(s => {
-      const { date, time } = formatDateTime(s.received_at)
-      return {
-        id: `sms-rec-${s.id}`, 
-        type: 'sms',
-        direction: 'received',
-        phone: s.from,
-        title: 'Received SMS',
-        description: s.message,
-        leadId: s.lead_id,
-        date, time
-      }
-    })
+    const smsMessages = mapSms(res.data)
 
-    // ✅ Push into the main activities timeline
-    activities.value.push(...recSms, ...sentSms)
+    // ✅ Push into timeline or activities
+    activities.value.push(...smsMessages)
+
     // Fetch Sent Emails
     const sentResponse = await axios.get('/api/sent-emails', {
       headers: {
@@ -318,8 +310,8 @@ onMounted(async () => {
             id: `received-${reply.id}`,
             type: 'email',
             direction: 'received',
-            title: reply.title, // 'Reply Received'
-            description: reply.description, // Subject
+            title: reply.title,
+            description: reply.description,
             from: reply.from,
             to: reply.to, 
             body_plain: reply.body_plain,

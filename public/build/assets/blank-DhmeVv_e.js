@@ -1,0 +1,1 @@
+import{_ as o,l as t,h as n,o as a,e as c}from"./main-DK1TH9pn.js";const r={},s={class:"layout-wrapper layout-blank"};function _(l,p){const e=c("RouterView");return a(),t("div",s,[n(e)])}const u=o(r,[["render",_]]);export{u as default};

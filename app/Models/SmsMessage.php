@@ -32,9 +32,9 @@ class SmsMessage extends Model
     // Relationships (optional but useful for chaining)
     public function lead()
     {
-        return $this->belongsTo(Lead::class);
+        return $this->belongsTo(Lead::class, 'lead_id');
     }
-
+    
     public function user()
     {
         return $this->belongsTo(User::class);
