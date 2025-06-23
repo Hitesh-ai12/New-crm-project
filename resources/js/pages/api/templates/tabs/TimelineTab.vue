@@ -189,191 +189,142 @@ import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
+const route = useRoute();
+const leadId = ref(route.params.id);
+
 const showSmsModal = ref(false);
-const activeMenuItem = ref('all')
-const messageFilter = ref('all')
-const route = useRoute()
-const leadId = ref(route.params.id)
 const selectedSms = ref({});
-// State for modal
 const showEmailModal = ref(false);
 const selectedEmail = ref({});
+const activeMenuItem = ref('all');
+const messageFilter = ref('all');
+const activities = ref([]);
 
+// Format a datetime string safely
 const formatDateTime = (dateTimeStr) => {
-  const dt = new Date(dateTimeStr)
+  const dt = new Date(dateTimeStr);
+  if (isNaN(dt)) return { date: '', time: '' };
   return {
     date: dt.toLocaleDateString(),
     time: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
-}
+  };
+};
 
-
-const leadSms = ref([])
-
+// Fetch all SMS and Emails
 onMounted(async () => {
-  const token = localStorage.getItem('auth_token')
-  const headers = { Authorization: `Bearer ${token}` }
+  const token = localStorage.getItem('auth_token');
+  const headers = { Authorization: `Bearer ${token}` };
 
   try {
-    const response = await axios.get(`/api/lead/${leadId.value}/sms`, { headers })
-    leadSms.value = response.data.map(sms => {
-      const { date, time } = formatDateTime(sms.sent_at || sms.received_at)
+    // ✅ Get SMS messages
+    const smsResponse = await axios.get(`/api/lead/${leadId.value}/sms`, { headers });
+
+    const smsMessages = smsResponse.data.map(s => {
+      const dt = new Date(`${s.date} ${s.time}`);
       return {
-        id: sms.id,
-        direction: sms.direction,
-        phone: sms.direction === 'sent' ? sms.to : sms.from,
-        message: sms.message,
-        date,
-        time
-      }
-    })
-  } catch (e) {
-    console.error('Failed to load SMS for lead', e)
-  }
-})
+        id: s.id,
+        type: 'sms',
+        direction: s.direction,
+        phone: s.phone,
+        title: s.title,
+        description: s.description,
+        leadId: s.leadId,
+        date: dt.toLocaleDateString(),
+        time: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+    });
 
-const viewSmsContent = (sms) => {
-  selectedSms.value = sms
-  showSmsModal.value = true
-}
+    activities.value.push(...smsMessages);
 
-const activities = ref([])
-
-onMounted(async () => {
-  try {
-    const token = localStorage.getItem('auth_token')
-    const headers = { Authorization: `Bearer ${token}` }
-
-    // Optional: formatDateTime helper must handle both sent_at or received_at or timestamp
-    const mapSms = (smsList) => {
-      return smsList.map(s => {
-        const { date, time } = formatDateTime(s.timestamp)  // 👈 timestamp from backend
-        return {
-          id: s.id,                // already comes as 'sms-sent-xx' or 'sms-received-xx'
-          type: 'sms',
-          direction: s.direction,  // sent or received
-          phone: s.phone,
-          title: s.title,
-          description: s.description,
-          leadId: s.leadId,
-          date: s.date,         
-          time: s.time,       
-        }
-      })
-    }
-
-    const res = await axios.get(`/api/lead/${leadId}/sms`, { headers })
-
-    const smsMessages = mapSms(res.data)
-
-    // ✅ Push into timeline or activities
-    activities.value.push(...smsMessages)
-
-    // Fetch Sent Emails
-    const sentResponse = await axios.get('/api/sent-emails', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    console.log('Raw Sent Emails API Response:', sentResponse.data)
-
-    const sentEmails = sentResponse.data.map(email => {
-      const createdAt = new Date(email.created_at)
+    // ✅ Get sent emails
+    const sentRes = await axios.get('/api/sent-emails', { headers });
+    const sentEmails = sentRes.data.map(email => {
+      const dt = new Date(email.created_at);
       return {
-        id: `sent-${email.id}`, 
+        id: `sent-${email.id}`,
         type: 'email',
         direction: 'sent',
         title: 'Sent Email',
         description: email.subject,
-        date: createdAt.toLocaleDateString(),
-        time: createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        to: email.to, 
-        body_plain: email.message, 
+        date: dt.toLocaleDateString(),
+        time: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        to: email.to,
+        body_plain: email.message,
         body_html: null,
-        attachments: email.attachments 
-      }
-    })
-    console.log('Formatted Sent Emails:', sentEmails)
-    activities.value.push(...sentEmails)
+        attachments: email.attachments
+      };
+    });
 
-    // Fetch Received Emails (Replies)
-    const receivedResponse = await axios.get('/api/received-emails', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    activities.value.push(...sentEmails);
 
-    const receivedEmails = receivedResponse.data.map(reply => {
-        const receivedAt = new Date(reply.received_at)
-        return {
-            id: `received-${reply.id}`,
-            type: 'email',
-            direction: 'received',
-            title: reply.title,
-            description: reply.description,
-            from: reply.from,
-            to: reply.to, 
-            body_plain: reply.body_plain,
-            body_html: reply.body_html,
-            attachments: reply.attachments,
-            date: receivedAt.toLocaleDateString(),
-            time: receivedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        }
-    })
-      console.log('Formatted Received Emails:', receivedEmails)
+    // ✅ Get received email replies
+    const recRes = await axios.get('/api/received-emails', { headers });
+    const recEmails = recRes.data.map(reply => {
+      const dt = new Date(reply.received_at);
+      return {
+        id: `received-${reply.id}`,
+        type: 'email',
+        direction: 'received',
+        title: reply.title,
+        description: reply.description,
+        from: reply.from,
+        to: reply.to,
+        body_plain: reply.body_plain,
+        body_html: reply.body_html,
+        attachments: reply.attachments,
+        date: dt.toLocaleDateString(),
+        time: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+    });
 
-      // --- IMPORTANT: Push received emails to the activities array ---
-      activities.value.push(...receivedEmails);
+    activities.value.push(...recEmails);
 
-      activities.value.sort((a, b) => {
-          const dateA = new Date(`${a.date} ${a.time}`);
-          const dateB = new Date(`${b.date} ${b.time}`);
-          return dateB.getTime() - dateA.getTime(); 
-      });
+    // ✅ Sort all activities by date-time (descending)
+    activities.value.sort((a, b) => {
+      const dateA = new Date(`${a.date} ${a.time}`);
+      const dateB = new Date(`${b.date} ${b.time}`);
+      return dateB.getTime() - dateA.getTime();
+    });
 
-    } catch (error) {
-      console.error('Failed to load emails:', error)
-      if (error.response && error.response.status === 401) {
-          console.error('Authentication failed. Please log in again.');
-      }
-    }
-})
-
-
-  // 💡 Computed: Filtered list based on menu
-  const filteredActivities = computed(() => {
-    if (activeMenuItem.value === 'all') return activities.value
-
-      if (activeMenuItem.value === 'email' || activeMenuItem.value === 'sms') {
-        return activities.value.filter((a) => {
-          if (a.type !== activeMenuItem.value) return false
-          if (messageFilter.value === 'all') return true
-          return a.direction === messageFilter.value && a.type === activeMenuItem.value
-        })
-      }
-
-    return activities.value.filter((a) => a.type === activeMenuItem.value)
-  })
-
-
-  // Action when user clicks reply
-  const replyToEmail = (activity) => {
-    alert(`Replying to: ${activity.title} from ${activity.from}. Full subject: ${activity.description}`);
+  } catch (err) {
+    console.error('Failed to load timeline data:', err);
   }
+});
 
-  // Function to view full email content in a modal
-  const viewEmailContent = (activity) => {
-    selectedEmail.value = activity;
-    showEmailModal.value = true;
-  };
+// 🧠 Computed filtered activities by menu and direction
+const filteredActivities = computed(() => {
+  if (activeMenuItem.value === 'all') return activities.value;
 
-  // Helper to extract file name from path
-  const getFileNameFromPath = (path) => {
-    return path.substring(path.lastIndexOf('/') + 1);
-  };
+  return activities.value.filter(a => {
+    if (a.type !== activeMenuItem.value) return false;
+    if (messageFilter.value === 'all') return true;
+    return a.direction === messageFilter.value;
+  });
+});
 
+// Open SMS Modal
+const viewSmsContent = (sms) => {
+  selectedSms.value = sms;
+  showSmsModal.value = true;
+};
+
+// Open Email Modal
+const viewEmailContent = (email) => {
+  selectedEmail.value = email;
+  showEmailModal.value = true;
+};
+
+// Reply to Email Action
+const replyToEmail = (activity) => {
+  alert(`Replying to: ${activity.title} from ${activity.from}. Full subject: ${activity.description}`);
+};
+
+// Extract file name from path
+const getFileNameFromPath = (path) => {
+  return path.substring(path.lastIndexOf('/') + 1);
+};
 </script>
+
 
 <style scoped>
 .container {
