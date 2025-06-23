@@ -557,11 +557,40 @@
             <input v-model="newLead.email" type="email" required />
             <span v-if="errors.email" class="error">{{ errors.email }}</span>
           </label>
-          <label>
+          <!-- <label>
             Phone:
             <input v-model="newLead.phone" type="tel" required />
             <span v-if="errors.phone" class="error">{{ errors.phone }}</span>
-          </label>
+          </label> -->
+ <!-- Country Dropdown -->
+<label>
+  Country:
+  <select v-model="newLead.country_code" required>
+    <option value="" disabled>Select Country</option>
+    <option v-for="country in countries" :key="country.id" :value="country.phone_code">
+      {{ country.name }} (+{{ country.phone_code }})
+    </option>
+  </select>
+</label>
+
+<!-- Phone Input with Selected Country Code -->
+<label>
+  Phone:
+  <div style="display: flex;">
+    <span style="padding: 0.5rem; border: 1px solid #ccc; background: #eee; border-inline-end: none;">
+      +{{ newLead.country_code || 'Code' }}
+    </span>
+    <input
+      v-model="newLead.phone"
+      type="tel"
+      required
+      style="flex: 1; border: 1px solid #ccc; border-inline-start: none;"
+      placeholder="Enter phone number"
+    />
+  </div>
+  <span v-if="errors.phone" class="error">{{ errors.phone }}</span>
+</label>
+
           <label>
           Tag:
           <select v-model="newLead.tag" required>
@@ -730,6 +759,7 @@ export default {
       last_name: '',
       email: '',
       phone: '',
+      country_code: '', // 👈 new field
       tag: '',
       stage: '',
     });
@@ -738,6 +768,9 @@ export default {
     const tags = ref([]);
     const stages = ref([]);
     const sources = ref([]);
+
+    const countries = ref([]);
+    
     const allSelected = ref(false);
     const activeColomType = ref('default');
 
@@ -1080,70 +1113,67 @@ const sendEmail = async () => {
     return
   }
 
-  emailData.value.to = selectedLeadEmails.join(',')
-  const message = tinymceEditor.value.getContent()
+      emailData.value.to = selectedLeadEmails.join(',')
+      const message = tinymceEditor.value.getContent()
 
-  Swal.fire({
-    title: 'Are you sure?',
-    text: 'Do you want to send this email?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Yes, send it!',
-    cancelButtonText: 'Cancel',
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        const formData = new FormData()
-        formData.append('from', emailData.value.from)
-        formData.append('subject', emailData.value.subject)
-        formData.append('message', message)
-        formData.append('template_id', emailData.value.template)
-        formData.append('user_id', userId) // ✅ Correctly parsed
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'Do you want to send this email?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, send it!',
+        cancelButtonText: 'Cancel',
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            const formData = new FormData()
+            formData.append('from', emailData.value.from)
+            formData.append('subject', emailData.value.subject)
+            formData.append('message', message)
+            formData.append('template_id', emailData.value.template)
+            formData.append('user_id', userId) // ✅ Correctly parsed
 
-        // Append lead IDs
-        selectedLeadIds.forEach(id => {
-          formData.append('lead_ids[]', id)
-        })
+            // Append lead IDs
+            selectedLeadIds.forEach(id => {
+              formData.append('lead_ids[]', id)
+            })
 
-        // Append each email
-        selectedLeadEmails.forEach(email => {
-          formData.append('to[]', email)
-        })
+            // Append each email
+            selectedLeadEmails.forEach(email => {
+              formData.append('to[]', email)
+            })
 
-        // Append attachments
-        emailData.value.attachments.forEach(file => {
-          formData.append('attachments[]', file)
-        })
+            // Append attachments
+            emailData.value.attachments.forEach(file => {
+              formData.append('attachments[]', file)
+            })
 
-        // ✅ Send request
-        await axios.post('/api/send-email', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,  // Optional: Sanctum
+            // ✅ Send request
+            await axios.post('/api/send-email', formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,  // Optional: Sanctum
+              }
+            })
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Email Sent!',
+              text: 'Your email has been successfully sent.',
+            })
+
+            closeEmailModal()
+          } catch (error) {
+            console.error('Email Send Error:', error)
+            Swal.fire({
+              icon: 'error',
+              title: 'Failed to Send',
+              text: 'Something went wrong. Please try again later.',
+            })
           }
-        })
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Email Sent!',
-          text: 'Your email has been successfully sent.',
-        })
-
-        closeEmailModal()
-      } catch (error) {
-        console.error('Email Send Error:', error)
-        Swal.fire({
-          icon: 'error',
-          title: 'Failed to Send',
-          text: 'Something went wrong. Please try again later.',
-        })
-      }
+        }
+      })
     }
-  })
-}
-
-
-
 
 
     const showEmailLeadModal = ref(false);
@@ -1762,17 +1792,39 @@ const sendEmail = async () => {
       }, 5000);
     };
 
+
+    const fetchCountries = async () => {
+      try {
+        const token = localStorage.getItem('auth_token'); // 🔑
+
+        const response = await axios.get('/api/countries', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        countries.value = response.data;
+      } catch (err) {
+        console.error('Error fetching countries:', err);
+      }
+    };
+
+
     const submitForm = async () => {
       if (!validateForm()) return;
 
       try {
         const authToken = localStorage.getItem('auth_token');
 
+        const fullPhone = `+${newLead.value.country_code}${newLead.value.phone}`;
+
         const response = await axios.post('/api/leads', {
+          
           first_name: newLead.value.first_name,
           last_name: newLead.value.last_name,
           email: newLead.value.email,
-          phone: newLead.value.phone,
+          phone: fullPhone,
+          country_code: newLead.value.country_code, // ✅ add this
           tag: String(newLead.value.tag),
           stage: String(newLead.value.stage),
         }, {
@@ -1789,9 +1841,11 @@ const sendEmail = async () => {
           last_name: '',
           email: '',
           phone: '',
+          country_code: '', // ✅ reset this too
           tag: '',
           stage: ''
         };
+
 
         showForm.value = false;
 
@@ -1954,7 +2008,7 @@ const sendEmail = async () => {
     onMounted(async () => {
       await fetchLeads(activeLeadType.value);
       await fetchItems();
-      
+     
       try {
         await destroyTinyMCE(); 
       } catch (error) {
@@ -1962,9 +2016,11 @@ const sendEmail = async () => {
        fetchSmsTemplates();
       await fetchTemplates();
       await fetchColumnSettings();
+       await fetchCountries();
     });
 
     return {
+      countries,
       activeColomType,
       allSelected,
       removeAttachment,

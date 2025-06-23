@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\FormController;
 use App\Http\Controllers\Template\TemplateController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CountryController;
 use App\Models\ApiKey;
 use App\Http\Controllers\Email\EmailController;
 use App\Http\Controllers\SignatureController;
@@ -56,6 +57,9 @@ Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/countries', [CountryController::class, 'index']);
+
     //Route::get('/templates', [TemplateController::class, 'index']);
     Route::get('/templates', [TemplateController::class, 'index']);
     Route::get('/leads', [LeadController::class, 'index']);

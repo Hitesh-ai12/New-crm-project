@@ -27,7 +27,7 @@ class LeadController extends Controller
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'nullable|string',
                 'email' => 'required|email|unique:leads|max:255',
-                'phone' => 'required|regex:/^\d{10}$/|unique:leads',
+                'phone' => 'required|regex:/^\+\d{10,15}$/|unique:leads,phone',
                 'tag' => 'nullable|string|max:255',
                 'stage' => 'nullable|string|max:255',
                 'new_listing_alert' => 'nullable|string',
