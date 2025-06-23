@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Sms;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Twilio\Rest\Client;
-use App\Models\SentSms;
+use App\Models\SmsMessage;
 use App\Models\Lead;
 use App\Models\IncomingSms;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +28,6 @@ class SmsController extends Controller
 
             $twilio = new Client($twilioSid, $twilioAuthToken);
 
-            // Ensure both arrays are aligned
             $leadIds = $request->lead_ids;
             $toNumbers = explode(',', $request->to);
 
@@ -40,13 +39,12 @@ class SmsController extends Controller
 
             foreach ($leadIds as $index => $leadId) {
                 $to = trim($toNumbers[$index]);
-
                 $lead = Lead::find($leadId);
+
                 if (!$lead) {
                     continue;
                 }
 
-                // Placeholder setup
                 $placeholders = [
                     '{{first_name}}' => $lead->first_name,
                     '{{last_name}}' => $lead->last_name ?? '',
@@ -55,26 +53,24 @@ class SmsController extends Controller
                     '{{city}}' => $lead->city ?? '',
                 ];
 
-                // Replace placeholders
                 $personalizedMessage = strtr($messageTemplate, $placeholders);
 
                 // Send SMS via Twilio
-                $twilio->messages->create(
-                    $to,
-                    [
-                        'from' => $twilioPhoneNumber,
-                        'body' => $personalizedMessage,
-                    ]
-                );
-
-                // Store each SMS
-                SentSms::create([
-                    'user_id' => $request->user_id, 
-                    'lead_id' => $leadId,       
+                $twilio->messages->create($to, [
                     'from' => $twilioPhoneNumber,
-                    'to' => $to,
-                    'message' => $personalizedMessage,
-                    'sent_at' => now(),
+                    'body' => $personalizedMessage,
+                ]);
+
+                // Save in `sms_messages` table
+                SmsMessage::create([
+                    'user_id'         => $request->user_id,
+                    'lead_id'         => $leadId,
+                    'from'            => $twilioPhoneNumber,
+                    'to'              => $to,
+                    'message'         => $personalizedMessage,
+                    'type'            => 'sent',
+                    'delivery_status' => 'sent', // change to 'delivered' if you handle webhook later
+                    'timestamp'       => now(),
                 ]);
             }
 
@@ -84,80 +80,80 @@ class SmsController extends Controller
         }
     }
 
-
-    public function incomingSms(Request $request)
-    {
-        try {
-            // Log incoming raw data into custom log file
-            Log::channel('twilio_sms')->info('Incoming SMS Webhook Hit', [
-                'From' => $request->input('From'),
-                'To' => $request->input('To'),
-                'Body' => $request->input('Body'),
-            ]);
-
-            $from = $request->input('From');
-            $to = $request->input('To');
-            $message = $request->input('Body');
-            $receivedAt = now();
-
-            $lead = Lead::where('phone', $from)->first();
-
-            if (!$lead) {
-                Log::channel('twilio_sms')->warning("No matching lead found for number: $from");
-                return response('No matching lead found', 200); 
-            }
-
-            IncomingSms::create([
-                'user_id' => $lead->user_id ?? null,
-                'lead_id' => $lead->id,
-                'from' => $from,
-                'to' => $to,
-                'message' => $message,
-                'received_at' => $receivedAt,
-            ]);
-
-            Log::channel('twilio_sms')->info("SMS saved for Lead ID: " . $lead->id);
-
-            return response('Message received and stored', 200);
-
-        } catch (\Exception $e) {
-            Log::channel('twilio_sms')->error('Error processing SMS', [
-                'error' => $e->getMessage()
-            ]);
-            return response('Error processing SMS', 500);
-        }
-    }
-
-        public function getIncomingSms()
+        public function incomingSms(Request $request)
         {
             try {
-                $userId = Auth::id();
-                Log::info('Fetching incoming SMS for user ID: ' . $userId);
+                Log::channel('twilio_sms')->info('Incoming SMS Webhook Hit', [
+                    'From' => $request->input('From'),
+                    'To' => $request->input('To'),
+                    'Body' => $request->input('Body'),
+                ]);
 
-                $smsList = \App\Models\IncomingSms::where('user_id', $userId)
-                    ->orderBy('received_at', 'desc')
-                    ->get()
-                    ->map(function ($s) {
-                        $dt = Carbon::parse($s->received_at);
-                        return [
-                            'id' => 'sms-rec-' . $s->id,
-                            'type' => 'sms',
-                            'direction' => 'received',
-                            'phone' => $s->from,
-                            'title' => 'Received SMS',
-                            'description' => $s->message,
-                            'leadId' => $s->lead_id,
-                            'date' => $dt->format('Y-m-d'),
-                            'time' => $dt->format('H:i'),
-                        ];
-                    });
+                $from = $request->input('From');
+                $to = $request->input('To');
+                $message = $request->input('Body');
+                $receivedAt = now();
 
-                return response()->json($smsList);
+                $lead = Lead::where('phone', $from)->first();
+
+                if (!$lead) {
+                    Log::channel('twilio_sms')->warning("No matching lead found for number: $from");
+                    return response('No matching lead found', 200);
+                }
+
+                SmsMessage::create([
+                    'user_id' => $lead->user_id ?? null,
+                    'lead_id' => $lead->id,
+                    'from' => $from,
+                    'to' => $to,
+                    'message' => $message,
+                    'type' => 'received',
+                    'delivery_status' => 'delivered',
+                    'timestamp' => $receivedAt,
+                ]);
+
+                Log::channel('twilio_sms')->info("Received SMS saved for Lead ID: " . $lead->id);
+
+                return response('Message received and stored', 200);
             } catch (\Exception $e) {
-                Log::error('Error fetching incoming SMS', ['error' => $e->getMessage()]);
-                return response()->json(['error' => 'Failed to fetch SMS'], 500);
+                Log::channel('twilio_sms')->error('Error processing SMS', [
+                    'error' => $e->getMessage()
+                ]);
+                return response('Error processing SMS', 500);
             }
         }
+
+    public function getIncomingSms()
+    {
+        try {
+            $userId = Auth::id();
+            Log::info('Fetching incoming SMS for user ID: ' . $userId);
+
+            $smsList = SmsMessage::where('user_id', $userId)
+                ->where('type', 'received')
+                ->orderBy('timestamp', 'desc')
+                ->get()
+                ->map(function ($s) {
+                    $dt = Carbon::parse($s->timestamp);
+                    return [
+                        'id' => 'sms-rec-' . $s->id,
+                        'type' => 'sms',
+                        'direction' => 'received',
+                        'phone' => $s->from,
+                        'title' => 'Received SMS',
+                        'description' => $s->message,
+                        'leadId' => $s->lead_id,
+                        'date' => $dt->format('Y-m-d'),
+                        'time' => $dt->format('H:i'),
+                    ];
+                });
+
+            return response()->json($smsList);
+        } catch (\Exception $e) {
+            Log::error('Error fetching incoming SMS', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to fetch SMS'], 500);
+        }
+    }
 
 
     public function smsStatus(Request $request)
@@ -175,10 +171,7 @@ class SmsController extends Controller
     }
 
 
-        
-
-
-
+    
     public function getSentSms(Request $request)
     {
         $sentSms = SentSms::where('user_id', Auth::id())
