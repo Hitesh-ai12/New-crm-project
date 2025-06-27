@@ -54,6 +54,7 @@ Route::post('/gmail/webhook', [GmailWebhookController::class, 'handle']);
 Route::get('/gmail/fetch', [GmailWebhookController::class, 'fetchLatestEmail']); 
 Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
+Route::get('/email/lead/{leadId}', [EmailController::class, 'getLeadEmails']);
 
 
 Route::middleware('auth:sanctum')->group(function () {

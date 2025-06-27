@@ -109,7 +109,7 @@ class EmailController extends Controller
     {
         $userId = $request->user()->id; 
 
-        $emails = SentEmail::where('user_id', $userId)
+        $emails = EmailLog::where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get(['id', 'lead_id', 'to', 'subject', 'message', 'created_at']);
 
@@ -185,7 +185,7 @@ class EmailController extends Controller
 
     public function getEmailTimeline(Request $request, $leadEmail)
     {
-        $sentEmails = SentEmail::where('to', $leadEmail)
+        $sentEmails = EmailLog::where('to', $leadEmail)
             ->get()
             ->map(function ($email) {
                 return [
@@ -328,5 +328,41 @@ public function getLeadMessages(Request $request, $leadId)
     );
 
     return response()->json($paginated);
+}
+
+// Controller
+public function getLeadEmails($leadId)
+{
+    $sent = EmailLog::where('lead_id', $leadId)
+        ->select('subject', 'message', 'created_at as time', 'direction', 'from', 'to')
+        ->get()
+        ->map(function ($email) {
+            return [
+                'direction' => 'sent',
+                'subject' => $email->subject,
+                'description' => strip_tags($email->message),
+                'time' => $email->time->format('H:i'),
+                'date' => $email->time->format('Y-m-d'),
+                'from' => $email->from,
+                'to' => $email->to,
+            ];
+        });
+
+    $received = EmailReply::where('lead_id', $leadId)
+        ->select('subject', 'message', 'received_at as time', 'from', 'to')
+        ->get()
+        ->map(function ($email) {
+            return [
+                'direction' => 'received',
+                'subject' => $email->subject,
+                'description' => strip_tags($email->message),
+                'time' => $email->time->format('H:i'),
+                'date' => $email->time->format('Y-m-d'),
+                'from' => $email->from,
+                'to' => $email->to,
+            ];
+        });
+
+    return response()->json($sent->merge($received)->sortBy('date')->values());
 }
 }

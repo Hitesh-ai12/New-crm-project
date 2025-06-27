@@ -94,13 +94,19 @@
             v-model="newMessage"
             @keyup.enter="sendMessage"
           />
-          <button
-            class="btn btn-primary rounded-circle position-absolute"
-            style=" block-size: 40px; inline-size: 40px; inset-block-start: 50%;inset-inline-end: 10px; transform: translateY(-50%);"
-            @click="sendMessage"
-          >
-            <i class="bi bi-send"></i>
-          </button>
+            <button
+              class="btn btn-primary rounded-circle position-absolute"
+              style="
+                z-index: 1;
+                block-size: 40px;
+                inline-size: 40px;
+                inset-block-start: 50%;
+                inset-inline-end: 10px;
+                transform: translateY(-50%);"
+              @click="sendMessage"
+            >
+              <i class="bi bi-send"></i>
+            </button>
         </div>
       </div>
     </div>
@@ -110,6 +116,7 @@
 import axios from 'axios';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import Swal from 'sweetalert2';
 
 export default {
   data() {
@@ -133,7 +140,6 @@ export default {
       try {
         const token = localStorage.getItem('auth_token');
         const headers = { Authorization: `Bearer ${token}` };
-
         const res = await axios.get("/api/sms/leads", { headers });
         this.leads = res.data;
       } catch (err) {
@@ -142,56 +148,83 @@ export default {
     },
 
     async selectChat(lead) {
-      this.selectedChat = lead;
-
       try {
         const token = localStorage.getItem('auth_token');
         const headers = { Authorization: `Bearer ${token}` };
 
         const res = await axios.get(`/api/sms/lead/${lead.leadId}`, { headers });
-        this.messages = res.data.reverse();
+
+        const messages = res.data;
+
+        const phone = messages.length > 0 ? messages[0].phone : lead.phone || '';
+
+        this.selectedChat = {
+          ...lead,
+          phone
+        };
+
+        this.messages = messages.reverse();
+
         this.$nextTick(() => this.scrollToBottom());
       } catch (err) {
         console.error("Error loading messages:", err);
       }
     },
 
+    // Send SMS message via API
+    async sendMessage() {
+      
+      const token = localStorage.getItem('auth_token');
+      const userId = parseInt(localStorage.getItem('user_id'));
+      const headers = { Authorization: `Bearer ${token}` };
+
+      try {
+        const payload = {
+          lead_ids: [this.selectedChat.leadId],
+          user_id: userId,
+          from: '+16187452168',
+          to: this.selectedChat.phone,
+          subject: 'SMS Chat',
+          message: this.newMessage,
+        };
+
+        await axios.post('/api/send-sms', payload, { headers });
+
+        // Format time & date
+        const now = new Date();
+        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const date = now.toISOString().slice(0, 10);
+
+        // Push to UI
+        this.messages.push({
+          id: `sms-sent-${Date.now()}`,
+          type: 'sms',
+          direction: 'sent',
+          phone: this.selectedChat.phone,
+          title: 'Sent SMS',
+          description: this.newMessage,
+          leadId: this.selectedChat.leadId,
+          date,
+          time,
+        });
+
+        this.newMessage = '';
+        this.$nextTick(() => this.scrollToBottom());
+      } catch (err) {
+        console.error("Send SMS Error:", err);
+        Swal.fire("Error", "Failed to send SMS.", "error");
+      }
+    },
+
+    // Scroll to bottom of message window
     scrollToBottom() {
       const el = this.$refs.messagesArea;
       if (el) el.scrollTop = el.scrollHeight;
     },
-
-    sendMessage() {
-      if (!this.newMessage.trim()) return;
-
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const ampm = hours >= 12 ? "PM" : "AM";
-      const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
-      const time = `${formattedHours}:${minutes < 10 ? "0" + minutes : minutes} ${ampm}`;
-
-      const newMsg = {
-        description: this.newMessage,
-        time: time,
-        direction: "sent",
-        date: now.toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        }),
-      };
-
-      this.messages.push(newMsg);
-      this.newMessage = "";
-      this.$nextTick(() => this.scrollToBottom());
-
-      // Optional: send to server here using axios.post(...)
-    },
   },
+
   mounted() {
     this.fetchLeads();
   },
 };
 </script>
-

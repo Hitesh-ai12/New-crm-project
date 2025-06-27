@@ -1,41 +1,69 @@
 <template>
-  <div class="row">
-    <div class="col-md-4 border-end">
-      <div class="list-group">
-        <button
-          v-for="email in emailList"
-          :key="email.id"
-          class="list-group-item list-group-item-action"
-          @click="selected = email"
-        >
-          {{ email.subject }}
-        </button>
+  <div class="email-chat d-flex shadow rounded" style="block-size: 90vh;">
+    <!-- Lead Sidebar -->
+    <div class="border-end p-3" style="inline-size: 300px;">
+      <input class="form-control mb-2" v-model="searchQuery" placeholder="Search lead" />
+      <div v-for="lead in filteredLeads" :key="lead.leadId" class="lead-item p-2 border-bottom" @click="selectLead(lead)" :class="{ 'bg-primary text-white': selectedLead?.leadId === lead.leadId }">
+        {{ lead.name }}
       </div>
     </div>
 
-    <div class="col-md-8">
-      <div v-if="selected" class="p-3 border rounded">
-        <h5>{{ selected.subject }}</h5>
-        <div class="text-muted small">{{ selected.time }}</div>
-        <p>{{ selected.body }}</p>
+    <!-- Chat Window -->
+    <div class="flex-grow-1 d-flex flex-column bg-light">
+      <div class="border-bottom p-3 bg-white">
+        <h5 v-if="selectedLead">{{ selectedLead.name }}</h5>
+        <p v-else class="text-muted">Select a lead to view emails</p>
       </div>
+
+      <div class="flex-grow-1 overflow-auto p-3" ref="emailArea">
+        <div v-for="(msg, index) in messages" :key="index" class="mb-3">
+          <div class="text-center text-muted small" v-if="msg.date">{{ msg.date }}</div>
+          <div :class="['p-3 rounded shadow-sm', msg.direction === 'sent' ? 'bg-info text-white ms-auto' : 'bg-white me-auto']" style="max-inline-size: 75%;">
+            <strong>{{ msg.subject }}</strong>
+            <div class="mt-1">{{ msg.description }}</div>
+            <small class="d-block text-end mt-1">{{ msg.time }}</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optional Compose Input -->
+      <!-- You can add TinyMCE and a Send Email button if needed -->
     </div>
-    
   </div>
 </template>
+
 <script>
+import axios from 'axios';
+
 export default {
-  name: "Email",
   data() {
     return {
-      emailList: [
-        { id: 1, subject: "Welcome Email", time: "10:00 AM" },
-        { id: 2, subject: "Meeting Reminder", time: "12:30 PM" },
-      ],
-      emailBody: [
-        { id: 1, subject: "Welcome Email", time: "10:00 AM", body: "Welcome to our service!" },
-      ],
+      leads: [],
+      selectedLead: null,
+      messages: [],
+      searchQuery: '',
     };
+  },
+  computed: {
+    filteredLeads() {
+      return this.leads.filter(lead => lead.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+    },
+  },
+  methods: {
+
+    async selectLead(lead) {
+      this.selectedLead = lead;
+      const res = await axios.get(`/api/email/lead/${lead.leadId}`);
+      this.messages = res.data.reverse();
+      this.$nextTick(() => this.scrollToBottom());
+    },
+    scrollToBottom() {
+      const el = this.$refs.emailArea;
+      if (el) el.scrollTop = el.scrollHeight;
+    },
+  },
+  mounted() {
+    this.selectLead();
   }
 };
 </script>
