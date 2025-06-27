@@ -13,106 +13,101 @@ use App\Models\EmailLog;
 use App\Models\SentEmail;
 use Carbon\Carbon;
 use App\Models\EmailReply;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+
+
 
 
 
 class EmailController extends Controller
 {
-public function sendEmail(Request $request)
-{
-    $request->validate([
-        'to' => 'required|array',
-        'to.*' => 'email',
-        'subject' => 'required|string',
-        'message' => 'required|string',
-        'template_id' => 'nullable|exists:templates,id',
-        'attachments.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx',
-        'user_id' => 'required|integer',
-        'lead_ids' => 'required|array',
-    ]);
 
-    $from = $request->input('from', config('mail.from.address'));
-    $userId = $request->input('user_id');
-    $leadIdMap = array_flip($request->input('lead_ids'));
-
-    $subjectTemplate = $request->input('subject');
-    $messageTemplate = $request->input('message');
-    $attachments = $request->file('attachments', []);
-    $attachmentPaths = [];
-
-    // Upload attachments
-    foreach ($attachments as $file) {
-        $path = $file->store('email_attachments', 'public');
-        $attachmentPaths[] = $path;
-    }
-
-    // Send to each recipient
-    foreach ($request->input('to') as $email) {
-        $lead = Lead::where('email', $email)->first();
-
-        if (!$lead || !isset($leadIdMap[$lead->id])) {
-            continue;
-        }
-
-        $placeholders = [
-            '{{first_name}}' => $lead->first_name,
-            '{{last_name}}' => $lead->last_name ?? '',
-            '{{email}}' => $lead->email,
-            '{{phone}}' => $lead->phone ?? '',
-            '{{city}}' => $lead->city ?? '',
-        ];
-
-        $personalizedSubject = strtr($subjectTemplate, $placeholders);
-        $personalizedMessage = strtr($messageTemplate, $placeholders);
-
-        try {
-            // Send email
-            Mail::to($email)->send(new CrmMailable([
-                'from' => $from,
-                'to' => $email,
-                'subject' => $personalizedSubject,
-                'message' => $personalizedMessage,
-                'attachments' => $attachments,
-                'attachmentPaths' => $attachmentPaths,
-            ]));
-
-            // Log in email_logs
-            EmailLog::create([
-                'lead_id' => $lead->id,
-                'user_id' => $userId,
-                'to' => $email,
-                'from' => $from,
-                'subject' => $personalizedSubject,
-                'message' => $personalizedMessage,
-                'direction' => 'sent',
-                'sent_at' => now(),
-                'attachments' => json_encode($attachmentPaths),
-            ]);
-
-            // Log in sent_emails
-            SentEmail::create([
-                'user_id' => $userId,
-                'lead_id' => $lead->id,
-                'from' => $from,
-                'to' => $email,
-                'subject' => $personalizedSubject,
-                'message' => $personalizedMessage,
-                'attachments' => json_encode($attachmentPaths),
-            ]);
-        } catch (\Exception $e) {
-            \Log::error("❌ Failed to send email to {$email}: " . $e->getMessage());
-            continue;
-        }
-    }
-
-    return response()->json(['message' => '✅ Emails sent and stored successfully!']);
-}
-
-
-
-public function getSentEmails(Request $request)
+    public function sendEmail(Request $request)
     {
-        $userId = $request->user()->id; // uses auth()
+        $request->validate([
+            'to' => 'required|array',
+            'to.*' => 'email',
+            'subject' => 'required|string',
+            'message' => 'required|string',
+            'template_id' => 'nullable|exists:templates,id',
+            'attachments.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx',
+            'user_id' => 'required|integer',
+            'lead_ids' => 'required|array',
+        ]);
+
+        $from = $request->input('from', config('mail.from.address'));
+        $userId = $request->input('user_id');
+        $leadIdMap = array_flip($request->input('lead_ids'));
+
+        $subjectTemplate = $request->input('subject');
+        $messageTemplate = $request->input('message');
+        $attachments = $request->file('attachments', []);
+        $attachmentPaths = [];
+
+        // Upload attachments
+        foreach ($attachments as $file) {
+            $path = $file->store('email_attachments', 'public');
+            $attachmentPaths[] = $path;
+        }
+
+        // Send to each recipient
+        foreach ($request->input('to') as $email) {
+            $lead = Lead::where('email', $email)->first();
+
+            if (!$lead || !isset($leadIdMap[$lead->id])) {
+                continue;
+            }
+
+            $placeholders = [
+                '{{first_name}}' => $lead->first_name,
+                '{{last_name}}' => $lead->last_name ?? '',
+                '{{email}}' => $lead->email,
+                '{{phone}}' => $lead->phone ?? '',
+                '{{city}}' => $lead->city ?? '',
+            ];
+
+            $personalizedSubject = strtr($subjectTemplate, $placeholders);
+            $personalizedMessage = strtr($messageTemplate, $placeholders);
+
+            try {
+                // Send email
+                Mail::to($email)->send(new CrmMailable([
+                    'from' => $from,
+                    'to' => $email,
+                    'subject' => $personalizedSubject,
+                    'message' => $personalizedMessage,
+                    'attachments' => $attachments,
+                    'attachmentPaths' => $attachmentPaths,
+                ]));
+
+                // Log in email_logs
+                EmailLog::create([
+                    'lead_id' => $lead->id,
+                    'user_id' => $userId,
+                    'to' => $email,
+                    'from' => $from,
+                    'subject' => $personalizedSubject,
+                    'message' => $personalizedMessage,
+                    'direction' => 'sent',
+                    'sent_at' => now(),
+                    'attachments' => json_encode($attachmentPaths),
+                ]);
+
+            } catch (\Exception $e) {
+                \Log::error("❌ Failed to send email to {$email}: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        return response()->json(['message' => '✅ Emails sent and stored successfully!']);
+    }
+
+
+
+    public function getSentEmails(Request $request)
+    {
+        $userId = $request->user()->id; 
 
         $emails = SentEmail::where('user_id', $userId)
             ->orderBy('created_at', 'desc')
@@ -120,6 +115,7 @@ public function getSentEmails(Request $request)
 
         return response()->json($emails);
     }
+
 
     public function fetchReplies()
     {
@@ -134,6 +130,7 @@ public function getSentEmails(Request $request)
             echo "Body: ".$message->getTextBody()."<hr>";
         }
     } 
+
 
     public function inbox()
     {
@@ -185,6 +182,7 @@ public function getSentEmails(Request $request)
         return response()->json($replies);
     }
 
+
     public function getEmailTimeline(Request $request, $leadEmail)
     {
         $sentEmails = SentEmail::where('to', $leadEmail)
@@ -218,6 +216,7 @@ public function getSentEmails(Request $request)
         return response()->json($combined->isNotEmpty() ? $combined : [['title' => 'No emails found']]);
     }
 
+
     public function getEmailLogs(Lead $lead)
     {
         $logs = $lead->emailLogs()->latest()->get();
@@ -225,11 +224,13 @@ public function getSentEmails(Request $request)
         return response()->json($logs);
     }
 
+
     public function getReceivedEmails(Request $request)
     {
         $receivedReplies = EmailReply::orderBy('received_at', 'desc')->get();
 
         $formattedReplies = $receivedReplies->map(function ($reply) {
+
             $receivedAt = $reply->received_at ? \Carbon\Carbon::parse($reply->received_at) : null;
 
             return [
@@ -251,5 +252,81 @@ public function getSentEmails(Request $request)
         return response()->json($formattedReplies);
     }
 
+public function getLeadMessages(Request $request, $leadId)
+{
+    $page = $request->input('page', 1);
+    $perPage = $request->input('per_page', 20);
+    $offset = ($page - 1) * $perPage;
 
+    // Combine email_logs and email_replies
+    $combined = DB::table('email_logs')
+        ->select(
+            'id',
+            'lead_id',
+            'from',
+            'to',
+            'subject',
+            'message',
+            'attachments',
+            DB::raw("'sent' as direction"),
+            'created_at',
+            'sent_at as date_time'
+        )
+        ->where('lead_id', $leadId)
+
+        ->unionAll(
+            DB::table('email_replies')
+                ->select(
+                    'id',
+                    'lead_id',
+                    'from',
+                    'to',
+                    'subject',
+                    'message',
+                    DB::raw('NULL as attachments'),
+                    DB::raw("'received' as direction"),
+                    'created_at',
+                    'received_at as date_time'
+                )
+                ->where('lead_id', $leadId)
+        );
+
+    // Wrap the union in a subquery to sort and paginate
+    $results = DB::table(DB::raw("({$combined->toSql()}) as combined"))
+        ->mergeBindings($combined)
+        ->orderByDesc('date_time')
+        ->offset($offset)
+        ->limit($perPage)
+        ->get();
+
+    // Total count for pagination
+    $totalCount = DB::table('email_logs')->where('lead_id', $leadId)->count() +
+                  DB::table('email_replies')->where('lead_id', $leadId)->count();
+
+    // Format response for frontend
+    $formatted = $results->map(function ($item) {
+        return [
+            'type' => 'email',
+            'direction' => $item->direction,
+            'subject' => $item->subject,
+            'message' => $item->message,
+            'from' => $item->from,
+            'to' => $item->to,
+            'attachments' => $item->attachments ? json_decode($item->attachments) : [],
+            'date' => $item->date_time ? Carbon::parse($item->date_time)->format('Y-m-d') : '',
+            'time' => $item->date_time ? Carbon::parse($item->date_time)->format('H:i:s') : '',
+        ];
+    });
+
+    // Paginate manually
+    $paginated = new LengthAwarePaginator(
+        $formatted,
+        $totalCount,
+        $perPage,
+        $page,
+        ['path' => url()->current()]
+    );
+
+    return response()->json($paginated);
+}
 }

@@ -9,20 +9,20 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-public function up()
-{
-    Schema::create('email_replies', function (Blueprint $table) {
-        $table->id();
-        $table->unsignedBigInteger('user_id')->nullable();
-        $table->unsignedBigInteger('lead_id')->nullable();
-        $table->string('from');
-        $table->string('to');
-        $table->string('subject');
-        $table->text('message')->nullable();
-        $table->timestamp('received_at')->nullable();
-        $table->timestamps();
-    });
-}
+    public function up()
+    {
+        Schema::create('email_replies', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('lead_id')->nullable();
+            $table->string('from');
+            $table->string('to');
+            $table->string('subject');
+            $table->text('message')->nullable();
+            $table->timestamp('received_at')->nullable();
+            $table->timestamps();
+        });
+    }
 
 
     /**

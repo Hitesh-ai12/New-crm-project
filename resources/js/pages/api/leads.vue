@@ -557,39 +557,35 @@
             <input v-model="newLead.email" type="email" required />
             <span v-if="errors.email" class="error">{{ errors.email }}</span>
           </label>
-          <!-- <label>
-            Phone:
-            <input v-model="newLead.phone" type="tel" required />
-            <span v-if="errors.phone" class="error">{{ errors.phone }}</span>
-          </label> -->
- <!-- Country Dropdown -->
-<label>
-  Country:
-  <select v-model="newLead.country_code" required>
-    <option value="" disabled>Select Country</option>
-    <option v-for="country in countries" :key="country.id" :value="country.phone_code">
-      {{ country.name }} (+{{ country.phone_code }})
-    </option>
-  </select>
-</label>
 
-<!-- Phone Input with Selected Country Code -->
-<label>
-  Phone:
-  <div style="display: flex;">
-    <span style="padding: 0.5rem; border: 1px solid #ccc; background: #eee; border-inline-end: none;">
-      +{{ newLead.country_code || 'Code' }}
-    </span>
-    <input
-      v-model="newLead.phone"
-      type="tel"
-      required
-      style="flex: 1; border: 1px solid #ccc; border-inline-start: none;"
-      placeholder="Enter phone number"
-    />
-  </div>
-  <span v-if="errors.phone" class="error">{{ errors.phone }}</span>
-</label>
+          <!-- Country Dropdown -->
+          <label>
+            Country:
+            <select v-model="newLead.country_code" required>
+              <option value="" disabled>Select Country</option>
+              <option v-for="country in countries" :key="country.id" :value="country.phone_code">
+                {{ country.name }} (+{{ country.phone_code }})
+              </option>
+            </select>
+          </label>
+
+          <!-- Phone Input with Selected Country Code -->
+          <label>
+            Phone:
+            <div style="display: flex;">
+              <span style="padding: 0.5rem; border: 1px solid #ccc; background: #eee; border-inline-end: none;">
+                +{{ newLead.country_code || 'Code' }}
+              </span>
+              <input
+                v-model="newLead.phone"
+                type="tel"
+                required
+                style="flex: 1; border: 1px solid #ccc; border-inline-start: none;"
+                placeholder="Enter phone number"
+              />
+            </div>
+            <span v-if="errors.phone" class="error">{{ errors.phone }}</span>
+          </label>
 
           <label>
           Tag:
@@ -955,66 +951,65 @@ export default {
           }
         };
 
-        const initializeTinyMCE = () => {
-          nextTick(() => {
-            if (!tinymce.get("email-editor")) {
-              tinymce.init({
-                selector: "#email-editor",
-                plugins: 'link lists image code',
-                toolbar: "undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | link image media | mergeFieldButton | preview fullscreen",
-                menubar: "file edit view insert format tools table help",
-                height: 500,
-                setup: (editor) => {
-                  tinymceEditor.value = editor;
+      const initializeTinyMCE = () => {
+        nextTick(() => {
+          if (!tinymce.get("email-editor")) {
+            tinymce.init({
+              selector: "#email-editor",
+              license_key: 'gpl',
+              plugins: 'link lists image code',
+              toolbar: "undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | link image media | mergeFieldButton | preview fullscreen",
+              menubar: "file edit view insert format tools table help",
+              height: 500,
+              setup: (editor) => {
+                tinymceEditor.value = editor;
 
-                  // Custom Merge Field Button
-                  editor.ui.registry.addMenuButton("mergeFieldButton", {
-                    text: "Merge Fields",
-                    fetch: (callback) => {
-                      const items = mergeFields.value.map((field) => ({
-                        type: "menuitem",
-                        text: field,
-                        onAction: () => {
-                          editor.insertContent(field);
-                        },
-                      }));
-                      callback(items);
-                    },
-                  });
-                },
-                image_title: true,
-                automatic_uploads: true,
-                file_picker_types: "image",
-                file_picker_callback: (callback, value, meta) => {
-                  const input = document.createElement("input");
-                  input.setAttribute("type", "file");
-                  input.setAttribute("accept", "image/*");
+                // Custom Merge Field Button
+                editor.ui.registry.addMenuButton("mergeFieldButton", {
+                  text: "Merge Fields",
+                  fetch: (callback) => {
+                    const items = mergeFields.value.map((field) => ({
+                      type: "menuitem",
+                      text: field,
+                      onAction: () => {
+                        editor.insertContent(field);
+                      },
+                    }));
+                    callback(items);
+                  },
+                });
+              },
+              image_title: true,
+              automatic_uploads: true,
+              file_picker_types: "image",
+              file_picker_callback: (callback, value, meta) => {
+                const input = document.createElement("input");
+                input.setAttribute("type", "file");
+                input.setAttribute("accept", "image/*");
 
-                  input.onchange = function () {
-                    const file = this.files[0];
-                    const reader = new FileReader();
+                input.onchange = function () {
+                  const file = this.files[0];
+                  const reader = new FileReader();
 
-                    reader.onload = function () {
-                      const base64 = reader.result;
-                      callback(base64, { title: file.name });
-                    };
-                    reader.readAsDataURL(file);
+                  reader.onload = function () {
+                    const base64 = reader.result;
+                    callback(base64, { title: file.name });
                   };
+                  reader.readAsDataURL(file);
+                };
 
-                  input.click();
-                },
-              });
-            }
-          });
-        };
+                input.click();
+              },
+            });
+          }
+        });
+      };
 
-
-
-    const destroyTinyMCE = () => {
-      if (tinymce.get("email-editor")) { 
-        tinymce.get("email-editor").remove();
-      }
-    };
+      const destroyTinyMCE = () => {
+        if (tinymce.get("email-editor")) { 
+          tinymce.get("email-editor").remove();
+        }
+      };
 
     const openEmailModal = () => {
       if (selectedLeads.value.length === 0) {
@@ -1039,33 +1034,33 @@ export default {
         destroyTinyMCE();
       };
 
-      const loadTemplate = () => {
-        const selectedTemplate = templates.value.find(
-          (template) => template.id === emailData.value.template
-        );
+    const loadTemplate = () => {
+      const selectedTemplate = templates.value.find(
+        (template) => template.id === emailData.value.template
+      );
 
-        if (selectedTemplate) {
-          let content = selectedTemplate.content;
-          tinymce.get("email-editor").setContent(content);
+      if (selectedTemplate) {
+        let content = selectedTemplate.content;
+        tinymce.get("email-editor").setContent(content);
 
-          emailData.value.subject = selectedTemplate.subject;
+        emailData.value.subject = selectedTemplate.subject;
 
-          // ✅ Fix: set attachment using correct key
-          if (selectedTemplate.attachment_path) {
-            emailData.value.attachments = [selectedTemplate.attachment_path];
-          } else {
-            emailData.value.attachments = [];
-          }
-
-          if (selectedSignature.value) {
-            addSignatureToBody();
-          }
+        // ✅ Fix: set attachment using correct key
+        if (selectedTemplate.attachment_path) {
+          emailData.value.attachments = [selectedTemplate.attachment_path];
+        } else {
+          emailData.value.attachments = [];
         }
-      };
 
-      const removeAttachment = (index) => {
-          emailData.value.attachments.splice(index, 1);
-        };
+        if (selectedSignature.value) {
+          addSignatureToBody();
+        }
+      }
+    };
+
+    const removeAttachment = (index) => {
+        emailData.value.attachments.splice(index, 1);
+      };
 
 
     const handleAttachments = (event) => {
@@ -1084,34 +1079,34 @@ export default {
     
   // Handle email sending
 
-const sendEmail = async () => {
-  const userId = parseInt(localStorage.getItem('user_id'))  // ✅ Ensure integer
-  if (!userId || isNaN(userId)) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Missing User ID',
-      text: 'Please log in again. User ID is missing or invalid.',
-    })
-    return
-  }
+  const sendEmail = async () => {
+    const userId = parseInt(localStorage.getItem('user_id')) 
+    if (!userId || isNaN(userId)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Missing User ID',
+        text: 'Please log in again. User ID is missing or invalid.',
+      })
+      return
+    }
 
-  // Selected leads
-  const selectedLeadEmails = leads.value
-    .filter(lead => selectedLeads.value.includes(lead.id))
-    .map(lead => lead.email)
+    // Selected leads
+    const selectedLeadEmails = leads.value
+      .filter(lead => selectedLeads.value.includes(lead.id))
+      .map(lead => lead.email)
 
-  const selectedLeadIds = leads.value
-    .filter(lead => selectedLeads.value.includes(lead.id))
-    .map(lead => lead.id)
+    const selectedLeadIds = leads.value
+      .filter(lead => selectedLeads.value.includes(lead.id))
+      .map(lead => lead.id)
 
-  if (!selectedLeadEmails.length) {
-    Swal.fire({
-      icon: 'error',
-      title: 'No Recipients',
-      text: 'Please select at least one lead.',
-    })
-    return
-  }
+    if (!selectedLeadEmails.length) {
+      Swal.fire({
+        icon: 'error',
+        title: 'No Recipients',
+        text: 'Please select at least one lead.',
+      })
+      return
+    }
 
       emailData.value.to = selectedLeadEmails.join(',')
       const message = tinymceEditor.value.getContent()
@@ -1175,13 +1170,11 @@ const sendEmail = async () => {
       })
     }
 
-
     const showEmailLeadModal = ref(false);
     const showSmsLeadModal = ref(false);
     const selectedPhones = ref([]); 
     const selectedNames = ref([]); 
     const selectedLeadsList = ref([]); 
-
 
     // SMS Modal Data
     const smsData = ref({
@@ -1213,12 +1206,12 @@ const sendEmail = async () => {
       updateSmsToField();
     };
 
-
     const initializesmsTinyMCE = () => {
       nextTick(() => {
         if (!tinymce.get("sms-editor")) {
           tinymce.init({
             selector: "#sms-editor",
+            license_key: 'gpl',
             plugins: 'link lists image code',
             toolbar: "undo redo | aligncenter alignright alignjustify | mergeFieldButton",
             menubar: "file edit view insert format tools table help",
@@ -1267,16 +1260,11 @@ const sendEmail = async () => {
       });
     };
 
-
-
     const destroysmsTinyMCE = () => {
       if (tinymce.get("sms-editor")) { 
         tinymce.get("sms-editor").remove();
       }
     };
-
-
-
 
     // ✅ Check if a lead is selected
     const isLeadSelected = (lead) => {
@@ -1458,7 +1446,7 @@ const sendEmail = async () => {
           from: smsData.value.from,
           to: selectedPhones.join(', '),
           subject: smsData.value.subject,
-          message: tinymce.get("sms-editor")?.getContent() || smsData.value.message,
+          message: tinymce.get("sms-editor")?.getContent({ format: 'text' }) || smsData.value.message,
           schedule: smsData.value.schedule || null,
         });
 
@@ -2020,6 +2008,7 @@ const sendEmail = async () => {
     });
 
     return {
+      isFullscreen,
       countries,
       activeColomType,
       allSelected,

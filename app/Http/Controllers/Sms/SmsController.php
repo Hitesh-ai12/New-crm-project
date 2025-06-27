@@ -70,7 +70,7 @@ class SmsController extends Controller
                     'to'              => $to,
                     'message'         => $personalizedMessage,
                     'type'            => 'sent',
-                    'delivery_status' => 'sent', // change to 'delivered' if you handle webhook later
+                    'delivery_status' => 'sent', 
                     'timestamp'       => now(),
                 ]);
             }

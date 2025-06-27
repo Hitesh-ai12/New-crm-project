@@ -260,7 +260,7 @@ onMounted(async () => {
     // ✅ Get received email replies
     const recRes = await axios.get('/api/received-emails', { headers });
     const recEmails = recRes.data.map(reply => {
-      const dt = new Date(reply.received_at);
+      const dt = new Date(`${reply.date} ${reply.time}`);
       return {
         id: `received-${reply.id}`,
         type: 'email',
@@ -276,6 +276,7 @@ onMounted(async () => {
         time: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
     });
+
 
     activities.value.push(...recEmails);
 

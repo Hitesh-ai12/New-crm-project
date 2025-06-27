@@ -18,14 +18,10 @@ return new class extends Migration
             $table->string('from');
             $table->string('subject');
             $table->text('message');
-
-            $table->string('direction')->default('sent'); // sent or received
+            $table->string('direction')->default('sent');
             $table->timestamp('sent_at')->nullable();
-
             $table->json('attachments')->nullable();
-
             $table->timestamps();
-
             // Optional foreign key constraints (remove if not needed)
             // $table->foreign('lead_id')->references('id')->on('leads')->onDelete('set null');
             // $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
