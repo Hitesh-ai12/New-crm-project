@@ -331,25 +331,28 @@ public function getLeadMessages(Request $request, $leadId)
     return response()->json($paginated);
 }
 
-// Controller
-public function getLeadEmails($leadId)
-{
-    $emails = Email::where('lead_id', $leadId)
-        ->orderBy('sent_at', 'asc') // or 'created_at' if 'sent_at' is sometimes null
-        ->get()
-        ->map(function ($email) {
-            return [
-                'direction' => $email->direction,
-                'subject' => $email->subject,
-                'description' => strip_tags($email->message),
-                'time' => optional($email->sent_at)->format('H:i'),
-                'date' => optional($email->sent_at)->format('Y-m-d'),
-                'from' => $email->from,
-                'to' => $email->to,
-            ];
-        });
+    // Controller
+    public function getLeadEmails($leadId)
+    {
+        $emails = Email::where('lead_id', $leadId)
+            ->orderByRaw('COALESCE(sent_at, created_at) ASC')
+            ->get()
+            ->map(function ($email) {
+                $timestamp = $email->sent_at ?? $email->created_at;
 
-    return response()->json($emails);
-}
+                return [
+                    'direction' => $email->direction,
+                    'subject' => $email->subject ?? '(No Subject)',
+                    'description' => strip_tags($email->message ?? ''),
+                    'time' => optional($timestamp)->format('H:i'),
+                    'date' => optional($timestamp)->format('Y-m-d'),
+                    'from' => $email->from,
+                    'to' => $email->to,
+                ];
+            });
+
+        return response()->json($emails);
+    }
+
 
 }

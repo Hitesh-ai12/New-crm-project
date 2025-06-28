@@ -80,16 +80,34 @@ class GmailWebhookController extends Controller
 
         // Decode email body
         $body = '';
+        $attachments = [];
+
         if ($payload->getBody()->getSize() > 0) {
             $body = base64_decode(strtr($payload->getBody()->getData(), '-_', '+/'));
         } elseif ($parts = $payload->getParts()) {
             foreach ($parts as $part) {
-                if ($part['mimeType'] === 'text/plain') {
+                $filename = $part->getFilename();
+                $mimeType = $part->getMimeType();
+
+                // Body
+                if ($part['mimeType'] === 'text/plain' && !$body) {
                     $body = base64_decode(strtr($part['body']['data'], '-_', '+/'));
-                    break;
+                }
+
+                // Attachment
+                if ($filename && isset($part['body']['attachmentId'])) {
+                    $attachmentId = $part['body']['attachmentId'];
+                    $attachment = $gmail->users_messages_attachments->get('me', $msgId, $attachmentId);
+                    $fileData = base64_decode(strtr($attachment->getData(), '-_', '+/'));
+
+                    // Save file
+                    $path = 'email_attachments/' . uniqid() . '_' . $filename;
+                    Storage::disk('public')->put($path, $fileData);
+                    $attachments[] = $path;
                 }
             }
         }
+
 
         $lead = Lead::whereRaw('LOWER(email) = ?', [$fromEmail])->first();
 
@@ -99,15 +117,18 @@ class GmailWebhookController extends Controller
         }
 
         // Store email reply only if lead matched
-        EmailReply::create([
+        Email::create([
             'user_id' => $lead->user_id,
             'lead_id' => $lead->id,
             'from' => $from,
             'to' => $to,
             'subject' => $subject,
             'message' => $body,
-            'received_at' => $receivedAt,
+            'sent_at' => $receivedAt,
+            'direction' => 'received',
+            'attachments' => json_encode($attachments),
         ]);
+
 
         Log::info("✅ Email stored for lead ID: {$lead->id}, user ID: {$lead->user_id}");
 
