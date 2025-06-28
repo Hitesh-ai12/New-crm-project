@@ -228,11 +228,10 @@ class EmailController extends Controller
 
     public function getReceivedEmails(Request $request)
     {
-        $receivedReplies = Email::orderBy('received_at', 'desc')->get();
+        $receivedReplies = Email::orderBy('sent_at', 'desc')->where('direction', 'received')->get();
 
         $formattedReplies = $receivedReplies->map(function ($reply) {
-
-            $receivedAt = $reply->received_at ? \Carbon\Carbon::parse($reply->received_at) : null;
+            $receivedAt = $reply->sent_at ? \Carbon\Carbon::parse($reply->sent_at) : null;
 
             return [
                 'id' => $reply->id,
