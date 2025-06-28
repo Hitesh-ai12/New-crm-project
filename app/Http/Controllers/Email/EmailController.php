@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Template;
 use App\Models\Lead;
 use Webklex\IMAP\Facades\Client;
-use App\Models\EmailLog;
+
 use App\Models\Email;
-use App\Models\SentEmail;
+
 use Carbon\Carbon;
-use App\Models\EmailReply;
+
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -105,34 +105,6 @@ class EmailController extends Controller
     }
 
 
-
-    public function getSentEmails(Request $request)
-    {
-        $userId = $request->user()->id; 
-
-        $emails = Email::where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get(['id', 'lead_id', 'to', 'subject', 'message', 'created_at']);
-
-        return response()->json($emails);
-    }
-
-
-    public function fetchReplies()
-    {
-        $client = Client::account('default');
-        $client->connect();
-
-        $folder = $client->getFolder('INBOX');
-        $messages = $folder->messages()->from('someone@example.com')->unseen()->get();
-
-        foreach ($messages as $message) {
-            echo "Subject: ".$message->getSubject()."<br>";
-            echo "Body: ".$message->getTextBody()."<hr>";
-        }
-    } 
-
-
     public function inbox()
     {
         $replies = Email::latest()->get();
@@ -151,37 +123,6 @@ class EmailController extends Controller
 
         return response()->json(['status' => 'sent']);
     }
-
-    // public function getReplies(Request $request, $leadEmail)
-    // {
-    //     $client = new Client([
-    //         'host' => 'imap.yourmailserver.com',
-    //         'port' => 993,
-    //         'encryption' => 'ssl',
-    //         'validate_cert' => true,
-    //         'username' => 'your-email@example.com',
-    //         'password' => 'your-password',
-    //         'protocol' => 'imap',
-    //     ]);
-
-    //     $client->connect();
-
-    //     $folder = $client->getFolder('INBOX');
-    //     $messages = $folder->messages()->from($leadEmail)->all()->recent()->get();
-
-    //     $replies = [];
-
-    //     foreach ($messages as $message) {
-    //         $replies[] = [
-    //             'subject' => $message->getSubject(),
-    //             'from' => $message->getFrom()[0]->mail,
-    //             'date' => $message->getDate()->format('Y-m-d H:i:s'),
-    //             'body' => $message->getTextBody() ?: $message->getHtmlBody(),
-    //         ];
-    //     }
-
-    //     return response()->json($replies);
-    // }
 
 
     public function getEmailTimeline(Request $request, $leadEmail)
@@ -218,14 +159,6 @@ class EmailController extends Controller
     }
 
 
-    public function getEmailLogs(Lead $lead)
-    {
-        $logs = $lead->emailLogs()->latest()->get();
-
-        return response()->json($logs);
-    }
-
-
     public function getReceivedEmails(Request $request)
     {
         $receivedReplies = Email::orderBy('sent_at', 'desc')->where('direction', 'received')->get();
@@ -252,83 +185,6 @@ class EmailController extends Controller
         return response()->json($formattedReplies);
     }
 
-// public function getLeadMessages(Request $request, $leadId)
-// {
-//     $page = $request->input('page', 1);
-//     $perPage = $request->input('per_page', 20);
-//     $offset = ($page - 1) * $perPage;
-
-//     // Combine email_logs and email_replies
-//     $combined = DB::table('email_logs')
-//         ->select(
-//             'id',
-//             'lead_id',
-//             'from',
-//             'to',
-//             'subject',
-//             'message',
-//             'attachments',
-//             DB::raw("'sent' as direction"),
-//             'created_at',
-//             'sent_at as date_time'
-//         )
-//         ->where('lead_id', $leadId)
-
-//         ->unionAll(
-//             DB::table('email_replies')
-//                 ->select(
-//                     'id',
-//                     'lead_id',
-//                     'from',
-//                     'to',
-//                     'subject',
-//                     'message',
-//                     DB::raw('NULL as attachments'),
-//                     DB::raw("'received' as direction"),
-//                     'created_at',
-//                     'received_at as date_time'
-//                 )
-//                 ->where('lead_id', $leadId)
-//         );
-
-//     // Wrap the union in a subquery to sort and paginate
-//     $results = DB::table(DB::raw("({$combined->toSql()}) as combined"))
-//         ->mergeBindings($combined)
-//         ->orderByDesc('date_time')
-//         ->offset($offset)
-//         ->limit($perPage)
-//         ->get();
-
-//     // Total count for pagination
-//     $totalCount = DB::table('email_logs')->where('lead_id', $leadId)->count() +
-//                   DB::table('email_replies')->where('lead_id', $leadId)->count();
-
-//     // Format response for frontend
-//     $formatted = $results->map(function ($item) {
-//         return [
-//             'type' => 'email',
-//             'direction' => $item->direction,
-//             'subject' => $item->subject,
-//             'message' => $item->message,
-//             'from' => $item->from,
-//             'to' => $item->to,
-//             'attachments' => $item->attachments ? json_decode($item->attachments) : [],
-//             'date' => $item->date_time ? Carbon::parse($item->date_time)->format('Y-m-d') : '',
-//             'time' => $item->date_time ? Carbon::parse($item->date_time)->format('H:i:s') : '',
-//         ];
-//     });
-
-//     // Paginate manually
-//     $paginated = new LengthAwarePaginator(
-//         $formatted,
-//         $totalCount,
-//         $perPage,
-//         $page,
-//         ['path' => url()->current()]
-//     );
-
-//     return response()->json($paginated);
-// }
 
     // Controller
     public function getLeadEmails($leadId)
