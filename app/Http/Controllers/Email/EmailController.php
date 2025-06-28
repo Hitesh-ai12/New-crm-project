@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Template;
 use App\Models\Lead;
 use Webklex\IMAP\Facades\Client;
-
 use App\Models\Email;
-
 use Carbon\Carbon;
-
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+
 
 
 
@@ -105,25 +103,6 @@ class EmailController extends Controller
     }
 
 
-    public function inbox()
-    {
-        $replies = Email::latest()->get();
-        return view('email.inbox', compact('replies'));
-    }
-
-    public function sendReply(Request $request)
-    {
-        $data = $request->validate([
-            'to' => 'required|email',
-            'subject' => 'required|string',
-            'message' => 'required|string',
-        ]);
-
-        Mail::to($data['to'])->send(new \App\Mail\LeadReply($data['subject'], $data['message']));
-
-        return response()->json(['status' => 'sent']);
-    }
-
 
     public function getEmailTimeline(Request $request, $leadEmail)
     {
@@ -186,6 +165,7 @@ class EmailController extends Controller
     }
 
 
+
     // Controller
     public function getLeadEmails($leadId)
     {
@@ -196,13 +176,16 @@ class EmailController extends Controller
                 $timestamp = $email->sent_at ?? $email->created_at;
 
                 return [
+                    'id' => $email->id,
                     'direction' => $email->direction,
                     'subject' => $email->subject ?? '(No Subject)',
                     'description' => strip_tags($email->message ?? ''),
+                    'body_html' => $email->message ?? '',
                     'time' => optional($timestamp)->format('H:i'),
                     'date' => optional($timestamp)->format('Y-m-d'),
                     'from' => $email->from,
                     'to' => $email->to,
+                    'attachments' => $email->attachments ? json_decode($email->attachments, true) : [],
                 ];
             });
 

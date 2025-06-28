@@ -237,48 +237,32 @@ onMounted(async () => {
     activities.value.push(...smsMessages);
 
     // ✅ Get sent emails
-    const sentRes = await axios.get('/api/sent-emails', { headers });
-    const sentEmails = sentRes.data.map(email => {
-      const dt = new Date(email.created_at);
+    const res = await axios.get(`/api/email/lead/${leadId.value}`);
+    const allEmails = res.data;
+
+    // Format emails
+    const formattedEmails = allEmails.map(email => {
+      const dt = new Date(`${email.date} ${email.time}`);
+
       return {
-        id: `sent-${email.id}`,
+        id: `${email.direction}-${Math.random().toString(36).substr(2, 9)}`, // or use email.id if exists
         type: 'email',
-        direction: 'sent',
-        title: 'Sent Email',
+        direction: email.direction,
+        title: email.direction === 'sent' ? 'Sent Email' : 'Reply Received',
         description: email.subject,
         date: dt.toLocaleDateString(),
         time: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        from: email.from,
         to: email.to,
-        body_plain: email.message,
-        body_html: null,
-        attachments: email.attachments
+        body_plain: email.description,
+        body_html: email.body_html || null,
+        attachments: email.attachments || []
       };
     });
 
-    activities.value.push(...sentEmails);
+    // Add to activity list
+    activities.value.push(...formattedEmails);
 
-    // ✅ Get received email replies
-    const recRes = await axios.get('/api/received-emails', { headers });
-    const recEmails = recRes.data.map(reply => {
-      const dt = new Date(`${reply.date} ${reply.time}`);
-      return {
-        id: `received-${reply.id}`,
-        type: 'email',
-        direction: 'received',
-        title: reply.title,
-        description: reply.description,
-        from: reply.from,
-        to: reply.to,
-        body_plain: reply.body_plain,
-        body_html: reply.body_html,
-        attachments: reply.attachments,
-        date: dt.toLocaleDateString(),
-        time: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-    });
-
-
-    activities.value.push(...recEmails);
 
     // ✅ Sort all activities by date-time (descending)
     activities.value.sort((a, b) => {
