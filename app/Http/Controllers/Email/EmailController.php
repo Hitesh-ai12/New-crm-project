@@ -10,6 +10,7 @@ use App\Models\Template;
 use App\Models\Lead;
 use Webklex\IMAP\Facades\Client;
 use App\Models\EmailLog;
+use App\Models\Email;
 use App\Models\SentEmail;
 use Carbon\Carbon;
 use App\Models\EmailReply;
@@ -82,7 +83,7 @@ class EmailController extends Controller
                 ]));
 
                 // Log in email_logs
-                EmailLog::create([
+                Email::create([
                     'lead_id' => $lead->id,
                     'user_id' => $userId,
                     'to' => $email,
@@ -109,7 +110,7 @@ class EmailController extends Controller
     {
         $userId = $request->user()->id; 
 
-        $emails = EmailLog::where('user_id', $userId)
+        $emails = Email::where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get(['id', 'lead_id', 'to', 'subject', 'message', 'created_at']);
 
@@ -134,7 +135,7 @@ class EmailController extends Controller
 
     public function inbox()
     {
-        $replies = EmailReply::latest()->get();
+        $replies = Email::latest()->get();
         return view('email.inbox', compact('replies'));
     }
 
@@ -185,7 +186,7 @@ class EmailController extends Controller
 
     public function getEmailTimeline(Request $request, $leadEmail)
     {
-        $sentEmails = EmailLog::where('to', $leadEmail)
+        $sentEmails = Email::where('to', $leadEmail)
             ->get()
             ->map(function ($email) {
                 return [
@@ -198,7 +199,7 @@ class EmailController extends Controller
                 ];
             });
 
-        $replies = EmailReply::where('from', $leadEmail)
+        $replies = Email::where('from', $leadEmail)
             ->get()
             ->map(function ($reply) {
                 return [
@@ -227,7 +228,7 @@ class EmailController extends Controller
 
     public function getReceivedEmails(Request $request)
     {
-        $receivedReplies = EmailReply::orderBy('received_at', 'desc')->get();
+        $receivedReplies = Email::orderBy('received_at', 'desc')->get();
 
         $formattedReplies = $receivedReplies->map(function ($reply) {
 
@@ -333,36 +334,22 @@ public function getLeadMessages(Request $request, $leadId)
 // Controller
 public function getLeadEmails($leadId)
 {
-    $sent = EmailLog::where('lead_id', $leadId)
-        ->select('subject', 'message', 'created_at as time', 'direction', 'from', 'to')
+    $emails = Email::where('lead_id', $leadId)
+        ->orderBy('sent_at', 'asc') // or 'created_at' if 'sent_at' is sometimes null
         ->get()
         ->map(function ($email) {
             return [
-                'direction' => 'sent',
+                'direction' => $email->direction,
                 'subject' => $email->subject,
                 'description' => strip_tags($email->message),
-                'time' => $email->time->format('H:i'),
-                'date' => $email->time->format('Y-m-d'),
+                'time' => optional($email->sent_at)->format('H:i'),
+                'date' => optional($email->sent_at)->format('Y-m-d'),
                 'from' => $email->from,
                 'to' => $email->to,
             ];
         });
 
-    $received = EmailReply::where('lead_id', $leadId)
-        ->select('subject', 'message', 'received_at as time', 'from', 'to')
-        ->get()
-        ->map(function ($email) {
-            return [
-                'direction' => 'received',
-                'subject' => $email->subject,
-                'description' => strip_tags($email->message),
-                'time' => $email->time->format('H:i'),
-                'date' => $email->time->format('Y-m-d'),
-                'from' => $email->from,
-                'to' => $email->to,
-            ];
-        });
-
-    return response()->json($sent->merge($received)->sortBy('date')->values());
+    return response()->json($emails);
 }
+
 }
