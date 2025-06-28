@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('emails', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('lead_id')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable(); // who owns this email (optional for received)
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->string('from');
             $table->string('to');
             $table->string('subject');

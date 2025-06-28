@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Google_Service_Gmail_WatchRequest;
 use App\Models\Lead;
-use App\Models\EmailReply;
+use App\Models\Email;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
