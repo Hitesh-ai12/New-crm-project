@@ -4,14 +4,14 @@
     <div class="border-end p-3" style="inline-size: 300px;">
       <input class="form-control mb-2" v-model="searchQuery" placeholder="Search lead" />
       <div v-for="lead in filteredLeads" :key="lead.leadId" class="lead-item p-2 border-bottom" @click="selectLead(lead)" :class="{ 'bg-primary text-white': selectedLead?.leadId === lead.leadId }">
-        {{ lead.name }}
+        {{ lead.firstName }} {{ lead.lastName }}
       </div>
     </div>
 
     <!-- Chat Window -->
     <div class="flex-grow-1 d-flex flex-column bg-light">
       <div class="border-bottom p-3 bg-white">
-        <h5 v-if="selectedLead">{{ selectedLead.name }}</h5>
+        <h5 v-if="selectedLead">{{ selectedLead.firstName }} {{ selectedLead.lastName }}</h5>
         <p v-else class="text-muted">Select a lead to view emails</p>
       </div>
 
@@ -25,9 +25,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Optional Compose Input -->
-      <!-- You can add TinyMCE and a Send Email button if needed -->
     </div>
   </div>
 </template>
@@ -46,24 +43,41 @@ export default {
   },
   computed: {
     filteredLeads() {
-      return this.leads.filter(lead => lead.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+      return this.leads.filter(lead => {
+        const fullName = `${lead.firstName || ''} ${lead.lastName || ''}`.trim().toLowerCase();
+        return fullName.includes(this.searchQuery.toLowerCase());
+      });
     },
   },
   methods: {
+    async fetchLeads() {
+      const token = localStorage.getItem('auth_token');
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.get('/api/email/chats', { headers });
+      this.leads = res.data;
+    },
 
-    async selectLead(lead) {
+    async selectLead(lead) { // 🟢 use this name to match template
+      const token = localStorage.getItem('auth_token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const res = await axios.get(`/api/email/lead/${lead.leadId}`, { headers });
+
       this.selectedLead = lead;
-      const res = await axios.get(`/api/email/lead/${lead.leadId}`);
       this.messages = res.data.reverse();
+
       this.$nextTick(() => this.scrollToBottom());
     },
+
+
     scrollToBottom() {
-      const el = this.$refs.emailArea;
-      if (el) el.scrollTop = el.scrollHeight;
+    const el = this.$refs.emailArea;
+    if (el) el.scrollTop = el.scrollHeight;
     },
+
   },
   mounted() {
-    this.selectLead();
+    this.fetchLeads();
   }
 };
 </script>

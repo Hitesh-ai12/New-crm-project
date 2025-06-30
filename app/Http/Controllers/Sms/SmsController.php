@@ -188,55 +188,57 @@ class SmsController extends Controller
             return response()->json(['error' => 'Failed to fetch SMS'], 500);
         }
     }
-public function getLeadList()
-{
-    try {
-        $userId = Auth::id();
 
-        $leads = SmsMessage::where('user_id', $userId)
-            ->select('lead_id')
-            ->distinct()
-            ->with(['lead' => function ($q) {
-                $q->select('id', 'first_name', 'last_name');
-            }])
-            ->get()
-            ->map(function ($s) {
-                $lead = $s->lead;
-                return [
-                    'leadId' => $s->lead_id,
-                    'name' => $lead ? trim($lead->first_name . ' ' . $lead->last_name) : 'Unknown',
-                ];
-            });
+    public function getLeadList()
+    {
+        try {
+            $userId = Auth::id();
 
-        return response()->json($leads);
+            $leads = SmsMessage::where('user_id', $userId)
+                ->select('lead_id')
+                ->distinct()
+                ->with(['lead' => function ($q) {
+                    $q->select('id', 'first_name', 'last_name');
+                }])
+                ->get()
+                ->map(function ($s) {
+                    $lead = $s->lead;
+                    return [
+                        'leadId' => $s->lead_id,
+                        'name' => $lead ? trim($lead->first_name . ' ' . $lead->last_name) : 'Unknown',
+                    ];
+                });
 
-    } catch (\Exception $e) {
-        Log::error('Failed to fetch lead list', ['error' => $e->getMessage()]);
-        return response()->json(['error' => 'Failed to fetch leads'], 500);
+            return response()->json($leads);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch lead list', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to fetch leads'], 500);
+        }
     }
-}
-public function getLeads()
-{
-    try {
-        $userId = Auth::id();
 
-        $leadIds = SmsMessage::where('user_id', $userId)
-            ->whereNotNull('lead_id')
-            ->pluck('lead_id')
-            ->unique();
+    public function getLeads()
+    {
+        try {
+            $userId = Auth::id();
 
-        $leads = DB::table('leads')
-            ->whereIn('id', $leadIds)
-            ->select('id', DB::raw("CONCAT(first_name, ' ', last_name) AS name"))
-            ->get();
+            $leadIds = SmsMessage::where('user_id', $userId)
+                ->whereNotNull('lead_id')
+                ->pluck('lead_id')
+                ->unique();
 
-        return response()->json($leads);
+            $leads = DB::table('leads')
+                ->whereIn('id', $leadIds)
+                ->select('id', DB::raw("CONCAT(first_name, ' ', last_name) AS name"))
+                ->get();
 
-    } catch (\Exception $e) {
-        \Log::error('Failed to fetch lead list', ['error' => $e->getMessage()]);
-        return response()->json(['error' => 'Server Error'], 500);
+            return response()->json($leads);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch lead list', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Server Error'], 500);
+        }
     }
-}
     // public function smsStatus(Request $request)
     // {
     //     $sid = $request->input('MessageSid');

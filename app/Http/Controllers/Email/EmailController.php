@@ -192,5 +192,24 @@ class EmailController extends Controller
         return response()->json($emails);
     }
 
+    public function getEmailChats()
+    {
+        $userId = auth()->id();
 
+        $chats = Email::with(['lead:id,id,first_name,last_name'])
+            ->whereNotNull('lead_id')
+            ->where('user_id', $userId)
+            ->groupBy('lead_id', 'user_id')
+            ->select('lead_id', 'user_id')
+            ->get()
+            ->map(function ($chat) {
+                return [
+                    'leadId' => $chat->lead_id,
+                    'firstName' => optional($chat->lead)->first_name,
+                    'lastName' => optional($chat->lead)->last_name,
+                ];
+            });
+
+        return response()->json($chats);
+    }
 }

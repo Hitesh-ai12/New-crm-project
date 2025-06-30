@@ -124,7 +124,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/emails/replies/{leadEmail}', [EmailController::class, 'getReplies']);
     Route::get('/leads/{email}/emails', [EmailController::class, 'getEmailTimeline']);
     Route::get('/leads/{lead}/email-logs', [LeadController::class, 'getEmailLogs']);
+    
     Route::get('/sent-emails', [EmailController::class, 'getSentEmails']);
+    Route::get('/email/chats', [EmailController::class, 'getEmailChats']);
 
     Route::get('/received-emails', [EmailController::class, 'getReceivedEmails']);
     // Route::get('/sent-sms', [SmsController::class, 'getSentSms']);

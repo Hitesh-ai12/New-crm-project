@@ -26,5 +26,9 @@ class Email extends Model
         'attachments' => 'array',
         'sent_at' => 'datetime',
     ];
+    
+    public function lead() {
+        return $this->belongsTo(Lead::class);
+    }
 }
 
