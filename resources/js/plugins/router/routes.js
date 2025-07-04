@@ -123,7 +123,12 @@ export const routes = [
           component: () => import('@/pages/settings/CreateSmsTemplates.vue'),
           props: true, // Pass route params as props
         },
-  
+          {
+          path: 'settings/email-verify',
+          name: 'email-verify',
+          component: () => import('@/pages/settings/verify.vue'),
+          props: true, // Pass route params as props
+        },
         {
           path: 'pre-listings',
           name: 'pre-listings',

@@ -5,12 +5,12 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
 
 <template>
   <!-- 👉 Dashboards -->
-  <VerticalNavGroup
-    :item="{
-      title: 'Dashboards',
-      icon: 'ri-home-smile-line',
-    }"
-  >
+    <VerticalNavGroup
+      :item="{
+        title: 'Dashboards',
+        icon: 'ri-home-smile-line',
+      }"
+    >
     <VerticalNavLink
       :item="{
         title: 'Analytics',
@@ -152,6 +152,13 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
         to: '/api/leads', 
       }"
     />
+    <VerticalNavLink
+      :item="{
+        title: 'Verify Email',
+        to: { name: 'email-verify' },
+      }"
+    />
+    
   </VerticalNavGroup>
 
   <VerticalNavLink

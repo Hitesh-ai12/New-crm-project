@@ -1,1 +1,0 @@
-import{_ as o,l as t,h as n,o as a,e as c}from"./main-C7aftqr6.js";const r={},s={class:"layout-wrapper layout-blank"};function _(l,p){const e=c("RouterView");return a(),t("div",s,[n(e)])}const u=o(r,[["render",_]]);export{u as default};

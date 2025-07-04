@@ -625,62 +625,62 @@
 
     <!-- Leads Table -->
     <div class="table-container">
-  <div class="table-wrapper">
-    <table class="lead_Table">
-      <thead>
-        <tr>
-          <!-- Fixed Checkbox Column -->
-          <th class="checkbox-col">
-            <label class="custom-checkbox-label">
-              <input type="checkbox" @change="toggleSelectAll" v-model="allSelected" class="custom-checkbox" />
-              <span class="custom-checkbox-span"></span>
-            </label>
-          </th>
-
-          <!-- Draggable Columns (Only First 6 Visible) -->
-          <draggable 
-            v-model="selectedColumns" 
-            tag="tr" 
-            item-key="col" 
-            handle=".drag-handle"
-            @end="onColumnReorder"
-          >
-            <template #item="{ element, index }">
-              <th 
-                class="lead_TableHead" 
-                :class="{ 'scroll-column': index >= 6 }"
-              >
-                <span class="drag-handle">☰</span>
-                {{ availableColumns[element]?.label || element }}
+      <div class="table-wrapper">
+        <table class="lead_Table">
+          <thead>
+            <tr>
+              <!-- Fixed Checkbox Column -->
+              <th class="checkbox-col">
+                <label class="custom-checkbox-label">
+                  <input type="checkbox" @change="toggleSelectAll" v-model="allSelected" class="custom-checkbox" />
+                  <span class="custom-checkbox-span"></span>
+                </label>
               </th>
-            </template>
-          </draggable>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(lead, index) in leads" :key="index">
-          <!-- Checkbox Column -->
-          <td class="checkbox-col">
-            <input type="checkbox" v-model="selectedLeads" :value="lead.id" />
-          </td>
 
-          <!-- Dynamic Columns (First 6 Visible, 7th Scrolls) -->
-          <td v-for="(col, idx) in selectedColumns" :key="col" :class="{ 'scroll-column': idx >= 6 }">
-            <template v-if="col === 'first_name'">
-              <router-link :to="'/update-profile/' + lead.id" class="lead-name-link">
-                {{ lead[col] || 'N/A' }}
-              </router-link>
-            </template>
-            <template v-else>
-              {{ lead[col] || 'N/A' }}
-            </template>
-          </td>
+              <!-- Draggable Columns (Only First 6 Visible) -->
+              <draggable 
+                v-model="selectedColumns" 
+                tag="tr" 
+                item-key="col" 
+                handle=".drag-handle"
+                @end="onColumnReorder"
+              >
+                <template #item="{ element, index }">
+                  <th 
+                    class="lead_TableHead" 
+                    :class="{ 'scroll-column': index >= 6 }"
+                  >
+                    <span class="drag-handle">☰</span>
+                    {{ availableColumns[element]?.label || element }}
+                  </th>
+                </template>
+              </draggable>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(lead, index) in leads" :key="index">
+              <!-- Checkbox Column -->
+              <td class="checkbox-col">
+                <input type="checkbox" v-model="selectedLeads" :value="lead.id" />
+              </td>
 
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+              <!-- Dynamic Columns (First 6 Visible, 7th Scrolls) -->
+              <td v-for="(col, idx) in selectedColumns" :key="col" :class="{ 'scroll-column': idx >= 6 }">
+                <template v-if="col === 'first_name'">
+                  <router-link :to="'/update-profile/' + lead.id" class="lead-name-link">
+                    {{ lead[col] || 'N/A' }}
+                  </router-link>
+                </template>
+                <template v-else>
+                  {{ lead[col] || 'N/A' }}
+                </template>
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
     <div v-if="filteredLeads.length === 0" class="no-leads">No leads available.</div>
 
@@ -755,7 +755,7 @@ export default {
       last_name: '',
       email: '',
       phone: '',
-      country_code: '', // 👈 new field
+      country_code: '', 
       tag: '',
       stage: '',
     });
@@ -797,7 +797,7 @@ export default {
 
     const showEmailModal = ref(false); 
     const tinymceEditor = ref(null);
-    const smsTinyEditor = ref(null);       // for SMS
+    const smsTinyEditor = ref(null);   
 
     const emailMessage = ref('');
 
@@ -1370,8 +1370,7 @@ export default {
       initializesmsTinyMCE();   
     });
   };
-
-
+  
     const expandSmsModal = () => {
       isFullscreen.value = !isFullscreen.value;
     };
@@ -2121,7 +2120,6 @@ export default {
       closeSmsLeadModal,
       showSmsLeadModal,
       addSelectedPhones,
-      toggleSmsLeadSelection, 
       selectedPhones,
       selectedNames,
       selectedLeadsList,

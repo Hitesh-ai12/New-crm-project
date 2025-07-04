@@ -42,6 +42,7 @@ class EmailController extends Controller
         $subjectTemplate = $request->input('subject');
         $messageTemplate = $request->input('message');
         $attachments = $request->file('attachments', []);
+        
         $attachmentPaths = [];
 
         // Upload attachments
