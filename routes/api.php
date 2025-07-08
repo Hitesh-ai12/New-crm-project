@@ -21,6 +21,8 @@ use App\Http\Controllers\Signature\SignatureFolderController;
 use App\Http\Controllers\Settings\ItemController;
 use App\Http\Controllers\Signature\SignatureTemplateController;
 use App\Http\Controllers\Webhook\GmailWebhookController;
+use App\Http\Controllers\whatsapp\TwilioWhatsappController;
+
 
 
 Route::get('/user', function (Request $request) {
@@ -55,6 +57,8 @@ Route::get('/gmail/fetch', [GmailWebhookController::class, 'fetchLatestEmail']);
 Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
 Route::get('/email/lead/{leadId}', [EmailController::class, 'getLeadEmails']);
+
+Route::post('/whatsapp/webhook', [WhatsappController::class, 'incoming']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -129,9 +133,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/email/chats', [EmailController::class, 'getEmailChats']);
 
     Route::get('/received-emails', [EmailController::class, 'getReceivedEmails']);
-    // Route::get('/sent-sms', [SmsController::class, 'getSentSms']);
-    // Route::get('/lead/{id}/sms', [SmsController::class, 'getLeadSms']);
-
 
     Route::post('/items', [ItemController::class, 'store']);
     Route::put('/items/{id}', [ItemController::class, 'update']);
@@ -141,6 +142,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sms/leads', [SmsController::class, 'getLeadList']);
     Route::get('/sms/lead/{leadId}', [SmsController::class, 'getSmsByLead']);
     // Route::get('/incoming-sms', [SmsController::class, 'getIncomingSms']);
+
+    Route::post('/whatsapp/send', [TwilioWhatsappController::class, 'sendMessage']);
+
 });
 
 
