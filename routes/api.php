@@ -21,8 +21,7 @@ use App\Http\Controllers\Signature\SignatureFolderController;
 use App\Http\Controllers\Settings\ItemController;
 use App\Http\Controllers\Signature\SignatureTemplateController;
 use App\Http\Controllers\Webhook\GmailWebhookController;
-use App\Http\Controllers\whatsapp\TwilioWhatsappController;
-
+use App\Http\Controllers\Whatsapp\TwilioWhatsappController;
 
 
 Route::get('/user', function (Request $request) {
@@ -58,7 +57,7 @@ Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 
 Route::get('/email/lead/{leadId}', [EmailController::class, 'getLeadEmails']);
 
-Route::post('/whatsapp/webhook', [WhatsappController::class, 'incoming']);
+Route::post('/whatsapp/webhook', [TwilioWhatsappController::class, 'incoming']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
