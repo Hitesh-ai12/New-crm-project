@@ -110,20 +110,27 @@ export const routes = [
           component: () => import('@/pages/settings/BirthdayWishesTemplate.vue'),
           props: true, // Pass route params as props
         },
+
         {
           path: '/settings/email-templates',
           name: 'email-templates',
           component: () => import('@/pages/settings/CreateEmailTemplates.vue'),
-          props: true, // Pass route params as props
+          props: true, 
         },
-
         {
           path: 'settings/sms-templates',
           name: 'sms-templates',
           component: () => import('@/pages/settings/CreateSmsTemplates.vue'),
           props: true, // Pass route params as props
         },
-          {
+        
+        {
+          path: '/settings/whatsapp-templates',
+          name: 'whatsapp-templates',
+          component: () => import('@/pages/settings/CreateWhatsappTemplates.vue'),
+          props: true, 
+        },
+        {
           path: 'settings/email-verify',
           name: 'email-verify',
           component: () => import('@/pages/settings/verify.vue'),

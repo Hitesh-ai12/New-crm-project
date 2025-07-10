@@ -12,10 +12,9 @@
           v-for="chat in filteredChats"
           :key="chat.id"
           class="chat-item d-flex p-3 border-bottom align-items-start"
-          :class="{ 'bg-light': selectedChat?.id === chat.id }"
+          :class="{ 'bg-light': selectedChat && selectedChat.id === chat.id }"
           @click="selectChat(chat)"
         >
-          <img src="https://via.placeholder.com/40" class="rounded-circle me-2" />
           <div class="flex-grow-1">
             <div class="d-flex justify-content-between">
               <strong>{{ chat.name }}</strong>
@@ -28,11 +27,10 @@
     </div>
 
     <!-- Chat Area -->
-    <div class="chat-area d-flex flex-column flex-grow-1">
+    <div class="chat-area d-flex flex-column flex-grow-1" v-if="selectedChat">
       <div class="p-3 border-bottom bg-white d-flex align-items-center">
-        <img src="https://via.placeholder.com/40" class="rounded-circle me-2" />
         <div class="flex-grow-1">
-          <strong>{{ selectedChat?.name || 'Select a chat' }}</strong>
+          <strong>{{ selectedChat.name }}</strong>
           <div class="text-muted small">online</div>
         </div>
         <div class="d-flex gap-2">
@@ -43,7 +41,7 @@
 
       <div class="chat-messages flex-grow-1 overflow-auto p-3 bg-light">
         <div
-          v-for="(msg, index) in selectedChat?.messages || []"
+          v-for="(msg, index) in selectedChat.messages"
           :key="index"
           class="mb-3"
         >
@@ -59,9 +57,21 @@
 
       <div class="chat-input p-3 bg-white border-top d-flex align-items-center">
         <i class="bi bi-emoji-smile me-2"></i>
-        <input v-model="newMessage" @keyup.enter="sendMessage" class="form-control me-2" placeholder="Type a message" />
-        <i class="bi bi-send-fill text-primary" role="button" @click="sendMessage"></i>
+        <input
+          v-model="newMessage"
+          @keyup.enter="sendMessage"
+          class="form-control me-2"
+          placeholder="Type a message"
+        />
+        <button class="btn btn-primary" @click="sendMessage">
+          <i class="bi bi-send-fill"></i>
+        </button>
       </div>
+    </div>
+
+    <!-- No chat selected fallback -->
+    <div class="chat-area d-flex flex-column flex-grow-1 justify-content-center align-items-center text-muted" v-else>
+      <p>Select a chat to begin</p>
     </div>
 
     <!-- Lead Selection Modal -->
@@ -76,9 +86,15 @@
             <div v-if="leads.length === 0">No leads found.</div>
             <div v-else>
               <div v-for="lead in leads" :key="lead.id" class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" :id="'lead-' + lead.id" v-model="selectedLeadIds" :value="lead.id">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  :id="'lead-' + lead.id"
+                  v-model="selectedLeadIds"
+                  :value="lead.id"
+                />
                 <label class="form-check-label" :for="'lead-' + lead.id">
-                  {{ lead.name }} - {{ lead.phone }}
+                  {{ lead.first_name }} {{ lead.last_name }} - {{ lead.phone }}
                 </label>
               </div>
             </div>
@@ -110,45 +126,57 @@ export default {
       chats: [],
     };
   },
+
   computed: {
     filteredChats() {
       return this.chats.filter(chat =>
-        chat.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+        (chat.name || '').toLowerCase().includes(this.searchQuery.toLowerCase())
       );
     },
   },
+
   methods: {
     selectChat(chat) {
+  
       this.selectedChat = chat;
+      
     },
 
     async sendMessage() {
       if (!this.newMessage.trim() || !this.selectedChat) return;
 
       const authToken = localStorage.getItem('auth_token');
-      const messagePayload = {
-        lead_id: this.selectedChat.id,
-        phone: this.selectedChat.phone, 
-        message: this.newMessage,
-      };
-
       try {
-        const response = await axios.post('/api/whatsapp/send', {
+        const response = await axios.post(
+          '/api/whatsapp/send',
+          {
             message: this.newMessage,
             recipients: [this.selectedChat.phone],
-          }, {
+          },
+          {
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
-          });
+          }
+        );
 
         if (response.data.success) {
+          const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          // ✅ Push message to selected chat
           this.selectedChat.messages.push({
             from: 'me',
             text: this.newMessage,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: timeNow,
           });
-          this.selectedChat.lastMessage = this.newMessage;
+
+          // ✅ Update lastMessage in sidebar too
+          const chat = this.chats.find(c => c.id === this.selectedChat.id);
+          if (chat) {
+            chat.lastMessage = this.newMessage;
+            chat.time = timeNow;
+          }
+
           this.newMessage = '';
         } else {
           console.error('Message sending failed:', response.data.error);
@@ -173,40 +201,76 @@ export default {
       }
     },
 
-useSelectedLeads() {
-  const selectedLeads = this.leads.filter(lead => this.selectedLeadIds.includes(lead.id));
+    useSelectedLeads() {
+      const selectedLeads = this.leads.filter(lead => this.selectedLeadIds.includes(lead.id));
 
-  selectedLeads.forEach(lead => {
-    const alreadyExists = this.chats.find(c => c.id === lead.id);
-    if (!alreadyExists) {
-      this.chats.push({
-        id: lead.id,
-        name: `${lead.first_name} ${lead.last_name}`,
-        phone: lead.phone,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        lastMessage: 'New chat started.',
-        messages: [],
+      selectedLeads.forEach(lead => {
+        const exists = this.chats.find(c => c.id === lead.id);
+        if (!exists) {
+          const newChat = {
+            id: lead.id,
+            name: `${lead.first_name || ''} ${lead.last_name || ''}`.trim(),
+            phone: lead.phone,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            lastMessage: 'New chat started.',
+            messages: [],
+          };
+          this.chats.push(newChat);
+        }
       });
-    }
-  });
 
-  // ✅ Set the first selected lead as the active chat
-  const firstSelected = selectedLeads[0];
-  if (firstSelected) {
-    this.selectedChat = {
-      id: firstSelected.id,
-      name: `${firstSelected.first_name} ${firstSelected.last_name}`,
-      phone: firstSelected.phone,
-      messages: [],
-    };
-  }
+      const first = selectedLeads[0];
+      if (first) {
+        this.selectedChat = this.chats.find(c => c.id === first.id);
+      }
 
-  this.showLeadModal = false;
-  this.selectedLeadIds = [];
-},
+      this.showLeadModal = false;
+      this.selectedLeadIds = [];
+    },
+
+    async fetchChats() {
+      try {
+        const authToken = localStorage.getItem('auth_token');
+        const response = await axios.get('/api/whatsapp/chats', {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+        this.chats = response.data;
+        return Promise.resolve(); 
+      } catch (error) {
+        console.error('Failed to load chats:', error);
+        return Promise.reject(error);
+      }
+    },
+  },
+  mounted() {
+    this.fetchChats(); 
+      const leadId = this.selectedChat?.id;
+      if (leadId) {
+        window.Echo.private(`lead.${leadId}`)
+          .listen('.WhatsappMessageReceived', (e) => {
+            console.log('Incoming message via WebSocket:', e);
+
+            this.selectedChat.messages.push({
+              text: e.text,
+              from: e.from,
+              time: e.time,
+            });
+
+            // Optionally update sidebar
+            const chat = this.chats.find(c => c.id === leadId);
+            if (chat) {
+              chat.lastMessage = e.text;
+              chat.time = e.time;
+            }
+          });
+      }
   },
 };
 </script>
+
+
 
 <style scoped>
 .chat-item:hover {

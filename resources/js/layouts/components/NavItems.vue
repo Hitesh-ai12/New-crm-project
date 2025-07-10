@@ -139,6 +139,14 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
         to: { name: 'email-templates' },
       }"
     />
+    
+    <VerticalNavLink
+      :item="{
+        title: 'Whatsapp Templates',
+        to: { name: 'whatsapp-templates' },
+      }"
+    />
+
     <VerticalNavLink
       :item="{
         title: 'Birthday Wishes',

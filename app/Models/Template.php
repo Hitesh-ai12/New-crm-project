@@ -16,7 +16,7 @@ class Template extends Model
         'content',
         'attachment_path',
         'created_by',
-        'folder_id', // ✅ Added folder_id to allow mass assignment
+        'folder_id', 
     ];
 
     // Creator relationship

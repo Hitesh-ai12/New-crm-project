@@ -16,4 +16,27 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+
+    ->withProviders([
+        Illuminate\Queue\QueueServiceProvider::class,
+    Illuminate\Bus\BusServiceProvider::class,
+
+        Illuminate\Filesystem\FilesystemServiceProvider::class,
+        Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
+        Illuminate\Cache\CacheServiceProvider::class,
+        Illuminate\Hashing\HashServiceProvider::class,
+        Illuminate\Translation\TranslationServiceProvider::class,
+        Illuminate\Database\DatabaseServiceProvider::class,
+        Illuminate\View\ViewServiceProvider::class,
+        Illuminate\Broadcasting\BroadcastServiceProvider::class,
+    Illuminate\Foundation\Providers\FoundationServiceProvider::class, // ✅ Add this line
+
+        App\Providers\BroadcastServiceProvider::class,
+
+        App\Providers\RouteServiceProvider::class,
+        App\Providers\EventServiceProvider::class,
+        App\Providers\AuthServiceProvider::class,
+    ])
+
+    ->create();
