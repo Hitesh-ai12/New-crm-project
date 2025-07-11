@@ -1,7 +1,8 @@
 import App from '@/App.vue';
 import { registerPlugins } from '@core/utils/plugins';
 import { createApp } from 'vue';
-import { echo } from './plugins/echo';
+// main.js
+import echo from './plugins/echo'; // ✅ If using default export
 
 
 // Styles

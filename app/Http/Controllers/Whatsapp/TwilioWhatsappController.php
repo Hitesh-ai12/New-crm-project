@@ -44,7 +44,7 @@ class TwilioWhatsappController extends Controller
                     $lead = Lead::where('phone', $recipient)->first();
 
                     // Store message in DB
-                    WhatsappMessage::create([
+                    $whatsappMessage = WhatsappMessage::create([
                         'user_id'   => $user->id,
                         'lead_id'   => $lead?->id,
                         'phone'     => $recipient,
@@ -54,8 +54,9 @@ class TwilioWhatsappController extends Controller
                         'is_read'   => false,
                         'sent_at'   => now(),
                     ]);
+                    
+                broadcast(new \App\Events\WhatsappMessageReceived($whatsappMessage))->toOthers();
 
-                    Log::info("✅ WhatsApp message sent to: $recipient");
                 } catch (\Exception $e) {
                     Log::error("❌ Failed to send WhatsApp message to $recipient: " . $e->getMessage());
 
@@ -102,7 +103,7 @@ class TwilioWhatsappController extends Controller
             }
 
             // Save incoming message
-            WhatsappMessage::create([
+            $incomingMessage = WhatsappMessage::create([
                 'user_id'   => $lead->user_id,
                 'lead_id'   => $lead->id,
                 'phone'     => $from,
@@ -112,6 +113,8 @@ class TwilioWhatsappController extends Controller
                 'is_read'   => false,
                 'sent_at'   => now(),
             ]);
+
+            broadcast(new \App\Events\WhatsappMessageReceived($incomingMessage))->toOthers();
 
             Log::info("✅ Incoming WhatsApp message saved from: $from (lead_id: {$lead->id}, user_id: {$lead->user_id})");
 
