@@ -67,6 +67,7 @@
           <i class="bi bi-send-fill"></i>
         </button>
       </div>
+      
     </div>
 
     <!-- No chat selected fallback -->
@@ -136,10 +137,31 @@ export default {
   },
 
   methods: {
-    selectChat(chat) {
-  
-      this.selectedChat = chat;
-      
+    scrollToBottom() {
+      this.$nextTick(() => {
+        const container = this.$refs.chatContainer;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
+    },
+
+    async selectChat(chat) {
+      this.selectedChat = { ...chat, messages: [] };
+
+      try {
+        const authToken = localStorage.getItem('auth_token');
+        const response = await axios.get(`/api/whatsapp/messages/${chat.id}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+
+        if (Array.isArray(response.data)) {
+          this.selectedChat.messages = response.data;
+          this.scrollToBottom();
+        }
+      } catch (err) {
+        console.error('Failed to load messages:', err);
+      }
     },
 
     async sendMessage() {
@@ -178,6 +200,8 @@ export default {
           }
 
           this.newMessage = '';
+
+          this.scrollToBottom();
         } else {
           console.error('Message sending failed:', response.data.error);
         }

@@ -58,7 +58,7 @@ Route::post('/incoming-sms', [SmsController::class, 'incomingSms']);
 Route::get('/email/lead/{leadId}', [EmailController::class, 'getLeadEmails']);
 
 Route::post('/whatsapp/webhook', [TwilioWhatsappController::class, 'incoming']);
-Route::get('/whatsapp/messages/{lead}', [TwilioWhatsappController::class, 'getLeadMessages']);
+// Route::get('/whatsapp/messages/{lead}', [TwilioWhatsappController::class, 'getLeadMessages']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
