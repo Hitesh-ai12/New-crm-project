@@ -2,7 +2,7 @@ import App from '@/App.vue';
 import { registerPlugins } from '@core/utils/plugins';
 import { createApp } from 'vue';
 // main.js
-import echo from './plugins/echo'; // ✅ If using default export
+import echo from '@/plugins/echo'; // ✅ If using default export
 
 
 // Styles
