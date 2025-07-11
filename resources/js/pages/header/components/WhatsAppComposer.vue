@@ -136,36 +136,11 @@ export default {
   },
 
   methods: {
-selectChat(chat) {
-  this.selectedChat = chat;
-
-  const leadId = chat.id;
-  if (!leadId) return;
-
-  // 👇 Leave channel before joining again (to avoid duplicate listeners)
-  if (window.Echo) {
-    window.Echo.leave(`private-lead.${leadId}`);
-  }
-
-  // ✅ Subscribe to private channel
-  window.Echo.private(`lead.${leadId}`)
-    .listen('.WhatsappMessageReceived', (e) => {
-      console.log('📨 Incoming via WebSocket:', e);
-
-      this.selectedChat.messages.push({
-        text: e.text,
-        from: e.from,
-        time: e.time,
-      });
-
-      const sidebarChat = this.chats.find(c => c.id === leadId);
-      if (sidebarChat) {
-        sidebarChat.lastMessage = e.text;
-        sidebarChat.time = e.time;
-      }
-    });
-},
-
+    selectChat(chat) {
+  
+      this.selectedChat = chat;
+      
+    },
 
     async sendMessage() {
       if (!this.newMessage.trim() || !this.selectedChat) return;
