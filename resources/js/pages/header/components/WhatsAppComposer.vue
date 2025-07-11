@@ -270,8 +270,6 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
 .chat-item:hover {
   background-color: #8f2727;
