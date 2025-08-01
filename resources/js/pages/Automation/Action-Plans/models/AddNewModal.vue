@@ -517,10 +517,18 @@ const populateModal = () => {
     actionPlanName.value = props.initialData.name;
     pauseOnReply.value = props.initialData.pause_on_reply;
     
-    actions.value = props.initialData.actions.map(action => {
+    actions.value = (props.initialData.actions || []).map(action => {
       let delayValue = action.delay_days;
-      let delayUnit = 'Days'; 
+      let delayUnit = 'Days';
 
+      // --- FIX IS HERE ---
+      // अगर delay_days 1 से कम है और एक पूर्णांक (integer) नहीं है,
+      // तो मान लें कि यह Hours में था।
+      if (delayValue > 0 && delayValue < 1 && delayValue * 24 === Math.floor(delayValue * 24)) {
+          delayValue = delayValue * 24; // Hours में बदलें
+          delayUnit = 'Hours'; // यूनिट को Hours पर सेट करें
+      }
+      
       return {
         id: Date.now() + Math.random(), 
         backend_id: action.id, 
@@ -846,6 +854,7 @@ watch(
   { deep: true }
 );
 </script>
+
 
 <style scoped>
 .input-error {

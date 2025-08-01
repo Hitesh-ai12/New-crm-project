@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('plan_id')->constrained('automation_action_plans')->onDelete('cascade');
             $table->string('type');
-            $table->integer('delay_days')->default(0);
+            $table->decimal('delay_days', 8, 4)->default(0); 
             $table->string('task_name')->nullable();
             $table->string('task_type')->nullable();
             $table->unsignedBigInteger('email_template_id')->nullable();
@@ -29,7 +29,6 @@ return new class extends Migration
             $table->unsignedInteger('step_order')->default(0);
             $table->timestamps();
         });
-
     }
 
     /**

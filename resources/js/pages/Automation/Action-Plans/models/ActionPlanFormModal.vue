@@ -172,7 +172,7 @@
                 <label
                   :for="'emailTemplate-' + action.id"
                   class="form-label-custom"
-                  >Email Template</label
+                  >* Email Template</label
                 >
                 <select
                   :id="'emailTemplate-' + action.id"
@@ -180,8 +180,9 @@
                   v-model="action.emailTemplate"
                   :class="{ 'input-error': errors[action.id]?.emailTemplate }"
                   @blur="validateField(action.id, 'emailTemplate')"
-                  > <!-- REMOVED required -->
-                  <option value="">Select Template (Optional)</option>
+                  required
+                >
+                  <option value="">Select Template</option>
                   <option
                     v-for="template in emailTemplates"
                     :key="template.id"
@@ -204,7 +205,7 @@
                 <label
                   :for="'textTemplate-' + action.id"
                   class="form-label-custom"
-                  >Text Template</label
+                  >* Text Template</label
                 >
                 <select
                   :id="'textTemplate-' + action.id"
@@ -212,8 +213,9 @@
                   v-model="action.textTemplate"
                   :class="{ 'input-error': errors[action.id]?.textTemplate }"
                   @blur="validateField(action.id, 'textTemplate')"
-                  > <!-- REMOVED required -->
-                  <option value="">Select Template (Optional)</option>
+                  required
+                >
+                  <option value="">Select Template</option>
                   <option
                     v-for="template in textTemplates"
                     :key="template.id"
@@ -517,8 +519,18 @@ const populateModal = () => {
     
     actions.value = (props.initialData.actions || []).map(action => {
       let delayValue = action.delay_days;
-      let delayUnit = 'Days'; 
+      let delayUnit = 'Days';
 
+      // --- FIX IS HERE ---
+      // अगर delay_days 0 है, तो default Days ही रहेगा.
+      // अगर delay_days 1 से कम है और 0 से बड़ा है, तो उसे Hours में मानें।
+      if (delayValue > 0 && delayValue < 1) {
+        // hoursValue को 2 दशमलव स्थान तक राउंड करें ताकि floating point error से बचा जा सके।
+        const hoursValue = parseFloat((delayValue * 24).toFixed(2));
+        delayValue = hoursValue;
+        delayUnit = 'Hours';
+      }
+      
       return {
         id: Date.now() + Math.random(), 
         backend_id: action.id, 
@@ -529,8 +541,8 @@ const populateModal = () => {
         taskType: action.task_type,
         emailTemplate: action.email_template_id,
         textTemplate: action.sms_template_id,
-        noteContent: action.note_content,
         newStage: action.new_stage || [], 
+        noteContent: action.note_content,
         addTags: action.add_tags || [],
         removeTags: action.remove_tags || [],
         pauseSpecificPlan: action.pause_specific_plan,
@@ -597,11 +609,11 @@ function validateField(actionId, fieldKey) {
             break;
 
         case 'emailTemplate':
-            // Template is now optional, so no required validation here
+            if (action.type === 'Send Email' && !fieldValue) message = 'Email Template is required';
             break;
 
         case 'textTemplate':
-            // Template is now optional, so no required validation here
+            if (action.type === 'Send Text' && !fieldValue) message = 'Text Template is required';
             break;
 
         case 'newStage':
@@ -651,10 +663,10 @@ function validateAction(action) {
             fieldsToValidate.push('taskName', 'taskType');
             break;
         case 'Send Email':
-            // emailTemplate is optional now
+            fieldsToValidate.push('emailTemplate');
             break;
         case 'Send Text':
-            // textTemplate is optional now
+            fieldsToValidate.push('textTemplate');
             break;
         case 'Add Note':
             fieldsToValidate.push('noteContent');
@@ -678,7 +690,7 @@ function validateAction(action) {
 function isActionEffectivelyEmpty(action) {
     return !action.type &&
            !action.taskName && !action.taskType &&
-           !action.emailTemplate && !action.textTemplate && // Include these for emptiness check
+           !action.emailTemplate && !action.textTemplate &&
            action.newStage.length === 0 && !action.noteContent &&
            action.addTags.length === 0 && action.removeTags.length === 0 &&
            !action.pauseSpecificPlan && !action.assignActionPlan;
@@ -702,20 +714,6 @@ function validateForm() {
 
     return valid;
 }
-
-const canAddAction = computed(() => {
-    const planNameValid = actionPlanName.value.trim() !== '';
-    if (!actions.value.length) {
-        return planNameValid;
-    }
-    const lastAction = actions.value[actions.value.length - 1];
-
-    if (isActionEffectivelyEmpty(lastAction) && !formAttempted.value) {
-        return false;
-    }
-
-    return planNameValid && validateAction(lastAction);
-});
 
 const addAction = () => {
     if (!canAddAction.value) {
@@ -767,6 +765,20 @@ const handleActionChange = (action) => {
         delete errors[action.id];
     }
 };
+
+const canAddAction = computed(() => {
+    const planNameValid = actionPlanName.value.trim() !== '';
+    if (!actions.value.length) {
+        return planNameValid;
+    }
+    const lastAction = actions.value[actions.value.length - 1];
+
+    if (isActionEffectivelyEmpty(lastAction) && !formAttempted.value) {
+        return false;
+    }
+
+    return planNameValid && validateAction(lastAction);
+});
 
 const submitForm = async () => {
   formAttempted.value = true;
@@ -844,6 +856,7 @@ watch(
   { deep: true }
 );
 </script>
+
 
 <style scoped>
 /* CSS styles are kept as is, as per your request */
