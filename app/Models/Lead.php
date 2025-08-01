@@ -16,7 +16,7 @@ class Lead extends Model
             'last_name',
             'email',
             'phone',
-            'user_id',  
+            'user_id',
             'tag',
             'stage',
             'new_listing_alert',
@@ -32,11 +32,30 @@ class Lead extends Model
             'city',
             'tasks',
             'appointments',
-            'house_number',  
-            'street',     
-            'province',   
-            'zip_code'    
+            'house_number',
+            'street',
+            'province',
+            'zip_code',
+            'notes',
+            'dob',
+            'facebook',
+            'instagram',
+            'linkedin',
+            'whatsapp',
+            'twitter',
+            'state',
+            'country',
+            'zip',
+            'company',
+            'lead_source',
+            'status',
+            'address_line1',
+            'address_line2',
+            'interested_in',
+            'preferred_contact_time',
+            'gender',
         ];
+
         
         protected $casts = [
             'created_at' => 'datetime',
@@ -54,5 +73,19 @@ class Lead extends Model
         {
             return $this->hasMany(EmailLog::class);
         }
+        
+        // Relationship to tasks in dedicated table
+        public function dedicatedTasks()
+        {
+            return $this->hasMany(Task::class);
+        }
 
+        // Helper method to add task to JSON field
+        public function addJsonTask(array $taskData)
+        {
+            $tasks = $this->tasks ?? [];
+            $tasks[] = $taskData;
+            $this->tasks = $tasks;
+            return $this->save();
+        }
 }

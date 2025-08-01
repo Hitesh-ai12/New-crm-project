@@ -64,6 +64,31 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
     />
   </VerticalNavGroup>
 
+  <!-- // Automation -->
+     <!-- 👉 Front Pages -->
+  <VerticalNavGroup
+    :item="{
+      title: 'Automation',
+      icon: 'ri-file-copy-line',
+    }"
+  >
+    <VerticalNavLink
+      :item="{
+        title: 'action-plan',  
+        to: '/action-plan',
+        icon: 'ri-file-copy-line',
+      }"
+    />
+    <VerticalNavLink
+      :item="{
+        title: 'Pre-Construction Listings',
+        to: '/pre-listings',
+        icon: 'ri-file-copy-line',
+      }"
+    />
+  </VerticalNavGroup>
+
+  <!-- end -->
   <VerticalNavLink
     :item="{
       title: 'My Team',

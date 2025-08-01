@@ -148,6 +148,13 @@ export const routes = [
           component: () => import('@/pages/listings/property-listing.vue'),
           props: true, // Pass route params as props
         },
+
+        {
+          path: 'action-plan',
+          name: 'action-plan',
+          component: () => import('@/pages/Automation/Action-Plans/Actionplansmain.vue'),
+          props: true, 
+        },
     ],
   },
 

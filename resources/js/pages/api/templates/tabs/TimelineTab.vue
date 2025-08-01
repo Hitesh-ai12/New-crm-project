@@ -25,6 +25,16 @@
         <div class="icon"><i class="fas fa-envelope"></i></div>
         <div class="label">Email</div>
       </div>
+
+      <div
+        class="menu-item"
+        :class="{ active: activeMenuItem === 'whatsapp' }"
+        @click="activeMenuItem = 'whatsapp'; messageFilter = 'all'"
+        >
+        <div class="icon"><i class="fab fa-whatsapp"></i></div>
+        <div class="label">WhatsApp</div>
+      </div>
+
       <div
         class="menu-item"
         :class="{ active: activeMenuItem === 'notes' }"
@@ -86,6 +96,11 @@
               To: {{ activity.phone }}
             </span>
 
+            <!-- WhatsApp info -->
+            <span v-else-if="activity.type === 'whatsapp'">
+              {{ activity.direction === 'sent' ? 'To' : 'From' }}: {{ activity.phone }}
+            </span>
+
             <br>
             <span v-html="activity.description"></span>
           </p>
@@ -99,6 +114,7 @@
           >
             Reply
           </button>
+
           <button
             v-if="activity.type === 'email'"
             class="btn btn-sm btn-info ms-2"
@@ -106,6 +122,7 @@
           >
             View
           </button>
+          
         <button
         v-if="activity.type === 'sms'"
         class="btn btn-sm btn-info ms-2"
@@ -114,8 +131,16 @@
         View
         </button>
 
+        <button
+          v-if="activity.type === 'whatsapp'"
+          class="btn btn-sm btn-info ms-2"
+          @click="viewWhatsappChat(activity)"
+        >
+          View
+        </button>
         </div>
       </div>
+
       <div v-if="showEmailModal" class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0, 0, 0, 50%);">
         <div class="modal-dialog modal-lg" role="document">
           <div class="modal-content">
@@ -180,6 +205,54 @@
         </div>
       </div>
 
+    <!-- WhatsApp Chat Modal -->
+  <div
+    v-if="showWhatsappModal"
+    class="modal fade show d-block"
+    tabindex="-1"
+    role="dialog"
+    style="background-color: rgba(0, 0, 0, 50%);"
+  >
+    <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">WhatsApp Chat with {{ selectedWhatsappChat.phone }}</h5>
+          <button type="button" class="btn-close" @click="showWhatsappModal = false"></button>
+        </div>
+        <div class="modal-body" style="max-block-size: 60vh; overflow-y: auto;">
+          <div 
+            v-for="(msg, index) in selectedWhatsappChat.messages" 
+            :key="index" 
+            class="mb-3"
+          >
+            <div
+              :class="{
+                'd-flex justify-content-end': msg.direction === 'sent',
+                'd-flex justify-content-start': msg.direction === 'received'
+              }"
+            >
+              <div
+                :class="{
+                  'bg-primary text-white p-3 rounded': msg.direction === 'sent',
+                  'bg-light p-3 rounded': msg.direction === 'received'
+                }"
+                style="max-inline-size: 70%;"
+              >
+                <div>{{ msg.text }}</div>
+                <div class="small text-muted mt-1 text-end">{{ msg.time }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="showWhatsappModal = false">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
     </div>
   </div>
 </template>
@@ -200,6 +273,13 @@ const activeMenuItem = ref('all');
 const messageFilter = ref('all');
 const activities = ref([]);
 
+const showWhatsappModal = ref(false);
+const whatsappChatMessages = ref([]);
+const selectedWhatsappChat = ref({
+  phone: '',
+  messages: []
+});
+
 // Format a datetime string safely
 const formatDateTime = (dateTimeStr) => {
   const dt = new Date(dateTimeStr);
@@ -208,6 +288,29 @@ const formatDateTime = (dateTimeStr) => {
     date: dt.toLocaleDateString(),
     time: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   };
+};
+
+const viewWhatsappChat = async (activity) => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // Get the specific chat for this activity
+    const response = await axios.get(`/api/whatsapp/message/${activity.id}`, { headers });
+    
+    selectedWhatsappChat.value = {
+      phone: activity.phone || 'WhatsApp Contact',
+      messages: [{
+        text: activity.description,
+        time: activity.time,
+        direction: activity.direction === 'sent' ? 'sent' : 'received'
+      }]
+    };
+    
+    showWhatsappModal.value = true;
+  } catch (err) {
+    console.error('Failed to load WhatsApp message:', err);
+  }
 };
 
 // Fetch all SMS and Emails
@@ -245,7 +348,7 @@ onMounted(async () => {
       const dt = new Date(`${email.date} ${email.time}`);
 
       return {
-        id: `${email.direction}-${Math.random().toString(36).substr(2, 9)}`, // or use email.id if exists
+        id: `${email.direction}-${Math.random().toString(36).substr(2, 9)}`, 
         type: 'email',
         direction: email.direction,
         title: email.direction === 'sent' ? 'Sent Email' : 'Reply Received',
@@ -262,6 +365,25 @@ onMounted(async () => {
 
     // Add to activity list
     activities.value.push(...formattedEmails);
+
+    // Get WhatsApp messages
+    const whatsappResponse = await axios.get(`/api/whatsapp/messages/${leadId.value}`, { headers });
+    const whatsappMessages = whatsappResponse.data.map((m, index) => {
+      const dt = new Date();
+      // Adjust this based on your actual API response structure
+      return {
+        id: `whatsapp-${index}`,
+        type: 'whatsapp',
+        direction: m.from === 'me' ? 'sent' : 'received',
+        title: m.from === 'me' ? 'Sent WhatsApp Message' : 'Received WhatsApp Message',
+        description: m.text,
+        date: dt.toLocaleDateString(),
+        time: m.time || dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        phone: 'WhatsApp Contact' // Adjust based on your data
+      };
+    });
+
+    activities.value.push(...whatsappMessages);
 
 
     // ✅ Sort all activities by date-time (descending)

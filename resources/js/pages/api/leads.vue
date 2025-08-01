@@ -1,4 +1,5 @@
 <template>
+
   <div class="leads-container">
 
     <div class="leads-header">
@@ -105,7 +106,7 @@
           <select id="template" v-model="emailData.template" @change="loadTemplate">
             <option value="">Select Template</option>
             <option v-for="template in templates" :key="template.id" :value="template.id">
-              {{ template.title }} <!-- Show template title instead of ID -->
+              {{ template.title }} 
             </option>
           </select>
         </div>
@@ -118,7 +119,6 @@
           <label for="attachments">Attachments:</label>
           <input type="file" id="attachments" @change="handleAttachments" />
           
-          <!-- Show attachment below with remove button -->
           <div v-if="emailData.attachments.length" class="attachment-list mt-2">
             <div v-for="(file, index) in emailData.attachments" :key="index" class="attachment-item">
               <span>{{ file.split('/').pop() }}</span>
@@ -150,7 +150,6 @@
       <i class="fa-solid fa-envelope"></i>
     </li>
     
-    <!--  Email to field  Lead modal-->   
     <teleport to="body">
       <div v-if="showSmsLeadModal" class="integrte_LeadModal">
         <div class="modal_LeadContent">
@@ -242,10 +241,9 @@
         </select>
       </div>
 
-     <!-- Message Body (Textarea with Character Counter inside) -->
         <!-- TinyMCE Editor -->
         <textarea id="sms-editor"></textarea>
-      <!-- Schedule SMS -->
+
       <div class="form-group">
         <label for="sms-schedule">Schedule SMS:</label>
         <input type="datetime-local" id="sms-schedule" v-model="smsData.schedule" />
@@ -260,16 +258,16 @@
   </div>
 
     <!-- "My Leads" Button -->
-    <li
-      v-if="activeLeadType === 'my'"
-      class="total-leads"
-      @click="openSmsModal"
-      :class="{ disabled: selectedLeads.length === 0 }"
-      :disabled="selectedLeads.length === 0"
-    >
-      <span>Smart SMS</span>
-      <i class="fa-solid fa-comment-dots"></i>
-    </li>
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          @click="openSmsModal"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+        >
+          <span>Smart SMS</span>
+          <i class="fa-solid fa-comment-dots"></i>
+        </li>
 
         <li
           v-if="activeLeadType === 'my'"
@@ -281,6 +279,23 @@
           <span>Tags</span>
           <i class="fa-solid fa-tags"></i>
         </li>
+
+        <li
+          v-if="activeLeadType === 'my'"
+          class="total-chats total-leads"
+          :class="{ disabled: selectedLeads.length === 0 }"
+          :disabled="selectedLeads.length === 0"
+          @click="showWhatsappModal = true"
+        >
+          <span>Whatsapp</span>
+          <i class="fa-brands fa-whatsapp"></i>
+        </li>
+
+        <WhatsappChatModal
+          :visible="showWhatsappModal"
+          :selectedLeads="selectedLeadsList"
+          @close="showWhatsappModal = false"
+        />
 
         <li
           v-if="activeLeadType === 'my'"
@@ -325,17 +340,6 @@
         >
           <span>Open House Alert</span>
           <i class="fa-solid fa-circle-exclamation"></i>
-        </li>
-
-        <li
-          v-if="activeLeadType === 'my'"
-          class="total-leads"
-          :class="{ disabled: selectedLeads.length === 0 }"
-          :disabled="selectedLeads.length === 0"
-          @click="openModal('actionPlan')"
-        >
-          <span>Action Plan</span>
-          <i class="fa-solid fa-plus"></i>
         </li>
 
         <li
@@ -391,18 +395,18 @@
           :class="{ disabled: selectedcoloms.length === 0 }"
           :disabled="selectedcoloms.length === 0"
           @click="opencolomsModal"
-        >
+          >
           <span>Lead</span>
           <i class="fa-solid fa-table-cells"></i>
         </li>
         
         <li
-        v-if="activeLeadType === 'my'"
-        class="total-leads"
-        @click="openColumnsModal"
-        >
-        <span>Settings</span>
-        <i class="fa-solid fa-gear"></i>
+          v-if="activeLeadType === 'my'"
+          class="total-leads"
+          @click="openColumnsModal"
+          >
+          <span>Settings</span>
+          <i class="fa-solid fa-gear"></i>
         </li>
 
       </ul>
@@ -416,8 +420,6 @@
         <h2>Select Import Type</h2>
 
         <div class="import-options" v-if="!showFileInput">
-          <!-- Direct File Import -->
-          <button @click="importDirectFile" class="import-button">Direct File Import</button>
 
           <!-- Indirect File Import -->
           <button @click="showFileUploadField" class="import-button">Indirect File Import</button>
@@ -425,9 +427,11 @@
 
         <!-- Show File Input for Indirect File Import -->
         <div v-if="showFileInput" class="file-upload-container">
-          <input type="file" @change="handleFileUpload" accept=".csv" />
-          <button @click="submitCsvFile" class="submit-button">Submit CSV</button>
-          <p v-if="fileError" class="error-message">{{ fileError }}</p>
+          <!-- <input type="file" @change="handleFileUpload" accept=".csv" /> -->
+        <input type="file" @change="handleFileUpload" accept=".csv" />
+
+        <button @click="submitCsvFile">Submit CSV</button>
+        <p v-if="fileError" class="error-message">{{ fileError }}</p>
         </div>
       </div>
     </div>
@@ -590,7 +594,7 @@
           <label>
           Tag:
           <select v-model="newLead.tag" required>
-            <option v-for="tag in tags" :key="tag.id" :value="tag.id">
+            <option v-for="tag in tags" :key="tag.id" :value="tag.name">
               {{ tag.name }}
             </option>
           </select>
@@ -600,7 +604,7 @@
         <label>
           Stage:
           <select v-model="newLead.stage" required>
-            <option v-for="stage in stages" :key="stage.id" :value="stage.id">
+            <option v-for="stage in stages" :key="stage.id" :value="stage.name">
               {{ stage.name }}
             </option>
           </select>
@@ -613,6 +617,7 @@
 
     <!-- Leads Table -->
   <div>
+
     <div>
       <label for="pageSize">Rows per page:</label>
       <select v-model="pageSize" @change="setPageSize(Number($event.target.value))">
@@ -626,6 +631,11 @@
     <!-- Leads Table -->
     <div class="table-container">
       <div class="table-wrapper">
+          <!-- Loader -->
+        <div v-if="isTableLoading" class="table-loader-overlay">
+          <Loader />
+          <span class="loader-text">Loading table...</span>
+        </div>
         <table class="lead_Table">
           <thead>
             <tr>
@@ -728,6 +738,8 @@
 
 <script lang="js">
 import '@/assets/leads.css';
+import WhatsappChatModal from '@/pages/api/leadmodels/WhatsappChatModal.vue';
+import Loader from '@/pages/loader/loader.vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import tinymce from 'tinymce';
@@ -738,17 +750,19 @@ import 'tinymce/themes/silver';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import draggable from "vuedraggable";
 
+
 export default {
   name: 'LeadsPage',
-   components: { draggable },
+   components: { draggable, WhatsappChatModal, Loader },
   setup() {
     const activeLeadType = ref('all');
     const leads = ref([]);
-    const loading = ref(true);
-    const error = ref('');
+    const loading = ref(false);
+    const error = ref(null);
     const searchQuery = ref('');
     const showForm = ref(false);
- 
+    const showWhatsappModal = ref(false);
+
     const newLead = ref({
       id: 0,
       first_name: '',
@@ -807,6 +821,10 @@ export default {
     const showLeadModal = ref(false);
     const selectedEmails = ref([]);
  
+    const loadingLeads = ref(false);
+    const loadingColumns = ref(false);
+
+const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value);
 
     const authToken = localStorage.getItem('auth_token');
     // Modal methods
@@ -1126,7 +1144,7 @@ export default {
             formData.append('subject', emailData.value.subject)
             formData.append('message', message)
             formData.append('template_id', emailData.value.template)
-            formData.append('user_id', userId) // ✅ Correctly parsed
+            formData.append('user_id', userId) 
 
             // Append lead IDs
             selectedLeadIds.forEach(id => {
@@ -1147,7 +1165,7 @@ export default {
             await axios.post('/api/send-email', formData, {
               headers: {
                 'Content-Type': 'multipart/form-data',
-                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,  // Optional: Sanctum
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`, 
               }
             })
 
@@ -1357,19 +1375,19 @@ export default {
     };
 
 
-  const openSmsModal = () => {
-    if (selectedLeads.value.length === 0) {
-      Swal.fire('No leads selected!', 'Please select leads before sending an SMS.', 'warning');
-      return;
-    }
+    const openSmsModal = () => {
+      if (selectedLeads.value.length === 0) {
+        Swal.fire('No leads selected!', 'Please select leads before sending an SMS.', 'warning');
+        return;
+      }
 
-    showSmsModal.value = true;
+      showSmsModal.value = true;
 
-    nextTick(() => {
-      destroysmsTinyMCE();     
-      initializesmsTinyMCE();   
-    });
-  };
+      nextTick(() => {
+        destroysmsTinyMCE();     
+        initializesmsTinyMCE();   
+      });
+    };
   
     const expandSmsModal = () => {
       isFullscreen.value = !isFullscreen.value;
@@ -1396,14 +1414,14 @@ export default {
     };
 
 
-  const insertMergeTag = (event) => {
-    const tag = event.target.value;
-    if (tag) {
-      smsData.value.message += ` ${tag}`;
-      smsData.value.subject += ` ${tag}`;
-      event.target.value = '';
-    }
-  };
+    const insertMergeTag = (event) => {
+      const tag = event.target.value;
+      if (tag) {
+        smsData.value.message += ` ${tag}`;
+        smsData.value.subject += ` ${tag}`;
+        event.target.value = '';
+      }
+    };
 
     const previewSms = () => {
       Swal.fire({
@@ -1459,59 +1477,52 @@ export default {
 
 
    // End -- Send Email And Sms On Selected Leads Functionlity...
-
-    const fetchLeads = async (type) => {
+       const token = localStorage.getItem("auth_token");
+       
+      const fetchLeads = async (type) => {
         activeLeadType.value = type;
-        loading.value = true; 
+        loadingLeads.value = true;
+        loadingColumns.value = true;
 
-        if (type === 'all') {
-          await getAllLeads();
-        } else if (type === 'my') {
-          await getMyLeads();
+        try {
+         
+
+          await Promise.all([
+            // Fetch leads based on type
+            (type === 'all' ? getAllLeads(token) : getMyLeads(token)),
+            // Fetch column settings
+            fetchColumnSettings(token)
+          ]);
+        } catch (err) {
+          console.error("Error fetching leads or columns:", err);
+        } finally {
+          loadingLeads.value = false;
+          loadingColumns.value = false;
         }
       };
 
-    const getAllLeads = async () => {
-      loading.value = true;
-      error.value = null;
 
-      try {
-        const authToken = localStorage.getItem('auth_token');
-        const response = await axios.get('/api/leads', {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
+      const getAllLeads = async (token) => {
+        try {
+          const response = await axios.get("/api/leads", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          leads.value = Array.isArray(response.data) ? response.data : [];
+        } catch (err) {
+          console.error("Error loading leads", err);
+        }
+      };
 
-        leads.value = Array.isArray(response.data) ? response.data : [];
-      } catch (err) {
-        console.error('Error fetching all leads:', err);
-        error.value = 'Failed to fetch leads.';
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    const getMyLeads = async () => {
-      loading.value = true;
-      error.value = null;
-
-      try {
-        const authToken = localStorage.getItem('auth_token');
-        const response = await axios.get('/api/leads', {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-
-        leads.value = Array.isArray(response.data) ? response.data : [];
-      } catch (err) {
-        console.error('Error fetching my leads:', err);
-        error.value = 'Failed to fetch my leads.';
-      } finally {
-        loading.value = false;
-      }
-    };
+      const getMyLeads = async (token) => {
+        try {
+          const response = await axios.get("/api/leads?type=my", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          leads.value = Array.isArray(response.data) ? response.data : [];
+        } catch (err) {
+          console.error("Error loading my leads", err);
+        }
+      };
 
 
     const fetchItems = async () => {
@@ -1697,34 +1708,7 @@ export default {
       }
     };
 
-    const importLeads = async (event) => {
-      const file = event.target.files[0];
 
-      if (!file) {
-        showToast('No file selected.', 'error');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-        const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
-
-        await axios.post('/leads/import', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'X-CSRF-TOKEN': csrfToken,
-          },
-        });
-
-        await fetchLeads();
-        showToast('Leads imported successfully!', 'success');
-      } catch (err) {
-        showToast('Failed to import leads.', 'error');
-      }
-    };
 
     const importIndirectFile = () => {
       closeImportModal();
@@ -1747,25 +1731,82 @@ export default {
       showFileInput.value = true;
     };
 
-    const handleFileUpload = (event) => {
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+
+    if (!file) {
+      fileError.value = "No file selected.";
+      selectedFile.value = null;
+      return;
+    }
+
+    const validExtensions = ['.csv'];
+    const fileName = file.name.toLowerCase();
+
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+
+    if (hasValidExtension) {
+      selectedFile.value = file;
+      fileError.value = '';
+    } else {
+      selectedFile.value = null;
+      fileError.value = 'Please select a valid CSV file.';
+    }
+  };
+
+
+
+    const importLeads = async (event) => {
       const file = event.target.files[0];
-      if (file && file.type === 'text/csv') {
-        selectedFile.value = file;
-        fileError.value = '';
-      } else {
-        selectedFile.value = null;
-        fileError.value = 'Please select a valid CSV file.';
+      if (!file || !file.name.endsWith('.csv')) {
+        showToast('No file selected or invalid file type.', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const token = localStorage.getItem('auth_token');
+
+        await axios.post('/api/leads/import', formData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        showToast('Leads imported successfully!', 'success');
+        await fetchLeads();
+      } catch (err) {
+        showToast('Failed to import leads.', 'error');
       }
     };
 
-    const submitCsvFile = () => {
-      if (!selectedFile.value) {
-        fileError.value = 'No file selected or invalid file type.';
+    const submitCsvFile = async () => {
+      if (!selectedFile.value || !selectedFile.value.name.endsWith('.csv')) {
+        fileError.value = "Please select a valid CSV file.";
         return;
       }
- 
-      closeImportModal();
+
+      const formData = new FormData();
+      formData.append("file", selectedFile.value);
+
+      try {
+        const token = localStorage.getItem("auth_token");
+        await axios.post("/api/leads/import", formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        showToast("Leads imported successfully!", "success");
+        await fetchLeads();
+      } catch (err) {
+        showToast("Failed to import leads.", "error");
+      }
     };
+
 
     const importDirectFile = () => {
       closeImportModal();
@@ -1811,7 +1852,7 @@ export default {
           last_name: newLead.value.last_name,
           email: newLead.value.email,
           phone: fullPhone,
-          country_code: newLead.value.country_code, // ✅ add this
+          country_code: newLead.value.country_code,
           tag: String(newLead.value.tag),
           stage: String(newLead.value.stage),
         }, {
@@ -1828,15 +1869,13 @@ export default {
           last_name: '',
           email: '',
           phone: '',
-          country_code: '', // ✅ reset this too
+          country_code: '',
           tag: '',
           stage: ''
         };
 
 
         showForm.value = false;
-
-        // ✅ PERFECT: Go to first page & reload leads
         currentPage.value = 1;
         await getAllLeads();
 
@@ -1851,6 +1890,7 @@ export default {
    // Column selection modal
     const showColumnsModal = ref(false);
     const selectedColumns = ref(['first_name', 'email', 'phone']); 
+
     const availableColumns = ref({
       first_name: { label: 'Name', disabled: true },
       email: { label: 'Email', disabled: true },
@@ -1858,7 +1898,7 @@ export default {
       latest_activity: { label: 'Latest Activity' },
       activity_at: { label: 'Activity At' },
       created_on: { label: 'Created On' },
-      tags: { label: 'Tags' },
+      tag: { label: 'Tag' },
       stage: { label: 'Stage' },
       latest_source: { label: 'Latest Source' },
       latest_sms: { label: 'Latest SMS' },
@@ -1891,16 +1931,18 @@ export default {
       closeColumnsModal(); 
     };
    
-    const fetchColumnSettings = async () => {
+    const fetchColumnSettings = async (token) => {
       try {
+        const token = localStorage.getItem("auth_token");
+
         const response = await axios.get("/api/columns-settings", {
-          headers: { Authorization: `Bearer ${authToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         selectedColumns.value = Array.isArray(response.data.selectedColumns)
           ? response.data.selectedColumns
-          : ['first_name', 'email', 'phone'];
+          : ["first_name", "email", "phone"];
       } catch (error) {
-        showToast('Failed to fetch column settings!');
+        showToast("Failed to fetch column settings!");
       }
     };
 
@@ -1960,6 +2002,8 @@ export default {
         showToast("Failed to save column order.");
       }
     };
+
+    
     const signatures = ref([]);
     const hasFetchedSignatures = ref(false);
 
@@ -1995,18 +2039,24 @@ export default {
     onMounted(async () => {
       await fetchLeads(activeLeadType.value);
       await fetchItems();
-     
+       fetchSmsTemplates();
+       await fetchTemplates();
+       await fetchColumnSettings();
+       await fetchCountries();
       try {
         await destroyTinyMCE(); 
       } catch (error) {
+
       }
-       fetchSmsTemplates();
-      await fetchTemplates();
-      await fetchColumnSettings();
-       await fetchCountries();
+
+ 
     });
 
     return {
+          loadingLeads,
+    loadingColumns,
+    isTableLoading,
+      showWhatsappModal,
       isFullscreen,
       countries,
       activeColomType,
@@ -2644,4 +2694,39 @@ button:hover {
   border-radius: 5px;
   margin-inline-start: 10px;
 }
+
+.loader-overlay {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 90%);
+  block-size: 200px;
+}
+
+.table-wrapper {
+  position: relative;
+}
+
+.table-loader-overlay {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(3px);
+  background-color: rgba(255, 255, 255, 40%); /* optional dimming */
+  block-size: 100%;
+  inline-size: 100%;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+}
+
+.loader-text {
+  color: #333;
+  font-weight: 500;
+  margin-block-start: 8px;
+}
+
 </style>

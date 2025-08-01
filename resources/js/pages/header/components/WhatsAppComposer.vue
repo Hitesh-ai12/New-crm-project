@@ -39,14 +39,20 @@
         </div>
       </div>
 
-      <div class="chat-messages flex-grow-1 overflow-auto p-3 bg-light">
+      <div
+        class="chat-messages flex-grow-1 overflow-auto p-3 bg-light"
+        ref="chatContainer"
+      >
         <div
           v-for="(msg, index) in selectedChat.messages"
           :key="index"
           class="mb-3"
         >
           <div
-            :class="['p-2 rounded', msg.from === 'me' ? 'bg-success text-white ms-auto' : 'bg-white me-auto']"
+            :class="[
+              'p-2 rounded',
+              msg.from === 'me' ? 'bg-success text-white ms-auto' : 'bg-white me-auto',
+            ]"
             style="max-inline-size: 75%;"
           >
             {{ msg.text }}
@@ -67,8 +73,9 @@
           <i class="bi bi-send-fill"></i>
         </button>
       </div>
-      
+
     </div>
+
 
     <!-- No chat selected fallback -->
     <div class="chat-area d-flex flex-column flex-grow-1 justify-content-center align-items-center text-muted" v-else>
@@ -147,68 +154,76 @@ export default {
     },
 
     async selectChat(chat) {
-      this.selectedChat = { ...chat, messages: [] };
-
+      const authToken = localStorage.getItem('auth_token');
       try {
-        const authToken = localStorage.getItem('auth_token');
         const response = await axios.get(`/api/whatsapp/messages/${chat.id}`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
 
-        if (Array.isArray(response.data)) {
-          this.selectedChat.messages = response.data;
-          this.scrollToBottom();
-        }
+        this.selectedChat = {
+          ...chat,
+          messages: response.data,
+        };
+
+        this.scrollToBottom();
       } catch (err) {
-        console.error('Failed to load messages:', err);
+        console.error('❌ Failed to load messages for chat:', err);
       }
     },
 
-    async sendMessage() {
-      if (!this.newMessage.trim() || !this.selectedChat) return;
+async sendMessage() {
+  if (!this.newMessage.trim() || !this.selectedChat) return;
 
-      const authToken = localStorage.getItem('auth_token');
-      try {
-        const response = await axios.post(
-          '/api/whatsapp/send',
-          {
-            message: this.newMessage,
-            recipients: [this.selectedChat.phone],
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        );
+  const authToken = localStorage.getItem('auth_token');
+  const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        if (response.data.success) {
-          const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-          // ✅ Push message to selected chat
-          this.selectedChat.messages.push({
-            from: 'me',
-            text: this.newMessage,
-            time: timeNow,
-          });
-
-          // ✅ Update lastMessage in sidebar too
-          const chat = this.chats.find(c => c.id === this.selectedChat.id);
-          if (chat) {
-            chat.lastMessage = this.newMessage;
-            chat.time = timeNow;
-          }
-
-          this.newMessage = '';
-
-          this.scrollToBottom();
-        } else {
-          console.error('Message sending failed:', response.data.error);
-        }
-      } catch (error) {
-        console.error('Failed to send message:', error);
+  try {
+    const response = await axios.post(
+      '/api/whatsapp/send',
+      {
+        message: this.newMessage,
+        recipients: [this.selectedChat.phone],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
       }
-    },
+    );
+
+if (response.data && response.data.status === 'success') {
+  if (!this.selectedChat.messages) {
+    this.$set(this.selectedChat, 'messages', []);
+  }
+
+  this.selectedChat.messages.push({
+    from: 'me',
+    text: this.newMessage,
+    time: timeNow,
+  });
+
+  const chat = this.chats.find(c => c.id === this.selectedChat.id);
+  if (chat) {
+    chat.lastMessage = this.newMessage;
+    chat.time = timeNow;
+  }
+
+  this.selectedChat = { ...this.selectedChat }; // force reactivity
+  this.newMessage = '';
+  this.scrollToBottom();
+
+  this.$nextTick(() => {
+    const input = this.$el.querySelector('.chat-input input');
+    if (input) input.focus();
+  });
+} else {
+  console.error('🚨 Message sending failed:', response.data);
+}
+
+  } catch (error) {
+    console.error('Failed to send message:', error);
+  }
+},
 
     async fetchMyLeads() {
       try {
@@ -252,21 +267,21 @@ export default {
       this.selectedLeadIds = [];
     },
 
-    async fetchChats() {
-      try {
-        const authToken = localStorage.getItem('auth_token');
-        const response = await axios.get('/api/whatsapp/chats', {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-        this.chats = response.data;
-        return Promise.resolve(); 
-      } catch (error) {
-        console.error('Failed to load chats:', error);
-        return Promise.reject(error);
-      }
-    },
+      async fetchChats() {
+        try {
+          const authToken = localStorage.getItem('auth_token');
+          const response = await axios.get('/api/whatsapp/chats', {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+          this.chats = response.data;
+          return Promise.resolve(); 
+        } catch (error) {
+          console.error('Failed to load chats:', error);
+          return Promise.reject(error);
+        }
+      },
   },
   mounted() {
     this.fetchChats(); 

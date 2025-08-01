@@ -17,7 +17,7 @@
         <label class="form-label">Phone</label>
         <input type="text" v-model="user.phone" class="form-control" required />
       </div>
-      <div class="col-md-6">
+      <!-- <div class="col-md-6">
         <label class="form-label">Latest Activity</label>
         <input type="text" v-model="user.latestActivity" class="form-control" />
       </div>
@@ -28,7 +28,7 @@
       <div class="col-md-6">
         <label class="form-label">Created On</label>
         <input type="date" v-model="user.createdOn" class="form-control" />
-      </div>
+      </div> -->
       <div class="col-md-6">
         <label class="form-label">Tags</label>
         <input type="text" v-model="user.tags" class="form-control" />
@@ -37,7 +37,7 @@
         <label class="form-label">Stage</label>
         <input type="text" v-model="user.stage" class="form-control" />
       </div>
-      <div class="col-md-6">
+      <!-- <div class="col-md-6">
         <label class="form-label">Latest Source</label>
         <input type="text" v-model="user.latestSource" class="form-control" />
       </div>
@@ -48,11 +48,11 @@
       <div class="col-md-6">
         <label class="form-label">Latest Email</label>
         <input type="text" v-model="user.latestEmail" class="form-control" />
-      </div>
-      <div class="col-md-6">
+      </div> -->
+      <!-- <div class="col-md-6">
         <label class="form-label">Next Task</label>
         <input type="text" v-model="user.nextTask" class="form-control" />
-      </div>
+      </div> -->
       <div class="col-md-6">
         <label class="form-label">Next Appointment</label>
         <input type="date" v-model="user.nextAppointment" class="form-control" />
@@ -160,9 +160,18 @@
 
 
 <script setup>
-import { reactive, ref } from 'vue'
+import axios from 'axios'
+import { onMounted, reactive, ref } from 'vue'
 
-const leadId = ref('123') 
+// Auth token setup
+const token = localStorage.getItem('auth_token')
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+}
+
+const leadId = ref(null)
+
+// Form model
 const user = reactive({
   name: '',
   email: '',
@@ -199,50 +208,100 @@ const user = reactive({
   zip_code: ''
 })
 
-const leftFields = {
-  name: { label: 'Name', type: 'input', attrs: { required: true } },
-  email: { label: 'Email', type: 'input', attrs: { type: 'email', required: true } },
-  phone: { label: 'Phone', type: 'input', attrs: { required: true } },
-  latestActivity: { label: 'Latest Activity', type: 'input' },
-  activityAt: { label: 'Activity At', type: 'input', attrs: { type: 'date' } },
-  createdOn: { label: 'Created On', type: 'input', attrs: { type: 'date' } },
-  tags: { label: 'Tags', type: 'input' },
-  stage: { label: 'Stage', type: 'input' },
-  latestSource: { label: 'Latest Source', type: 'input' },
-  latestSMS: { label: 'Latest SMS', type: 'input' },
-  latestEmail: { label: 'Latest Email', type: 'input' },
-  nextTask: { label: 'Next Task', type: 'input' },
-  nextAppointment: { label: 'Next Appointment', type: 'input', attrs: { type: 'date' } },
-  house_number: { label: 'House Number', type: 'input', attrs: { required: true } },
-  street: { label: 'Street', type: 'input', attrs: { required: true } },
-  city: { label: 'City', type: 'input', attrs: { required: true } },
-  province: { label: 'Province', type: 'input', attrs: { required: true } },
-  zip_code: { label: 'Zip Code', type: 'input', attrs: { required: true } },
+// ✅ Payload mapping (frontend → backend)
+const mapToBackendPayload = () => ({
+  first_name: user.name.split(' ')[0],
+  last_name: user.name.split(' ').slice(1).join(' ') || null,
+  email: user.email,
+  phone: user.phone,
+  tag: user.tags,
+  stage: user.stage,
+  new_listing_alert: user.newListingAlerts ? '1' : '0',
+  neighbourhood_alert: user.neighbourhoodAlerts ? '1' : '0',
+  open_house_alert: user.openHouseAlerts ? '1' : '0',
+  price_drop_alert: user.priceDropAlerts ? '1' : '0',
+  action_plans: user.activeActionPlans,
+  real_estate_newsletter: user.assignedNewsletters,
+  market_updates: user.assignedMarketUpdates,
+  background: user.background,
+  notes: user.notes,
+  dob: user.dob,
+  city: user.city,
+  house_number: user.house_number,
+  street: user.street,
+  province: user.province,
+  zip_code: user.zip_code,
+  facebook: user.facebook,
+  instagram: user.instagram,
+  linkedin: user.linkedin,
+  whatsapp: user.whatsapp,
+  twitter: user.twitter
+})
+
+// ✅ PUT request to update lead
+const updateLead = async () => {
+  try {
+    const payload = mapToBackendPayload()
+    const token = localStorage.getItem('auth_token')
+
+    const response = await axios.put(`/api/leads/${leadId.value}`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    alert('Lead updated successfully!')
+    console.log(response.data)
+  } catch (error) {
+    if (error.response?.data?.errors) {
+      alert('Validation failed: ' + JSON.stringify(error.response.data.errors))
+    } else {
+      alert('Update failed: ' + error.message)
+    }
+  }
 }
 
-const rightFields = {
-  newListingAlerts: { label: 'New Listing Alerts', type: 'checkbox' },
-  neighbourhoodAlerts: { label: 'Neighbourhood Alerts', type: 'checkbox' },
-  openHouseAlerts: { label: 'Open House Alerts', type: 'checkbox' },
-  priceDropAlerts: { label: 'Price Drop Alerts', type: 'checkbox' },
-  activeActionPlans: { label: 'Active Action Plans', type: 'input' },
-  assignedMarketUpdates: { label: 'Assigned Market Updates', type: 'input' },
-  assignedNewsletters: { label: 'Assigned Newsletters', type: 'input' },
-  notes: { label: 'Notes', type: 'textarea' },
-  dob: { label: 'Date of Birth', type: 'input', attrs: { type: 'date' } },
-  background: { label: 'Background', type: 'textarea' },
-  facebook: { label: 'Facebook', type: 'input', attrs: { type: 'url' } },
-  instagram: { label: 'Instagram', type: 'input', attrs: { type: 'url' } },
-  linkedin: { label: 'LinkedIn', type: 'input', attrs: { type: 'url' } },
-  whatsapp: { label: 'WhatsApp', type: 'input' },
-  twitter: { label: 'Twitter', type: 'input', attrs: { type: 'url' } },
+// ✅ Pre-fill form from backend
+const loadLead = async (id) => {
+  try {
+    const { data } = await axios.get(`/api/leads/${id}`)
+    leadId.value = data.id
+    user.name = `${data.first_name || ''} ${data.last_name || ''}`.trim()
+    user.email = data.email
+    user.phone = data.phone
+    user.tags = data.tag
+    user.stage = data.stage
+    user.newListingAlerts = data.new_listing_alert === '1'
+    user.neighbourhoodAlerts = data.neighbourhood_alert === '1'
+    user.openHouseAlerts = data.open_house_alert === '1'
+    user.priceDropAlerts = data.price_drop_alert === '1'
+    user.activeActionPlans = data.action_plans
+    user.assignedMarketUpdates = data.market_updates
+    user.assignedNewsletters = data.real_estate_newsletter
+    user.background = data.background
+    user.notes = data.notes
+    user.dob = data.dob
+    user.city = data.city
+    user.house_number = data.house_number
+    user.street = data.street
+    user.province = data.province
+    user.zip_code = data.zip_code
+    user.facebook = data.facebook
+    user.instagram = data.instagram
+    user.linkedin = data.linkedin
+    user.whatsapp = data.whatsapp
+    user.twitter = data.twitter
+  } catch (err) {
+    console.error(err)
+  }
 }
-  
-function updateLead() {
-  console.log('Lead data:', user)
-  alert('Lead Updated Successfully!')
-}
+
+// Load lead on mount
+onMounted(() => {
+  loadLead(1) // Replace with dynamic ID if needed
+})
 </script>
+
 
 <style scoped>
 textarea.form-control {

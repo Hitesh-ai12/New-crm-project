@@ -7,7 +7,6 @@ use App\Http\Controllers\Auth\FormController;
 use App\Http\Controllers\Template\TemplateController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CountryController;
-use App\Models\ApiKey;
 use App\Http\Controllers\Email\EmailController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\Sms\SmsController;
@@ -22,6 +21,11 @@ use App\Http\Controllers\Settings\ItemController;
 use App\Http\Controllers\Signature\SignatureTemplateController;
 use App\Http\Controllers\Webhook\GmailWebhookController;
 use App\Http\Controllers\Whatsapp\TwilioWhatsappController;
+use App\Http\Controllers\Calendars\TaskController;
+use App\Http\Controllers\Appointment\AppointmentController;
+use App\Http\Controllers\Dashboard\EventCountController;
+use App\Http\Controllers\Automation\AutomationController;
+use App\Http\Controllers\LeadActionPlanAssignmentController;
 
 
 Route::get('/user', function (Request $request) {
@@ -32,6 +36,7 @@ Route::get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->get('/get-role', [AuthController::class, 'getRole']);
 Route::post('form-submit', [FormController::class, 'store']);
 Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('auth:sanctum');
+
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/items', [ItemController::class, 'index']);
@@ -42,9 +47,8 @@ Route::post('/send-email', [EmailController::class, 'sendEmail'])->name('send.em
 
 Route::get('/sms-templates', [EmailTemplateController::class, 'getSmsTemplates']);
 Route::post('/upload', [FileUploadController::class, 'upload']);
-Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
 // Route::middleware('auth:sanctum')->post('/generate-api-key', [AuthController::class, 'generateApiKey']);
-// 
+
 Route::post('/upload-image', [EditorController::class, 'uploadImage']);
 
 Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms');
@@ -59,8 +63,41 @@ Route::get('/email/lead/{leadId}', [EmailController::class, 'getLeadEmails']);
 
 Route::post('/whatsapp/webhook', [TwilioWhatsappController::class, 'incoming']);
 // Route::get('/whatsapp/messages/{lead}', [TwilioWhatsappController::class, 'getLeadMessages']);
-
+// --- Automation Action Plan Routes ---
+Route::prefix('automation')->group(function () {
+    Route::middleware('auth:sanctum')->group(function () { // <-- आपका auth middleware यहाँ है
+        Route::post('/action-plans/batch-delete', [AutomationController::class, 'batchDeleteActionPlans']);
+        Route::get('/action-plans/{actionPlan}', [AutomationController::class, 'showActionPlan']);
+        Route::put('/action-plans/{actionPlan}', [AutomationController::class, 'updateActionPlan']);
+        
+    
+        // 'automation/' prefix को हटा दें क्योंकि यह पहले से ही group में डिफाइन है
+        Route::get('/action-plans', [AutomationController::class, 'indexActionPlans']); // <--- Corrected
+        Route::post('/action-plan', [AutomationController::class, 'storeActionPlan']); // <--- Corrected
+    });
+});
 Route::middleware('auth:sanctum')->group(function () {
+       // सभी असाइनमेंट्स को देखने के लिए
+    Route::get('/lead-action-plan-assignments', [LeadActionPlanAssignmentController::class, 'index']);
+    // असाइनमेंट का स्टेटस अपडेट करने के लिए (पॉज़/रिज़्यूम)
+    Route::post('/lead-action-plan-assignments/{assignment}/status', [LeadActionPlanAssignmentController::class, 'updateStatus']);
+
+    // Action Plans को Leads पर Assign करने के लिए (नया रूट)
+    Route::post('/assign-action-plans', [LeadController::class, 'assignActionPlans']);
+
+    Route::post('/leads/import', [LeadController::class, 'import']);
+    Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
+
+
+    Route::get('/dashboard/message-counts', [EventCountController::class, 'index']);
+
+    Route::get('/events/today-counts', [EventCountController::class, 'getTodayCounts']);
+
+    Route::post('/appointments', [AppointmentController::class, 'store']);
+    Route::get('/appointments', [AppointmentController::class, 'index']);
+
+    //woring on calendar apis 07/16/2025 
+    Route::post('/tasks', [TaskController::class, 'store']);
 
     Route::get('/countries', [CountryController::class, 'index']);
 

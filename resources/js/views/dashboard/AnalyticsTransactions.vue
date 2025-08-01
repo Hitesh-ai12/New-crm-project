@@ -1,34 +1,50 @@
 <style>
-.v-table .v-table__wrapper .v-data-table__tr td{
-  padding:25px}
-.v-table .v-table__wrapper table thead tr th.v-data-table__td{
-    background-color: #fff !important;
-    border-bottom: 1px solid #e6e5e7 !important;
-    padding: 25px;}
-.layout-nav-type-vertical .layout-vertical-nav .nav-item-title{color:#000}
-header.layout-navbar{
+.v-table .v-table__wrapper .v-data-table__tr td {
+  padding: 25px;
+}
+
+.v-table .v-table__wrapper table thead tr th.v-data-table__td {
+  padding: 25px;
+  background-color: #fff !important;
+  border-block-end: 1px solid #e6e5e7 !important;
+}
+.layout-nav-type-vertical .layout-vertical-nav .nav-item-title { color: #000; }
+
+header.layout-navbar {
   background: #fff;
-    border-bottom: 1px solid #eee;}
-.layout-nav-type-vertical .layout-vertical-nav{
-  background-color:#fff !important;
-box-shadow: 0px 0px 15px 2px #d7d7d78f;}
-  .services-card .v-row .service-cards{
-    padding: 30px 25px;
-    border-radius: 10px;
-    box-shadow: 0px 1px 5px 3px #c3c3c324}
-    .services-card .v-row .v-col-sm-6:first-child .service-cards {
-    background-image: linear-gradient(to left, #7fd5ff 0%, #f9e4db 100%);
+  border-block-end: 1px solid #eee;
 }
-    .services-card .service-cards .v-avatar{
-      background-color:transparent !important; 
-      box-shadow:none !important}
-     .services-card .service-cards .v-avatar i{color:#000} 
-    .services-card .v-row .v-col-sm-6:nth-child(2) .service-cards {
-    background-image: linear-gradient(to left, #99a4f9 0%, #f0e3f7 100%);
+
+.layout-nav-type-vertical .layout-vertical-nav {
+  background-color: #fff !important;
+  box-shadow: 0 0 15px 2px #d7d7d78f;
 }
-    .services-card .v-row .v-col-sm-6:nth-child(3) .service-cards{
-    background-image: linear-gradient( 135deg, #FFF6B7 10%, #F6416C 100%);}
-    .services-card .v-row .v-col-sm-6:last-child .service-cards{background-image: linear-gradient(-225deg, #DFFFCD 0%, #39F3BB 100%);}
+
+.services-card .v-row .service-cards {
+  border-radius: 10px;
+  box-shadow: 0 1px 5px 3px #c3c3c324;
+  padding-block: 30px;
+  padding-inline: 25px;
+}
+
+.services-card .v-row .v-col-sm-6:first-child .service-cards {
+  background-image: linear-gradient(to left, #7fd5ff 0%, #f9e4db 100%);
+}
+
+.services-card .service-cards .v-avatar {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+.services-card .service-cards .v-avatar i { color: #000; }
+
+.services-card .v-row .v-col-sm-6:nth-child(2) .service-cards {
+  background-image: linear-gradient(to left, #99a4f9 0%, #f0e3f7 100%);
+}
+
+.services-card .v-row .v-col-sm-6:nth-child(3) .service-cards {
+  background-image: linear-gradient(135deg, #fff6b7 10%, #f6416c 100%);
+}
+.services-card .v-row .v-col-sm-6:last-child .service-cards { background-image: linear-gradient(-225deg, #dfffcd 0%, #39f3bb 100%); }
 </style>
  
 <script setup>

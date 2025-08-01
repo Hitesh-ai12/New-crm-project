@@ -11,12 +11,14 @@ class ColumnSettingController extends Controller
     public function getColumnSettings()
     {
         $userId = Auth::id();
+
         $settings = ColumnSetting::where('user_id', $userId)->first();
 
         return response()->json([
             'selectedColumns' => $settings ? $settings->selected_columns : ["first_name", "email", "phone"]
         ]);
     }
+
 
     public function saveColumnSettings(Request $request)
     {

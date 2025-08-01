@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class TwilioWhatsappController extends Controller
 {
- public function sendMessage(Request $request)
+    public function sendMessage(Request $request)
     {
         $request->validate([
             'message' => 'required|string',
@@ -55,11 +55,9 @@ class TwilioWhatsappController extends Controller
                         'sent_at'   => now(),
                     ]);
                     
-                broadcast(new \App\Events\WhatsappMessageReceived($whatsappMessage))->toOthers();
+                    broadcast(new \App\Events\WhatsappMessageReceived($whatsappMessage))->toOthers();
 
                 } catch (\Exception $e) {
-                    Log::error("❌ Failed to send WhatsApp message to $recipient: " . $e->getMessage());
-
                     // Optional: Store as failed
                     WhatsappMessage::create([
                         'user_id'   => $user->id,
@@ -76,7 +74,6 @@ class TwilioWhatsappController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'All messages processed.']);
         } catch (\Exception $e) {
-            Log::error("🚨 Unexpected WhatsApp error: " . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'WhatsApp message sending failed',
@@ -84,6 +81,7 @@ class TwilioWhatsappController extends Controller
             ], 500);
         }
     }
+
 
     public function incoming(Request $request)
     {
@@ -149,6 +147,7 @@ class TwilioWhatsappController extends Controller
 
     public function getChatList()
     {
+
         $user = auth()->user();
 
         if (!$user) {
@@ -176,39 +175,39 @@ class TwilioWhatsappController extends Controller
                     'messages' => $messages->map(function ($msg) {
                         return [
                             'text' => $msg->message,
-                            'from' => $msg->direction === 'outgoing' ? 'me' : 'them', // ✅ fixed
+                            'from' => $msg->direction === 'outgoing' ? 'me' : 'them', 
                             'time' => $msg->created_at->format('h:i A'),
                         ];
                     })->toArray(),
                 ];
             })
-            ->filter() // removes nulls
+            ->filter() 
             ->values();
 
         return response()->json($messages);
     }
 
-public function getMessagesByLeadId($leadId)
-{
-    $user = auth()->user();
+    public function getMessagesByLeadId($leadId)
+    {
+        $user = auth()->user();
 
-    if (!$user) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $messages = WhatsappMessage::where('lead_id', $leadId)
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($msg) {
+                return [
+                    'text' => $msg->message,
+                    'from' => $msg->direction === 'outgoing' ? 'me' : 'them',
+                    'time' => $msg->created_at->format('h:i A'),
+                ];
+            });
+
+        return response()->json($messages);
     }
-
-    $messages = WhatsappMessage::where('lead_id', $leadId)
-        ->where('user_id', $user->id)
-        ->orderBy('created_at', 'asc')
-        ->get()
-        ->map(function ($msg) {
-            return [
-                'text' => $msg->message,
-                'from' => $msg->direction === 'outgoing' ? 'me' : 'them',
-                'time' => $msg->created_at->format('h:i A'),
-            ];
-        });
-
-    return response()->json($messages);
-}
 
 }

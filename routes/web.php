@@ -19,7 +19,7 @@ Route::get('/gmail/callback', [GmailWebhookController::class, 'handleGoogleCallb
 Route::get('/gmail/start-watch', [GmailWebhookController::class, 'startWatch']);
 // API routes
 Route::get('/lead-form', function (Request $request) {
-    $userId = $request->query('user_id'); // URL se user_id fetch karein
+    $userId = $request->query('user_id'); 
     return view('lead-form', compact('userId'));
 });
 Route::get('{any?}', function() {

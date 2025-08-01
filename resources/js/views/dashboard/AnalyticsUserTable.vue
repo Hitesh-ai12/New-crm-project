@@ -69,21 +69,21 @@ import { computed, onMounted, ref } from 'vue';
 export default {
   name: 'LeadsPage',
   setup() {
-    const leads = ref([]);  // Initialize leads as an empty array
+    const leads = ref([]);
     const loading = ref(true);
     const error = ref('');
     const searchQuery = ref('');
     const selectedLeads = ref([]);
-    const pageSize = ref(10); // Default page size
+    const pageSize = ref(10);
     const currentPage = ref(1);
     const toast = ref({ message: '', type: '' });
 
     // Fetch Leads
     const fetchLeads = async () => {
       try {
-        const response = await axios.get('/leads');  // Replace with your API endpoint
+        const response = await axios.get('/leads');
         console.log(response.data);
-        leads.value = Array.isArray(response.data) ? response.data : [];  // Ensure leads is an array
+        leads.value = Array.isArray(response.data) ? response.data : [];
       } catch (err) {
         error.value = 'Failed to fetch leads.';
       } finally {
@@ -109,7 +109,7 @@ export default {
     // Pagination Calculation
     const totalPages = computed(() => {
       const pages = Math.ceil(filteredLeads.value.length / pageSize.value);
-      return pages > 0 ? pages : 1; // Default to at least 1 page
+      return pages > 0 ? pages : 1; 
     });
 
     const changePage = (page) => {
@@ -120,10 +120,9 @@ export default {
     // Set Page Size
     const setPageSize = (size) => {
       pageSize.value = size;
-      currentPage.value = 1;  // Reset to first page when page size changes
+      currentPage.value = 1; 
     };
 
-    // Initialize data when component is mounted
     onMounted(() => {
       fetchLeads();
     });
@@ -140,7 +139,7 @@ export default {
       paginatedLeads,
       changePage,
       setPageSize,
-      toast, // Return toast object to template
+      toast, 
     };
   }
 };
