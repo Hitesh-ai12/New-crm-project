@@ -1504,6 +1504,8 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
 
       const getAllLeads = async (token) => {
         try {
+                 const token = localStorage.getItem("auth_token");
+
           const response = await axios.get("/api/leads", {
             headers: { Authorization: `Bearer ${token}` },
           });

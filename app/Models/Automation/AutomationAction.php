@@ -27,6 +27,7 @@ class AutomationAction extends Model
     ];
 
     protected $casts = [
+        'delay_days' => 'float',
         'new_stage' => 'array',
         'add_tags' => 'array',
         'remove_tags' => 'array',
