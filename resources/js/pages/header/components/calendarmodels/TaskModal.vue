@@ -62,7 +62,7 @@ export default {
         return;
       }
 
-      emit('save', taskData.value);  // ✅ Pass data to parent
+      emit('save', taskData.value);
       emit('close');
     };
 

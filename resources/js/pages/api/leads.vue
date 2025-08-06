@@ -1023,39 +1023,37 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
         });
       };
 
-      const destroyTinyMCE = () => {
-        if (tinymce.get("email-editor")) { 
-          tinymce.get("email-editor").remove();
-        }
-      };
+
 
     const openEmailModal = () => {
-      if (selectedLeads.value.length === 0) {
-        Swal.fire({
-          icon: "warning",
-          title: "No Leads Selected",
-          text: "Please select at least one lead before sending an email.",
-        });
-        return;
-      }
-
+      // if (selectedLeads.value.length === 0) {
+      //   Swal.fire({
+      //     icon: "warning",
+      //     title: "No Leads Selected",
+      //     text: "Please select at least one lead before sending an email.",
+      //   });
+      //   return;
+      // }
       showEmailModal.value = true;
-
       nextTick(() => {
         destroyTinyMCE();
         initializeTinyMCE();
       });
     };
-
+    const destroyTinyMCE = () => {
+      if (tinymce.get("email-editor")) { 
+        tinymce.get("email-editor").remove();
+      }
+    };  
     const closeEmailModal = () => {
-        showEmailModal.value = false;
-        destroyTinyMCE();
-      };
+      showEmailModal.value = false;
+      destroyTinyMCE();
+    };
 
     const loadTemplate = () => {
-      const selectedTemplate = templates.value.find(
-        (template) => template.id === emailData.value.template
-      );
+    const selectedTemplate = templates.value.find(
+      (template) => template.id === emailData.value.template
+    );
 
       if (selectedTemplate) {
         let content = selectedTemplate.content;
@@ -1077,9 +1075,8 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
     };
 
     const removeAttachment = (index) => {
-        emailData.value.attachments.splice(index, 1);
-      };
-
+      emailData.value.attachments.splice(index, 1);
+    };
 
     const handleAttachments = (event) => {
       emailData.value.attachments = Array.from(event.target.files);
@@ -1504,8 +1501,6 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
 
       const getAllLeads = async (token) => {
         try {
-                 const token = localStorage.getItem("auth_token");
-
           const response = await axios.get("/api/leads", {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -2207,6 +2202,7 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
 .modal {
   position: fixed;
   z-index: 1000;
+  display: block;
   padding: 20px;
   border-radius: 8px;
   background-color: white;

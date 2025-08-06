@@ -5,6 +5,7 @@ namespace App\Models\Automation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\LeadActionPlanAssignment; // <-- यह लाइन जोड़ें
 
 class AutomationActionPlan extends Model
 {
@@ -36,4 +37,12 @@ class AutomationActionPlan extends Model
         // Yahan hum 'created_by' foreign key ko 'users' table ke 'id' se jod rahe hain.
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /**
+     * Get the lead action plan assignments for the action plan.
+     */
+    public function leadActionPlanAssignments()
+    {
+        return $this->hasMany(LeadActionPlanAssignment::class, 'action_plan_id');
+    }    
 }

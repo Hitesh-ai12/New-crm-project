@@ -4,7 +4,7 @@
       <div class="modal-header border-0 pb-0">
         <h5 class="modal-title fw-bold">
           <transition name="fade" mode="out-in">
-            <span v-if="!showAddStageForm">🚩 Assign Stage</span>
+            <span v-if="!showAddStageForm">🚩 Assign Stage(s)</span>
             <span v-else>➕ Add New Stage</span>
           </transition>
         </h5>
@@ -24,17 +24,16 @@
             <div class="stage-list-container">
                <p v-if="!filteredStages.length" class="text-muted text-center mt-4">No stages found.</p>
                <div v-else class="list-group">
-<button
-  v-for="stage in filteredStages"
-  :key="stage.id"
-  type="button"
-  class="list-group-item list-group-item-action"
-  :class="{ 'active': selectedStages.includes(stage.id) }"
-  @click="toggleStageSelection(stage.id)"
->
-  {{ stage.name }}
-</button>
-
+                <button
+                  v-for="stage in filteredStages"
+                  :key="stage.id"
+                  type="button"
+                  class="list-group-item list-group-item-action"
+                  :class="{ 'active': selectedStages.includes(stage.id) }"
+                  @click="toggleStageSelection(stage.id)"
+                >
+                  {{ stage.name }}
+                </button>
                </div>
             </div>
 
@@ -64,10 +63,10 @@
             key="apply"
             type="button"
             class="btn btn-primary"
-            :disabled="!selectedStage"
-            @click="assignStage"
+            :disabled="!selectedStages.length"
+            @click="assignStages"
           >
-            Apply
+            Apply ({{ selectedStages.length }})
           </button>
           <button
             v-else
@@ -90,16 +89,14 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 import { computed, onMounted, ref } from 'vue'
 
-const emit = defineEmits(['close', 'stage-assigned'])
+const emit = defineEmits(['close', 'stages-assigned']) // Emit 'stages-assigned' event
 
 // State
 const stages = ref([])
-const selectedStage = ref(null)
+const selectedStages = ref([]) // Changed to array for multi-select
 const searchQuery = ref('')
 const newStage = ref('')
 const showAddStageForm = ref(false)
-const selectedStages = ref([]) 
-
 
 // Helper function to show toast messages
 const showToastMessage = (title, icon = 'success') => {
@@ -163,21 +160,20 @@ const addStage = async () => {
     )
     const newItem = res.data.item
     stages.value.push(newItem)
-    // 4. Automatically select the new stage for better UX
-    selectedStage.value = newItem.id 
+    selectedStages.value.push(newItem.id) // Automatically select the new stage
     newStage.value = ''
     showAddStageForm.value = false
-    showToastMessage('Stage added successfully!')
+    showToastMessage('Stage added successfully!', 'success')
   } catch (err) {
     console.error('Failed to add stage:', err)
     showToastMessage('Failed to add stage.', 'error')
   }
 }
 
-// Apply selected stage
-const assignStage = () => {
-  emit('stage-assigned', selectedStage.value)
-  showToastMessage('Stage assigned successfully!')
+// Apply selected stages
+const assignStages = () => {
+  emit('stages-assigned', selectedStages.value) // Emit the selected stage IDs
+  showToastMessage('Stages selected for assignment!', 'info')
   emit('close')
 }
 

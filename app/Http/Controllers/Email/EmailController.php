@@ -12,10 +12,7 @@ use Webklex\IMAP\Facades\Client;
 use App\Models\Email;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
-
-
-
+use Illuminate\Support\Facades\DB; 
 
 
 

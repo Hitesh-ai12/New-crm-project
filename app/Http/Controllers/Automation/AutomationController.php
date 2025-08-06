@@ -9,25 +9,276 @@ use App\Models\Automation\AutomationAction;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use App\Models\Template; // Template model import karein
-
+use App\Models\Template;
+use App\Models\Item;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth; // <-- Auth facade को इंपोर्ट करें
 
 class AutomationController extends Controller
 {
+     /**
+     * Adds or updates an 'Add Tag(s)' action to specified action plans.
+     */
+    public function addTagActionToActionPlans(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'action_plan_ids' => 'required|array|min:1',
+            'action_plan_ids.*' => 'integer|exists:automation_action_plans,id',
+            'tag_ids' => 'required|array|min:1',
+            'tag_ids.*' => [
+                'integer',
+                Rule::exists('items', 'id')->where(function ($query) {
+                    $query->where('type', 'tag');
+                }),
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+
+        DB::beginTransaction();
+        try {
+            $updatedPlansCount = 0;
+            $actionPlanIds = $validated['action_plan_ids'];
+            $tagIdsToAdd = $validated['tag_ids'];
+
+            foreach ($actionPlanIds as $planId) {
+                $actionPlan = AutomationActionPlan::with('actions')->find($planId);
+
+                if (!$actionPlan) {
+                    continue;
+                }
+
+                $addTagAction = $actionPlan->actions->firstWhere('type', 'Add Tag(s)');
+
+                if ($addTagAction) {
+                    $currentTags = $addTagAction->add_tags ?? [];
+                    $mergedTags = array_unique(array_merge($currentTags, $tagIdsToAdd));
+                    $addTagAction->add_tags = $mergedTags;
+                    $addTagAction->save();
+                } else {
+                    $addTagAction = new AutomationAction([
+                        'plan_id' => $actionPlan->id,
+                        'type' => 'Add Tag(s)',
+                        'delay_days' => 0,
+                        'add_tags' => $tagIdsToAdd,
+                        'step_order' => $actionPlan->actions->max('step_order') + 1,
+                    ]);
+                    $actionPlan->actions()->save($addTagAction);
+                    $actionPlan->step_count = $actionPlan->step_count + 1;
+                    $actionPlan->save();
+                }
+                $updatedPlansCount++;
+            }
+            DB::commit();
+
+            return response()->json([
+                'message' => "Tags action added/updated in {$updatedPlansCount} action plan(s) successfully.",
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to add/update tags action to action plans.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
+     * Adds or updates a 'Change Stage' action to specified action plans.
+     */
+    public function addChangeStageActionToActionPlans(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'action_plan_ids' => 'required|array|min:1',
+            'action_plan_ids.*' => 'integer|exists:automation_action_plans,id',
+            'stage_ids' => 'required|array|min:1',
+            'stage_ids.*' => [
+                'integer',
+                Rule::exists('items', 'id')->where(function ($query) {
+                    $query->where('type', 'stage');
+                }),
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+
+        DB::beginTransaction();
+        try {
+            $updatedPlansCount = 0;
+            $actionPlanIds = $validated['action_plan_ids'];
+            $stageIdsToAssign = $validated['stage_ids'];
+
+            foreach ($actionPlanIds as $planId) {
+                $actionPlan = AutomationActionPlan::with('actions')->find($planId);
+
+                if (!$actionPlan) {
+                    continue;
+                }
+
+                $changeStageAction = $actionPlan->actions->firstWhere('type', 'Change Stage');
+
+                if ($changeStageAction) {
+                    $changeStageAction->new_stage = array_unique(array_merge($changeStageAction->new_stage ?? [], $stageIdsToAssign));
+                    $changeStageAction->save();
+                } else {
+                    $changeStageAction = new AutomationAction([
+                        'plan_id' => $actionPlan->id,
+                        'type' => 'Change Stage',
+                        'delay_days' => 0,
+                        'new_stage' => $stageIdsToAssign,
+                        'step_order' => $actionPlan->actions->max('step_order') + 1,
+                    ]);
+                    $actionPlan->actions()->save($changeStageAction);
+                    $actionPlan->step_count = $actionPlan->step_count + 1;
+                    $actionPlan->save();
+                }
+                $updatedPlansCount++;
+            }
+            DB::commit();
+
+            return response()->json([
+                'message' => "Change Stage action added/updated in {$updatedPlansCount} action plan(s) successfully.",
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to add/update change stage action to action plans.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Adds or updates an 'Assign Source' action to specified action plans.
+     */
+    public function addAssignSourceActionToActionPlans(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'action_plan_ids' => 'required|array|min:1',
+            'action_plan_ids.*' => 'integer|exists:automation_action_plans,id',
+            'source_ids' => 'required|array|min:1',
+            'source_ids.*' => [
+                'integer',
+                Rule::exists('items', 'id')->where(function ($query) {
+                    $query->where('type', 'source');
+                }),
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+
+        DB::beginTransaction();
+        try {
+            $updatedPlansCount = 0;
+            $actionPlanIds = $validated['action_plan_ids'];
+            $sourceIdsToAssign = $validated['source_ids'];
+
+            foreach ($actionPlanIds as $planId) {
+                $actionPlan = AutomationActionPlan::with('actions')->find($planId);
+
+                if (!$actionPlan) {
+                    continue;
+                }
+
+                $assignSourceAction = $actionPlan->actions->firstWhere('type', 'Assign Source');
+
+                if ($assignSourceAction) {
+                    $assignSourceAction->assign_action_plan = (string)$sourceIdsToAssign[0]; 
+                    $assignSourceAction->save();
+                } else {
+                    $assignSourceAction = new AutomationAction([
+                        'plan_id' => $actionPlan->id,
+                        'type' => 'Assign Source',
+                        'delay_days' => 0,
+                        'assign_action_plan' => (string)$sourceIdsToAssign[0], 
+                        'step_order' => $actionPlan->actions->max('step_order') + 1,
+                    ]);
+                    $actionPlan->actions()->save($assignSourceAction);
+                    $actionPlan->step_count = $actionPlan->step_count + 1;
+                    $actionPlan->save();
+                }
+                $updatedPlansCount++;
+            }
+            DB::commit();
+
+            return response()->json([
+                'message' => "Assign Source action added/updated in {$updatedPlansCount} action plan(s) successfully.",
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to add/update assign source action to action plans.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Display a listing of the automation action plans.
+     */
+
+   /**
      * Display a listing of the automation action plans.
      */
     public function indexActionPlans(Request $request)
     {
-        $actionPlans = AutomationActionPlan::with(['actions', 'creator:id,name'])->get();
+        $userId = Auth::id();
 
-        return response()->json([
-            'message' => 'Action plans fetched successfully.',
-            'data' => $actionPlans,
-        ]);
+        $perPage = $request->input('per_page', 10);
+        $searchQuery = $request->input('search');
+
+        $query = AutomationActionPlan::with(['actions', 'creator:id,name']);
+
+        if ($searchQuery) {
+            $query->where('name', 'like', '%' . $searchQuery . '%');
+        }
+
+        $actionPlans = $query->paginate($perPage);
+
+        $actionPlans->getCollection()->each(function ($actionPlan) use ($userId) {
+
+            $assignments = $actionPlan->leadActionPlanAssignments()
+                                    ->whereHas('lead', function ($query) use ($userId) {
+                                        $query->where('user_id', $userId);
+                                    })
+                                    ->get();
+
+            $statusCounts = $assignments->groupBy('status')->map->count();
+
+            $actionPlan->active_leads_count = $statusCounts->get('active', 0);
+            $actionPlan->paused_leads_count = $statusCounts->get('paused', 0);
+            $actionPlan->stopped_leads_count = $statusCounts->get('stopped', 0);
+            $actionPlan->completed_leads_count = $statusCounts->get('completed', 0);
+        });
+
+        return response()->json($actionPlans);
     }
 
-     /**
+    /**
      * Store a newly created automation action plan.
      */
     public function storeActionPlan(Request $request)
@@ -42,8 +293,6 @@ class AutomationController extends Controller
             'actions.*.task_name' => 'required_if:actions.*.type,Create Task|nullable|string|max:255',
             'actions.*.task_type' => 'required_if:actions.*.type,Create Task|nullable|string|max:255',
             
-            // --- CHANGES START HERE (storeActionPlan) ---
-            // email_template_id should exist in 'templates' table with type 'email'
             'actions.*.email_template_id' => [
                 'nullable',
                 'integer',
@@ -51,7 +300,6 @@ class AutomationController extends Controller
                     $query->where('type', 'email');
                 }),
             ],
-            // sms_template_id should exist in 'templates' table with type 'sms'
             'actions.*.sms_template_id' => [
                 'nullable',
                 'integer',
@@ -59,7 +307,6 @@ class AutomationController extends Controller
                     $query->where('type', 'sms');
                 }),
             ],
-            // --- CHANGES END HERE ---
 
             'actions.*.note_content' => 'required_if:actions.*.type,Add Note|nullable|string',
 
@@ -72,8 +319,8 @@ class AutomationController extends Controller
             'actions.*.remove_tags' => 'nullable|array',
             'actions.*.remove_tags.*' => 'integer',
 
-            'actions.*.pause_specific_plan' => 'required_if:actions.*.type,Pause Specific Action plan|nullable|string|exists:automation_action_plans,id',
-            'actions.*.assign_action_plan' => 'required_if:actions.*.type,Assign Action Plan|nullable|string|exists:automation_action_plans,id',
+            'actions.*.pause_specific_plan' => 'required_if:actions.*.type,Pause Specific Action plan|nullable|integer|exists:automation_action_plans,id',
+            'actions.*.assign_action_plan' => 'required_if:actions.*.type,Assign Action Plan|nullable|integer|exists:automation_action_plans,id', // <-- FIX IS HERE: Changed 'string' to 'integer'
             
             'actions.*.step_order' => 'required|integer|min:0',
         ]);
@@ -93,7 +340,7 @@ class AutomationController extends Controller
             $plan = AutomationActionPlan::create([
                 'name' => $validated['title'],
                 'pause_on_reply' => $validated['pause_on_reply'] ?? false,
-                'created_by' => auth()->id(),
+                'created_by' => Auth::id(),
             ]);
 
             foreach ($validated['actions'] as $index => $actionData) {
@@ -154,7 +401,7 @@ class AutomationController extends Controller
         ]);
     }
 
-     /**
+    /**
      * Update the specified automation action plan in storage.
      */
     public function updateActionPlan(Request $request, AutomationActionPlan $actionPlan)
@@ -170,8 +417,6 @@ class AutomationController extends Controller
             'actions.*.task_name' => 'required_if:actions.*.type,Create Task|nullable|string|max:255',
             'actions.*.task_type' => 'required_if:actions.*.type,Create Task|nullable|string|max:255',
             
-            // --- CHANGES START HERE (updateActionPlan) ---
-            // email_template_id should exist in 'templates' table with type 'email'
             'actions.*.email_template_id' => [
                 'nullable',
                 'integer',
@@ -179,7 +424,6 @@ class AutomationController extends Controller
                     $query->where('type', 'email');
                 }),
             ],
-            // sms_template_id should exist in 'templates' table with type 'sms'
             'actions.*.sms_template_id' => [
                 'nullable',
                 'integer',
@@ -187,7 +431,6 @@ class AutomationController extends Controller
                     $query->where('type', 'sms');
                 }),
             ],
-            // --- CHANGES END HERE ---
 
             'actions.*.note_content' => 'required_if:actions.*.type,Add Note|nullable|string',
 
@@ -200,8 +443,8 @@ class AutomationController extends Controller
             'actions.*.remove_tags' => 'nullable|array',
             'actions.*.remove_tags.*' => 'integer',
 
-            'actions.*.pause_specific_plan' => 'required_if:actions.*.type,Pause Specific Action plan|nullable|string|exists:automation_action_plans,id',
-            'actions.*.assign_action_plan' => 'required_if:actions.*.type,Assign Action Plan|nullable|string|exists:automation_action_plans,id',
+            'actions.*.pause_specific_plan' => 'required_if:actions.*.type,Pause Specific Action plan|nullable|integer|exists:automation_action_plans,id',
+            'actions.*.assign_action_plan' => 'required_if:actions.*.type,Assign Action Plan|nullable|integer|exists:automation_action_plans,id', // <-- FIX IS HERE: Changed 'string' to 'integer'
             
             'actions.*.step_order' => 'required|integer|min:0',
         ]);
@@ -280,6 +523,7 @@ class AutomationController extends Controller
             ], 500);
         }
     }
+
    /**
      * Delete the specified automation action plan(s) from storage.
      */

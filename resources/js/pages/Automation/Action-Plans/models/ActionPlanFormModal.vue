@@ -521,8 +521,6 @@ const populateModal = () => {
       let delayValue = action.delay_days;
       let delayUnit = 'Days';
 
-      // --- FIX IS HERE ---
-      // अगर delay_days 0 है, तो default Days ही रहेगा.
       // अगर delay_days 1 से कम है और 0 से बड़ा है, तो उसे Hours में मानें।
       if (delayValue > 0 && delayValue < 1) {
         // hoursValue को 2 दशमलव स्थान तक राउंड करें ताकि floating point error से बचा जा सके।

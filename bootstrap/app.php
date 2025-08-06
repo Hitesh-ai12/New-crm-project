@@ -46,6 +46,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // App\Providers\RouteServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
-        App\Providers\BroadcastServiceProvider::class,
+        // App\Providers\BroadcastServiceProvider::class,
     ])
     ->create();

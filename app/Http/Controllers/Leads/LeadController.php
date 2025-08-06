@@ -9,6 +9,7 @@ use App\Mail\ComposeEmail;
 use Illuminate\Http\Request;
 use App\Models\LeadActionPlanAssignment;
 use App\Models\Automation\AutomationActionPlan;
+use App\Models\Automation\AutomationAction;
 use App\Models\Lead;
 use App\Models\User;
 use Twilio\Rest\Client;
@@ -164,7 +165,7 @@ class LeadController extends Controller
             'action_plan_ids' => 'required|array|min:1',
             'action_plan_ids.*' => 'integer|exists:automation_action_plans,id',
             'lead_ids' => 'required|array|min:1',
-            'lead_ids.*' => 'integer|exists:leads,id', // Assuming 'leads' table
+            'lead_ids.*' => 'integer|exists:leads,id',
         ]);
 
         if ($validator->fails()) {
@@ -182,35 +183,34 @@ class LeadController extends Controller
             $assignmentsCount = 0;
             foreach ($validated['lead_ids'] as $leadId) {
                 foreach ($validated['action_plan_ids'] as $actionPlanId) {
-                    // Check if assignment already exists to avoid duplicates
-                    $existingAssignment = LeadActionPlanAssignment::where('lead_id', $leadId)
-                                                                ->where('action_plan_id', $actionPlanId)
-                                                                ->first();
+                    $actionPlan = AutomationActionPlan::with('actions')->find($actionPlanId);
+                    
+                    if (!$actionPlan) {
+                        continue;
+                    }
+                    
+                    $assignment = LeadActionPlanAssignment::firstOrNew([
+                        'lead_id' => $leadId,
+                        'action_plan_id' => $actionPlanId,
+                    ]);
 
-                    if (!$existingAssignment) {
-                        // Fetch the action plan to get its first action's delay
-                        $actionPlan = AutomationActionPlan::with('actions')->find($actionPlanId);
-                        
+                    // अगर असाइनमेंट नया है या 'completed' है, तो उसे अपडेट करें
+                    if (!$assignment->exists || $assignment->status === 'completed') {
                         $firstAction = $actionPlan->actions->sortBy('step_order')->first();
                         $nextActionDueAt = null;
                         $currentActionId = null;
 
                         if ($firstAction) {
                             $delayDays = $firstAction->delay_days;
-                            // Calculate initial due date based on the first action's delay
-                            // Assuming delay_days is already in days (can be fractional)
                             $nextActionDueAt = now()->addDays($delayDays);
-                            $currentActionId = $firstAction->id; // Set the first action as current
+                            $currentActionId = $firstAction->id;
                         }
 
-                        LeadActionPlanAssignment::create([
-                            'lead_id' => $leadId,
-                            'action_plan_id' => $actionPlanId,
-                            'status' => 'active', // Initially active
-                            'current_action_id' => $currentActionId,
-                            'next_action_due_at' => $nextActionDueAt,
-                            'assigned_at' => now(),
-                        ]);
+                        $assignment->status = 'active';
+                        $assignment->current_action_id = $currentActionId;
+                        $assignment->next_action_due_at = $nextActionDueAt;
+                        $assignment->assigned_at = now();
+                        $assignment->save();
                         $assignmentsCount++;
                     }
                 }
@@ -231,12 +231,7 @@ class LeadController extends Controller
         }
     }
 
-    // ... (Your existing methods for fetching leads, etc.)
-    // public function index(Request $request) // Assuming this is your leads fetching method
-    // {
-    //     $leads = Lead::select('id', 'first_name', 'last_name')->get();
-    //     return response()->json($leads);
-    // }
+
 
 public function import(Request $request)
 {

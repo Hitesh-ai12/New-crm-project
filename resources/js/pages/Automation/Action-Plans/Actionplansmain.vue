@@ -47,7 +47,15 @@
           <i class="fas fa-globe"></i> Assign Source
         </button>
 
-        <!-- New Button to open Assignments Modal -->
+        <button
+          class="btn btn-danger"
+          :disabled="isDisabled"
+          @click="confirmDeleteSelected"
+          title="Delete Selected Action Plans"
+        >
+          <i class="fas fa-trash-alt"></i> Delete
+        </button>
+        
         <button
           class="btn btn-info"
           @click="showAssignmentsModal = true"
@@ -55,9 +63,18 @@
         >
           <i class="fas fa-list-alt"></i> View Assignments
         </button>
-
-        <!-- Delete button removed as per request -->
       </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-3">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Search action plans by name..."
+        v-model="searchQuery"
+        @input="debouncedSearch"
+      />
     </div>
 
     <!-- Data Table -->
@@ -73,15 +90,18 @@
             <th>Stopped</th>
             <th>Completed</th>
             <th>Created By</th>
+            <th>Tag(s)</th>
+            <th>Stage(s)</th>
+            <th>Source(s)</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading">
-            <td colspan="9" class="text-center py-4">Loading action plans...</td>
+            <td colspan="12" class="text-center py-4">Loading action plans...</td>
           </tr>
           <tr v-else-if="actionPlans.length === 0">
-            <td colspan="9" class="text-center py-4">No action plans found.</td>
+            <td colspan="12" class="text-center py-4">No action plans found matching your criteria.</td>
           </tr>
           <tr v-else v-for="item in actionPlans" :key="item.id">
             <td>
@@ -93,20 +113,41 @@
             </td>
             <td>{{ item.name }}</td>
             <td>{{ item.step_count }}</td>
-            <td>{{ item.tracking_stats?.active || 0 }}</td>
-            <td>{{ item.tracking_stats?.paused || 0 }}</td>
-            <td>{{ item.tracking_stats?.stopped || 0 }}</td>
-            <td>{{ item.tracking_stats?.completed || 0 }}</td>
+            <td>{{ item.active_leads_count }}</td>
+            <td>{{ item.paused_leads_count }}</td>
+            <td>{{ item.stopped_leads_count }}</td>
+            <td>{{ item.completed_leads_count }}</td>
             <td>{{ item.creator?.name || 'N/A' }}</td>
+            <td><div class="scrollable-cell">{{ getTagsForDisplay(item) }}</div></td>
+            <td><div class="scrollable-cell">{{ getStagesForDisplay(item) }}</div></td>
+            <td><div class="scrollable-cell">{{ getSourcesForDisplay(item) }}</div></td>
             <td>
-              <button class="btn btn-sm btn-info" @click="openEditModal(item)" title="Edit Action Plan">
-                <i class="fas fa-edit"></i> Edit
+              <button class="btn btn-sm btn-info me-2" @click="openEditModal(item)" title="Edit Action Plan">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-danger" @click="confirmDelete(item.id)" title="Delete Action Plan">
+                <i class="fas fa-trash-alt"></i>
               </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination Controls -->
+    <nav v-if="totalPages > 1" aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" :class="{ disabled: currentPage === 1 }">
+          <a class="page-link" href="#" @click.prevent="currentPage--" :disabled="currentPage === 1">Previous</a>
+        </li>
+        <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }">
+          <a class="page-link" href="#" @click.prevent="currentPage = page">{{ page }}</a>
+        </li>
+        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+          <a class="page-link" href="#" @click.prevent="currentPage++" :disabled="currentPage === totalPages">Next</a>
+        </li>
+      </ul>
+    </nav>
 
     <!-- Modals -->
     <ActionPlanFormModal
@@ -121,16 +162,29 @@
       @close="showAssignUserModal = false"
       :selectedActionPlanIds="selectedActionPlanIds"
     />
-    <AssignTagModal v-if="showAssignTagModal" @close="showAssignTagModal = false" :selected="selectedActionPlanIds" />
-    <AssignStageModal v-if="showAssignStageModal" @close="showAssignStageModal = false" :selected="selectedActionPlanIds" />
-    <AssignSourceModal v-if="showAssignSourceModal" @close="showAssignSourceModal = false" :selected="selectedActionPlanIds" />
+    <AssignTagModal 
+      v-if="showAssignTagModal" 
+      @close="showAssignTagModal = false" 
+      @tags-assigned="handleTagsAssigned"
+      :selectedActionPlanIds="selectedActionPlanIds"
+    />
+    <AssignStageModal 
+      v-if="showAssignStageModal" 
+      @close="showAssignStageModal = false" 
+      @stages-assigned="handleStagesAssigned"
+      :selectedActionPlanIds="selectedActionPlanIds"
+    />
+    <AssignSourceModal 
+      v-if="showAssignSourceModal" 
+      @close="showAssignSourceModal = false" 
+      @sources-assigned="handleSourcesAssigned"
+      :selectedActionPlanIds="selectedActionPlanIds"
+    />
     
-    <!-- New Assigned Action Plans List Modal -->
     <LeadActionPlanAssignmentsModal
       v-if="showAssignmentsModal"
       @close="showAssignmentsModal = false"
     />
-
   </div>
 </template>
 
@@ -138,7 +192,8 @@
 import axios from 'axios';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { computed, onMounted, ref } from 'vue';
+import Swal from 'sweetalert2';
+import { computed, onMounted, ref, watch } from 'vue'; // Import watch
 
 const token = localStorage.getItem('auth_token');
 if (token) {
@@ -147,6 +202,13 @@ if (token) {
 
 const actionPlans = ref([]);
 const loading = ref(true);
+
+// Pagination and Search state
+const currentPage = ref(1);
+const itemsPerPage = ref(10); // Default items per page
+const totalPages = ref(1); // Will be updated from backend
+const searchQuery = ref('');
+let searchTimeout = null; // For debouncing
 
 const selectedActionPlanIds = ref([]);
 const allSelected = computed(() => selectedActionPlanIds.value.length === actionPlans.value.length && actionPlans.value.length > 0);
@@ -161,8 +223,10 @@ const showAssignUserModal = ref(false);
 const showAssignTagModal = ref(false);
 const showAssignStageModal = ref(false);
 const showAssignSourceModal = ref(false);
+const showAssignmentsModal = ref(false);
 
-const showAssignmentsModal = ref(false); // New state for the assignments modal
+const showConfirmModal = ref(false);
+const idsToDelete = ref([]);
 
 const isDisabled = computed(() => selectedActionPlanIds.value.length === 0);
 
@@ -171,7 +235,7 @@ import AssignSourceModal from './models/AssignSourceModal.vue';
 import AssignStageModal from './models/AssignStageModal.vue';
 import AssignTagModal from './models/AssignTagModal.vue';
 import AssignUserModal from './models/AssignUserModal.vue';
-import LeadActionPlanAssignmentsModal from './models/LeadActionPlanAssignmentsModal.vue'; // New import
+import LeadActionPlanAssignmentsModal from './models/LeadActionPlanAssignmentsModal.vue';
 
 const showToastMessage = (title, icon = 'success') => {
   if (typeof Swal !== 'undefined') {
@@ -191,19 +255,78 @@ const showToastMessage = (title, icon = 'success') => {
   }
 };
 
+const allTagsLookup = ref({});
+const allStagesLookup = ref({});
+const allSourcesLookup = ref({});
+
 const fetchActionPlans = async () => {
   loading.value = true;
   try {
-    const response = await axios.get('/api/automation/action-plans?include=actions,creator');
+    const response = await axios.get('/api/automation/action-plans', {
+      params: { // Send pagination and search parameters
+        page: currentPage.value,
+        per_page: itemsPerPage.value,
+        search: searchQuery.value,
+        include: 'actions,creator' // Still include actions and creator
+      },
+      headers: { Authorization: `Bearer ${token}` }
+    });
     actionPlans.value = response.data.data || [];
+    totalPages.value = response.data.last_page || 1; // Update total pages from backend
   } catch (error) {
     console.error('Failed to load action plans:', error);
     showToastMessage('Failed to load action plans.', 'error');
     actionPlans.value = [];
+    totalPages.value = 1;
   } finally {
     loading.value = false;
   }
 };
+
+const fetchItemsLookup = async () => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    const [tagsRes, stagesRes, sourcesRes] = await Promise.all([
+      axios.get('/api/items?type=tag', { headers: { Authorization: `Bearer ${token}` } }),
+      axios.get('/api/items?type=stage', { headers: { Authorization: `Bearer ${token}` } }),
+      axios.get('/api/items?type=source', { headers: { Authorization: `Bearer ${token}` } })
+    ]);
+
+    allTagsLookup.value = (tagsRes.data.tags || []).reduce((acc, item) => {
+      acc[item.id] = item.name;
+      return acc;
+    }, {});
+    
+    allStagesLookup.value = (stagesRes.data.stages || []).reduce((acc, item) => {
+      acc[item.id] = item.name;
+      return acc;
+    }, {});
+
+    allSourcesLookup.value = (sourcesRes.data.sources || []).reduce((acc, item) => {
+      acc[item.id] = item.name;
+      return acc;
+    }, {});
+
+  } catch (error) {
+    console.error('Failed to load tags/stages/sources for lookup:', error);
+  }
+};
+
+const debouncedSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1; // Reset to first page on new search
+    fetchActionPlans(); // Fetch data with new search query
+  }, 300); // 300ms delay
+};
+
+// Watch currentPage to refetch data when page changes
+watch(currentPage, () => {
+  fetchActionPlans();
+});
+
 
 const openAddModal = () => {
   selectedActionPlanForForm.value = null;
@@ -232,7 +355,7 @@ const handleFormSubmit = async (formData) => {
       showToastMessage('Action Plan added successfully!');
     }
     closeFormModal();
-    await fetchActionPlans();
+    await fetchActionPlans(); // Refresh the list after add/edit
   } catch (error) {
     console.error('Failed to save action plan:', error);
     const message = error.response?.data?.message || 'Something went wrong.';
@@ -245,12 +368,200 @@ const closeFormModal = () => {
   selectedActionPlanForForm.value = null;
 };
 
+const confirmDelete = (id) => {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "You are about to delete this action plan. This action cannot be undone.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      executeDelete([id]);
+    }
+  });
+};
+
+const confirmDeleteSelected = () => {
+  if (selectedActionPlanIds.value.length === 0) {
+    showToastMessage('Please select at least one action plan to delete.', 'warning');
+    return;
+  }
+  Swal.fire({
+    title: 'Are you sure?',
+    text: `You are about to delete ${selectedActionPlanIds.value.length} selected action plan(s).`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete them!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      executeDelete(selectedActionPlanIds.value);
+    }
+  });
+};
+
+const executeDelete = async (ids) => {
+  try {
+    const response = await axios.post('/api/automation/action-plans/batch-delete', { ids });
+    await fetchActionPlans();
+    selectedActionPlanIds.value = [];
+    showToastMessage(response.data.message || 'Action Plan(s) deleted successfully!', 'success');
+  } catch (error) {
+    console.error('Failed to delete action plan(s):', error);
+    showToastMessage('Failed to delete action plan(s).', 'error');
+  }
+};
+
+const handleTagsAssigned = async (assignedTagIds) => {
+    try {
+        if (selectedActionPlanIds.value.length === 0) {
+            showToastMessage('Please select at least one action plan to assign tags to.', 'warning');
+            return;
+        }
+
+        const payload = {
+            action_plan_ids: selectedActionPlanIds.value,
+            tag_ids: assignedTagIds
+        };
+
+        const response = await axios.post('/api/automation/action-plans/add-tag-action', payload);
+        showToastMessage(response.data.message || 'Tags action added to plan(s) successfully!', 'success');
+        showAssignTagModal.value = false;
+        await fetchActionPlans();
+    } catch (error) {
+        console.error('Failed to add tags action to plan(s):', error);
+        const message = error.response?.data?.message || 'Something went wrong.';
+        showToastMessage(message, 'error');
+    }
+};
+
+const handleStagesAssigned = async (assignedStageIds) => {
+    try {
+        if (selectedActionPlanIds.value.length === 0) {
+            showToastMessage('Please select at least one action plan to assign stages to.', 'warning');
+            return;
+        }
+
+        const payload = {
+            action_plan_ids: selectedActionPlanIds.value,
+            stage_ids: assignedStageIds
+        };
+
+        const response = await axios.post('/api/automation/action-plans/change-stage-action', payload);
+        showToastMessage(response.data.message || 'Change Stage action added to plan(s) successfully!', 'success');
+        showAssignStageModal.value = false;
+        await fetchActionPlans();
+    } catch (error) {
+        console.error('Failed to add change stage action to plan(s):', error);
+        const message = error.response?.data?.message || 'Something went wrong.';
+        showToastMessage(message, 'error');
+    }
+};
+
+const handleSourcesAssigned = async (assignedSourceIds) => {
+    try {
+        if (selectedActionPlanIds.value.length === 0) {
+            showToastMessage('Please select at least one action plan to assign sources to.', 'warning');
+            return;
+        }
+
+        const payload = {
+            action_plan_ids: selectedActionPlanIds.value,
+            source_ids: assignedSourceIds
+        };
+
+        const response = await axios.post('/api/automation/action-plans/assign-source-action', payload);
+        showToastMessage(response.data.message || 'Assign Source action added to plan(s) successfully!', 'success');
+        showAssignSourceModal.value = false;
+        await fetchActionPlans();
+    } catch (error) {
+        console.error('Failed to add assign source action to plan(s):', error);
+        const message = error.response?.data?.message || 'Something went wrong.';
+        showToastMessage(message, 'error');
+    }
+};
+
+const getTagsForDisplay = (item) => {
+  if (!item.actions || item.actions.length === 0) return 'N/A';
+  
+  const tagIds = item.actions
+    .filter(action => action.type === 'Add Tag(s)' && action.add_tags && action.add_tags.length > 0)
+    .flatMap(action => action.add_tags); // Flatten array of arrays
+
+  if (tagIds.length === 0) return 'N/A';
+
+  const tagNames = tagIds.map(id => allTagsLookup.value[id]).filter(name => name); // Map IDs to names, filter out undefined
+  return tagNames.length > 0 ? tagNames.join(', ') : 'N/A';
+};
+
+const getStagesForDisplay = (item) => {
+  if (!item.actions || item.actions.length === 0) return 'N/A';
+  
+  const stageIds = item.actions
+    .filter(action => action.type === 'Change Stage' && action.new_stage && action.new_stage.length > 0)
+    .flatMap(action => action.new_stage); // Flatten array of arrays
+
+  if (stageIds.length === 0) return 'N/A';
+
+  const stageNames = stageIds.map(id => allStagesLookup.value[id]).filter(name => name); // Map IDs to names, filter out undefined
+  return stageNames.length > 0 ? stageNames.join(', ') : 'N/A';
+};
+
+const getSourcesForDisplay = (item) => {
+  if (!item.actions || item.actions.length === 0) return 'N/A';
+  
+  // 'Assign Source' action में assign_action_plan field में source ID होती है (string के रूप में)
+  const sourceIds = item.actions
+    .filter(action => action.type === 'Assign Source' && action.assign_action_plan)
+    .map(action => parseInt(action.assign_action_plan)); // Parse to integer if it's a string ID
+
+  if (sourceIds.length === 0) return 'N/A';
+
+  const sourceNames = sourceIds.map(id => allSourcesLookup.value[id]).filter(name => name); // Map IDs to names, filter out undefined
+  return sourceNames.length > 0 ? sourceNames.join(', ') : 'N/A';
+};
+
+
 onMounted(() => {
+  fetchItemsLookup(); // Fetch lookup data on mount
   fetchActionPlans();
 });
 </script>
 
 <style scoped>
+/* Modal Styles... */
+
+/* Add custom styles for scrollable cells */
+.scrollable-cell {
+  max-inline-size: 150px; /* Adjust as needed */
+  overflow-x: auto;
+  padding-block-end: 5px; /* Add some padding for scrollbar */
+  white-space: nowrap;
+}
+
+/* For Webkit browsers (Chrome, Safari) */
+.scrollable-cell::-webkit-scrollbar {
+  block-size: 5px; /* Height of horizontal scrollbar */
+}
+
+.scrollable-cell::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background: #f1f1f1; /* Color of the tracking area */
+}
+
+.scrollable-cell::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: #888; /* Color of the scroll thumb */
+}
+
+.scrollable-cell::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Color of the scroll thumb on hover */
+}
+
 /* Your existing CSS styles go here. */
 .table th,
 .table td {

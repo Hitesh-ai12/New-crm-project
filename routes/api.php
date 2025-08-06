@@ -74,9 +74,15 @@ Route::prefix('automation')->group(function () {
         // 'automation/' prefix को हटा दें क्योंकि यह पहले से ही group में डिफाइन है
         Route::get('/action-plans', [AutomationController::class, 'indexActionPlans']); // <--- Corrected
         Route::post('/action-plan', [AutomationController::class, 'storeActionPlan']); // <--- Corrected
+        Route::post('/action-plans/add-tag-action', [AutomationController::class, 'addTagActionToActionPlans']);
+        Route::post('/action-plans/change-stage-action', [AutomationController::class, 'addChangeStageActionToActionPlans']);
+        Route::post('/action-plans/assign-source-action', [AutomationController::class, 'addAssignSourceActionToActionPlans']);
+    
+
     });
 });
 Route::middleware('auth:sanctum')->group(function () {
+
        // सभी असाइनमेंट्स को देखने के लिए
     Route::get('/lead-action-plan-assignments', [LeadActionPlanAssignmentController::class, 'index']);
     // असाइनमेंट का स्टेटस अपडेट करने के लिए (पॉज़/रिज़्यूम)

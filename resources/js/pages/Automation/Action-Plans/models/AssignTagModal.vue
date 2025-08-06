@@ -37,9 +37,9 @@
             </div>
 
             <div class="d-grid mt-3">
-               <button class="btn btn-light btn-sm" @click="showAddTagForm = true">
-                 + Add New
-               </button>
+                <button class="btn btn-light btn-sm" @click="showAddTagForm = true">
+                  + Add New
+                </button>
             </div>
           </div>
 
@@ -85,11 +85,10 @@
 
 <script setup>
 import axios from 'axios'
-import { computed, onMounted, ref } from 'vue'
-// 1. Import SweetAlert2
 import Swal from 'sweetalert2'
+import { computed, onMounted, ref } from 'vue'
 
-const emit = defineEmits(['close', 'tags-assigned'])
+const emit = defineEmits(['close', 'tags-assigned']) // 'tags-assigned' event will be emitted
 
 const tags = ref([])
 const selectedTags = ref([])
@@ -97,7 +96,6 @@ const searchQuery = ref('')
 const newTag = ref('')
 const showAddTagForm = ref(false)
 
-// 2. Helper function to show toast messages
 const showToastMessage = (title, icon = 'success') => {
   Swal.fire({
     toast: true,
@@ -127,7 +125,6 @@ const loadTags = async () => {
     tags.value = res.data.tags || []
   } catch (err) {
     console.error('Failed to load tags:', err)
-    // 3. Use error toast instead of alert
     showToastMessage('Failed to load tags.', 'error')
   }
 }
@@ -148,10 +145,10 @@ const toggleTag = (tagId) => {
 }
 
 const assignTags = () => {
+  // Emit the selected tag IDs to the parent (ActionPlans.vue)
   emit('tags-assigned', selectedTags.value)
-  // 4. Show success toast on assign
-  showToastMessage('Tags assigned successfully!')
-  emit('close')
+  showToastMessage('Tags selected for assignment!', 'info') // Inform user that tags are selected, not yet assigned to plan
+  emit('close') // Close the modal
 }
 
 const addTag = async () => {
@@ -167,11 +164,9 @@ const addTag = async () => {
     selectedTags.value.push(res.data.item.id)
     newTag.value = ''
     showAddTagForm.value = false
-    // 5. Show success toast on add
-    showToastMessage('Tag added successfully!')
+    showToastMessage('Tag added successfully!', 'success')
   } catch (err) {
     console.error('Failed to add tag:', err)
-    // 6. Use error toast instead of alert
     showToastMessage('Failed to add tag.', 'error')
   }
 }
@@ -185,6 +180,7 @@ const handleCancel = () => {
   }
 }
 </script>
+
 
 <style scoped>
 /* Scoped styles remain the same as the previous professional version */

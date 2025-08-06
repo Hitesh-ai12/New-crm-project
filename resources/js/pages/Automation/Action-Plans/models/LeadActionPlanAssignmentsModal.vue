@@ -8,6 +8,17 @@
         </button>
       </div>
       <div class="modal-body-custom">
+        <!-- Search Bar -->
+        <div class="mb-3">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Search by Lead Name, Action Plan, or Status..."
+            v-model="searchQuery"
+            @input="debouncedSearch"
+          />
+        </div>
+
         <div class="table-responsive">
           <table class="table table-bordered table-hover align-middle">
             <thead class="table-light">
@@ -25,10 +36,10 @@
               <tr v-if="loading">
                 <td colspan="7" class="text-center py-4">Loading assignments...</td>
               </tr>
-              <tr v-else-if="assignments.length === 0">
-                <td colspan="7" class="text-center py-4">No action plans assigned to leads yet.</td>
+              <tr v-else-if="paginatedAssignments.length === 0">
+                <td colspan="7" class="text-center py-4">No assignments found matching your criteria.</td>
               </tr>
-              <tr v-else v-for="assignment in assignments" :key="assignment.id">
+              <tr v-else v-for="assignment in paginatedAssignments" :key="assignment.id">
                 <td>{{ assignment.lead?.first_name }} {{ assignment.lead?.last_name }}</td>
                 <td>{{ assignment.action_plan?.name }}</td>
                 <td>
@@ -62,12 +73,36 @@
                     <span v-if="assignment.isUpdatingStatus" class="spinner-border spinner-border-sm me-1"></span>
                     Resume
                   </button>
+                  <button
+                    v-else-if="assignment.status === 'completed'"
+                    class="btn btn-sm btn-primary"
+                    @click="reassignCompletedPlan(assignment)"
+                    :disabled="assignment.isUpdatingStatus"
+                  >
+                    <span v-if="assignment.isUpdatingStatus" class="spinner-border spinner-border-sm me-1"></span>
+                    Re-assign
+                  </button>
                   <span v-else>N/A</span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination Controls -->
+        <nav v-if="totalPages > 1" aria-label="Page navigation">
+          <ul class="pagination justify-content-center">
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <a class="page-link" href="#" @click.prevent="currentPage--" :disabled="currentPage === 1">Previous</a>
+            </li>
+            <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }">
+              <a class="page-link" href="#" @click.prevent="currentPage = page">{{ page }}</a>
+            </li>
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <a class="page-link" href="#" @click.prevent="currentPage++" :disabled="currentPage === totalPages">Next</a>
+            </li>
+          </ul>
+        </nav>
       </div>
       <div class="modal-footer-custom">
         <button type="button" class="btn btn-secondary-custom" @click="$emit('close')">
@@ -80,14 +115,63 @@
 
 <script setup>
 import axios from 'axios';
-import { onMounted, ref } from 'vue';
+import Swal from 'sweetalert2';
+import { computed, onMounted, ref } from 'vue';
 
 const emit = defineEmits(['close']);
 
-const assignments = ref([]);
+const assignments = ref([]); // Holds all fetched assignments
 const loading = ref(true);
+const token = localStorage.getItem('auth_token');
 
-const token = localStorage.getItem('auth_token'); // Get token once
+// Pagination state
+const currentPage = ref(1);
+const itemsPerPage = ref(5); // Adjust as needed
+const searchQuery = ref(''); // Search query state
+let searchTimeout = null; // For debouncing search input
+
+// Computed properties for pagination and search
+const filteredAssignments = computed(() => {
+  if (!searchQuery.value) {
+    return assignments.value;
+  }
+  const query = searchQuery.value.toLowerCase();
+  return assignments.value.filter(assignment => {
+    const leadName = `${assignment.lead?.first_name || ''} ${assignment.lead?.last_name || ''}`.toLowerCase();
+    const actionPlanName = assignment.action_plan?.name?.toLowerCase() || '';
+    const status = assignment.status?.toLowerCase() || '';
+    const currentActionType = assignment.current_action?.type?.toLowerCase() || '';
+    const currentActionTaskName = assignment.current_action?.task_name?.toLowerCase() || '';
+    const currentActionNoteContent = assignment.current_action?.note_content?.toLowerCase() || '';
+
+    return leadName.includes(query) ||
+           actionPlanName.includes(query) ||
+           status.includes(query) ||
+           currentActionType.includes(query) ||
+           currentActionTaskName.includes(query) ||
+           currentActionNoteContent.includes(query);
+  });
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredAssignments.value.length / itemsPerPage.value);
+});
+
+const paginatedAssignments = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredAssignments.value.slice(start, end);
+});
+
+// Debounce function for search input
+const debouncedSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1; // Reset to first page on new search
+  }, 300); // 300ms delay
+};
 
 // Utility to show toast messages
 const showToastMessage = (title, icon = 'success') => {
@@ -139,13 +223,37 @@ const toggleAssignmentStatus = async (assignment, newStatus) => {
     const updatedAssignment = response.data.data;
     const index = assignments.value.findIndex(a => a.id === updatedAssignment.id);
     if (index !== -1) {
-      assignments.value[index].status = updatedAssignment.status;
-      assignments.value[index].next_action_due_at = updatedAssignment.next_action_due_at;
+      // Update the specific assignment object directly
+      assignments.value[index] = { ...assignments.value[index], ...updatedAssignment };
     }
     showToastMessage(`Action Plan status updated to '${newStatus}' successfully!`);
   } catch (error) {
     console.error(`Failed to update status for assignment ${assignment.id}:`, error);
     const message = error.response?.data?.message || `Failed to update status to '${newStatus}'.`;
+    showToastMessage(message, 'error');
+  } finally {
+    assignment.isUpdatingStatus = false;
+  }
+};
+
+const reassignCompletedPlan = async (assignment) => {
+  assignment.isUpdatingStatus = true;
+  try {
+    await axios.post(
+      '/api/assign-action-plans',
+      {
+        action_plan_ids: [assignment.action_plan_id],
+        lead_ids: [assignment.lead_id],
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    showToastMessage('Action Plan has been successfully re-assigned!');
+    await fetchAssignments(); // Refresh the list after re-assignment
+  } catch (err) {
+    console.error('Re-assignment error:', err);
+    const message = err.response?.data?.message || 'Failed to re-assign action plan.';
     showToastMessage(message, 'error');
   } finally {
     assignment.isUpdatingStatus = false;
@@ -172,7 +280,7 @@ onMounted(fetchAssignments);
 </script>
 
 <style scoped>
-/* Modal Overlay & Content Styling (from your previous modals, adjusted for wider content) */
+/* Modal Overlay & Content Styling (unchanged) */
 .modal-overlay-custom {
   position: fixed;
   z-index: 1050;
@@ -186,7 +294,7 @@ onMounted(fetchAssignments);
   inset-inline-start: 0;
 }
 
-.modal-content-custom-wide { /* Adjusted for wider content */
+.modal-content-custom-wide {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -195,14 +303,14 @@ onMounted(fetchAssignments);
   background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 15%);
   font-family: Inter, sans-serif;
-  inline-size: 95%; /* Wider modal */
-  max-block-size: 90vh; /* Allow scrolling for tall content */
-  max-inline-size: 1000px; /* Max width for larger screens */
+  inline-size: 95%;
+  max-block-size: 90vh;
+  max-inline-size: 1000px;
 }
 
 .modal-header-custom {
   display: flex;
-  flex-shrink: 0; /* Prevent header from shrinking */
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   border-block-end: 1px solid #eee;
@@ -227,15 +335,15 @@ onMounted(fetchAssignments);
 }
 
 .modal-body-custom {
-  flex-grow: 1; /* Allow body to take available space and scroll */
+  flex-grow: 1;
   margin-block-end: 20px;
-  overflow-y: auto; /* Enable scrolling for table content */
-  padding-inline-end: 15px; /* Add padding for scrollbar */
+  overflow-y: auto;
+  padding-inline-end: 15px;
 }
 
 .modal-footer-custom {
   display: flex;
-  flex-shrink: 0; /* Prevent footer from shrinking */
+  flex-shrink: 0;
   justify-content: flex-end;
   border-block-start: 1px solid #eee;
   gap: 10px;
@@ -257,11 +365,11 @@ onMounted(fetchAssignments);
   background-color: #5a6268;
 }
 
-/* Table Specific Styles */
+/* Table Specific Styles (unchanged) */
 .table th,
 .table td {
   padding-block: 12px;
-  padding-inline: 15px; /* Consistent padding */
+  padding-inline: 15px;
   text-align: center;
   vertical-align: middle;
 }
@@ -276,7 +384,7 @@ onMounted(fetchAssignments);
   background-color: #f2f2f2;
 }
 
-/* Badge Styles */
+/* Badge Styles (unchanged) */
 .badge {
   border-radius: 0.375rem;
   font-size: 0.875em;
@@ -284,13 +392,17 @@ onMounted(fetchAssignments);
   padding-block: 0.5em;
   padding-inline: 0.75em;
 }
+
 .bg-success { background-color: #28a745 !important; color: white; }
+
 .bg-warning { background-color: #ffc107 !important; }
+
 .bg-info { background-color: #17a2b8 !important; color: white; }
+
 .bg-danger { background-color: #dc3545 !important; color: white; }
 .bg-secondary { background-color: #6c757d !important; color: white; }
 
-/* Button Styles */
+/* Button Styles (unchanged) */
 .btn-sm {
   border-radius: 0.2rem;
   font-size: 0.875rem;
@@ -307,6 +419,12 @@ onMounted(fetchAssignments);
 .btn-success {
   border: none;
   background-color: #28a745;
+  color: white;
+}
+
+.btn-primary {
+  border: none;
+  background-color: #007bff;
   color: white;
 }
 

@@ -4,7 +4,7 @@
       <div class="modal-header border-0 pb-0">
         <h5 class="modal-title fw-bold">
           <transition name="fade" mode="out-in">
-            <span v-if="!showAddSourceForm">🚩 Assign Source</span>
+            <span v-if="!showAddSourceForm">🌐 Assign Source(s)</span>
             <span v-else>➕ Add New Source</span>
           </transition>
         </h5>
@@ -16,51 +16,38 @@
           <div v-if="!showAddSourceForm" key="assign">
             <div class="input-group mb-3">
               <span class="input-group-text bg-light border-0">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
               </span>
-              <input
-                v-model="searchQuery"
-                type="text"
-                class="form-control border-0 bg-light"
-                placeholder="Search for sources..."
-              />
+              <input v-model="searchQuery" type="text" class="form-control border-0 bg-light" placeholder="Search for sources...">
             </div>
 
             <div class="source-list-container">
-              <p v-if="!filteredSources.length" class="text-muted text-center mt-4">No sources found.</p>
-              <div v-else class="list-group">
+               <p v-if="!filteredSources.length" class="text-muted text-center mt-4">No sources found.</p>
+               <div v-else class="list-group">
                 <button
                   v-for="source in filteredSources"
                   :key="source.id"
                   type="button"
                   class="list-group-item list-group-item-action"
-                  :class="{ 'active': source.id === selectedSource }"
-                  @click="selectedSource = source.id"
+                  :class="{ 'active': selectedSources.includes(source.id) }"
+                  @click="toggleSourceSelection(source.id)"
                 >
                   {{ source.name }}
                 </button>
-              </div>
+               </div>
             </div>
 
             <div class="d-grid mt-3">
-              <button class="btn btn-light btn-sm" @click="showAddSourceForm = true">
-                + Add New
-              </button>
+               <button class="btn btn-light btn-sm" @click="showAddSourceForm = true">
+                 + Add New
+               </button>
             </div>
           </div>
 
           <div v-else key="add">
             <div class="mb-3">
               <label for="sourceName" class="form-label fw-semibold">Source Name</label>
-              <input
-                v-model.trim="newSource"
-                id="sourceName"
-                type="text"
-                class="form-control"
-                placeholder="e.g., Social Media"
-              />
+              <input v-model.trim="newSource" id="sourceName" type="text" class="form-control" placeholder="e.g., Website, Referral">
             </div>
           </div>
         </transition>
@@ -76,17 +63,17 @@
             key="apply"
             type="button"
             class="btn btn-primary"
-            :disabled="!selectedSource"
-            @click="assignSource"
+            :disabled="!selectedSources.length"
+            @click="assignSources"
           >
-            Apply
+            Apply ({{ selectedSources.length }})
           </button>
           <button
             v-else
             key="addSource"
             type="button"
             class="btn btn-success"
-            :disabled="!newSource.trim()"
+            :disabled="!newSource"
             @click="addSource"
           >
             Add Source
@@ -98,15 +85,15 @@
 </template>
 
 <script setup>
-import axios from 'axios';
-import Swal from 'sweetalert2'; // Import SweetAlert2
-import { computed, onMounted, ref } from 'vue';
+import axios from 'axios'
+import Swal from 'sweetalert2'
+import { computed, onMounted, ref } from 'vue'
 
-const emit = defineEmits(['close', 'source-assigned'])
+const emit = defineEmits(['close', 'sources-assigned']) // Emit 'sources-assigned' event
 
 // State
 const sources = ref([])
-const selectedSource = ref(null)
+const selectedSources = ref([]) // Changed to array for multi-select
 const searchQuery = ref('')
 const newSource = ref('')
 const showAddSourceForm = ref(false)
@@ -130,19 +117,19 @@ const showToastMessage = (title, icon = 'success') => {
 
 // Fetch all sources on mount
 onMounted(async () => {
-  await fetchSources()
+  await loadSources()
 })
 
-const fetchSources = async () => {
+const loadSources = async () => {
   try {
     const token = localStorage.getItem('auth_token')
-    const res = await axios.get('/api/items?type=source', {
+    const res = await axios.get('/api/items?type=source', { // Assuming type 'source' for sources
       headers: { Authorization: `Bearer ${token}` }
     })
-    sources.value = res.data.sources || []
+    sources.value = res.data.sources || [] // Assuming backend returns 'sources' key
   } catch (err) {
-    console.error('Failed to fetch sources:', err)
-    showToastMessage('Failed to fetch sources.', 'error') // Use toast for errors
+    console.error('Failed to load sources:', err)
+    showToastMessage('Failed to load sources.', 'error')
   }
 }
 
@@ -152,32 +139,41 @@ const filteredSources = computed(() =>
   )
 )
 
+const toggleSourceSelection = (sourceId) => {
+  const index = selectedSources.value.indexOf(sourceId)
+  if (index > -1) {
+    selectedSources.value.splice(index, 1) // Remove if already selected
+  } else {
+    selectedSources.value.push(sourceId) // Add if not selected
+  }
+}
+
 // Add new source
 const addSource = async () => {
-  if (!newSource.value.trim()) return // Use .trim() for validation
+  if (!newSource.value) return
   try {
     const token = localStorage.getItem('auth_token')
     const res = await axios.post(
       '/api/items',
-      { name: newSource.value, type: 'source' },
+      { name: newSource.value, type: 'source' }, // Assuming type 'source' for new sources
       { headers: { Authorization: `Bearer ${token}` } }
     )
-    const newItem = res.data.item // Get the new item from the response
+    const newItem = res.data.item
     sources.value.push(newItem)
-    selectedSource.value = newItem.id // Automatically select the new source
+    selectedSources.value.push(newItem.id) // Automatically select the new source
     newSource.value = ''
     showAddSourceForm.value = false
-    showToastMessage('Source added successfully!')
+    showToastMessage('Source added successfully!', 'success')
   } catch (err) {
     console.error('Failed to add source:', err)
     showToastMessage('Failed to add source.', 'error')
   }
 }
 
-// Apply selected source
-const assignSource = () => {
-  emit('source-assigned', selectedSource.value)
-  showToastMessage('Source assigned successfully!') // Add success toast
+// Apply selected sources
+const assignSources = () => {
+  emit('sources-assigned', selectedSources.value) // Emit the selected source IDs
+  showToastMessage('Sources selected for assignment!', 'info')
   emit('close')
 }
 
