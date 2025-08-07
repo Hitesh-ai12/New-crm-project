@@ -8,8 +8,7 @@ use App\Http\Controllers\Leads\LeadController;
 use App\Http\Controllers\Webhook\GmailWebhookController;
 use Illuminate\Support\Facades\Artisan;
 
-// Localhost पर cron job को मैन्युअल रूप से चलाने के लिए route
-// यह route सबसे पहले होना चाहिए
+
 Route::get('/run-scheduler', function () {
     Artisan::call('process:lead-actions');
 
