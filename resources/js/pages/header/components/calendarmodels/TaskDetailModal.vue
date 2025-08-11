@@ -1,7 +1,6 @@
-<!-- components/calendarmodels/TaskDetailModal.vue -->
 <template>
-  <div class="modal-overlay">
-    <div class="modal-content">
+  <div class="task-modal-overlay">
+    <div class="task-modal-content">
       <h3>Task Details</h3>
       <p><strong>Lead:</strong> {{ task.lead_name }}</p>
       <p><strong>Title:</strong> {{ task.title }}</p>
@@ -17,15 +16,11 @@ export default {
   props: ['task']
 }
 </script>
-<style>
-.event.lead-name {
-  color: #007bff;
-  cursor: pointer;
-  font-weight: bold;
-}
 
-.modal-overlay {
+<style scoped>
+.task-modal-overlay {
   position: fixed;
+  z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,11 +28,36 @@ export default {
   inset: 0;
 }
 
-.modal-content {
+.task-modal-content {
   border-radius: 10px;
   background: white;
+  inline-size: 400px;
+  max-inline-size: 90%;
   padding-block: 1rem;
   padding-inline: 2rem;
 }
 
+.task-modal-content h3 {
+  margin-block-end: 1rem;
+}
+
+.task-modal-content p {
+  font-size: 0.95rem;
+  margin-block-end: 0.75rem;
+}
+
+.task-modal-content button {
+  border: none;
+  border-radius: 4px;
+  background-color: #8c57ff;
+  color: white;
+  cursor: pointer;
+  margin-block-start: 1rem;
+  padding-block: 8px;
+  padding-inline: 16px;
+}
+
+.task-modal-content button:hover {
+  background-color: #6a43d6;
+}
 </style>

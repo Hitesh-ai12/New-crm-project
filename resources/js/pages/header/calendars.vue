@@ -1,5 +1,11 @@
 <template>
-  <div class="calendar-page">
+  <div class="calendar-page" style="position: relative;">
+    
+    <!-- Global Loader -->
+    <Loader v-if="isLoadingLeads || isLoadingAppointments">
+      Loading calendar...
+    </Loader>
+
     <!-- Header Section -->
     <div class="header">
       <h1>Calendar</h1>
@@ -9,7 +15,7 @@
       </div>
     </div>
 
-    <!-- Calendar Container - Make sure this is properly structured -->
+    <!-- Calendar Container -->
     <div class="calendar-container">
       <div class="calendar">
         <div class="calendar-header">
@@ -17,43 +23,40 @@
           <span>{{ formattedMonth }} {{ currentYear }}</span>
           <button @click="nextMonth">Next</button>
         </div>
+
         <div class="weekdays">
           <div v-for="day in weekdays" :key="day" class="weekday">{{ day }}</div>
         </div>
+
         <div class="calendar-days">
+          <div
+            class="calendar-day"
+            :class="{ 'current-day': isCurrentDay(day.date), 'empty-day': day.isPadding }"
+            v-for="(day, index) in daysInMonth"
+            :key="index"
+            @click="!day.isPadding && handleDateClick(day)"
+          >
+            <span v-if="!day.isPadding">{{ day.date }}</span>
 
-        <div
-          class="calendar-day"
-          :class="{
-            'current-day': isCurrentDay(day.date),
-            'empty-day': day.isPadding
-          }"
-          v-for="(day, index) in daysInMonth"
-          :key="index"
-          @click="!day.isPadding && handleDateClick(day)"
-        >
-          <span v-if="!day.isPadding">{{ day.date }}</span>
-
-        <div 
-          v-for="event in day.events" 
-          :key="event.id"
-          class="event"
-          @click.stop="openTaskDetail(event)"
-        >
-          <div class="fw-bold">{{ event.lead_name }}</div>
-          <div class="text-muted small"> {{ event.title }}</div>
-        </div>
-
+            <div
+              v-for="event in day.events"
+              :key="event.id"
+              class="event"
+              @click.stop="openTaskDetail(event)"
+            >
+              <div class="fw-bold">{{ event.lead_name }}</div>
+              <div class="text-muted small">{{ event.title }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
     <!-- Modals -->
-    <TaskDetailModal 
-      v-if="selectedTask" 
-      :task="selectedTask" 
-      @close="selectedTask = null" 
+    <TaskDetailModal
+      v-if="selectedTask"
+      :task="selectedTask"
+      @close="selectedTask = null"
     />
 
     <TaskModal
@@ -62,31 +65,32 @@
       @close="showTaskModal = false"
       @save="addTask"
     />
-    
+
     <AppointmentModal
       v-if="showAppointmentModal"
       :leads="leads"
       @close="showAppointmentModal = false"
       @save="addAppointment"
     />
-
   </div>
 </template>
 
-
 <script>
+import Loader from '@/pages/loader/loader.vue';
+import Swal from 'sweetalert2'; // <-- Swal को इंपोर्ट करें
 import { computed, onMounted, ref } from "vue";
 import AppointmentModal from './components/calendarmodels/AppointmentModal.vue';
 import TaskDetailModal from './components/calendarmodels/TaskDetailModal.vue';
 import TaskModal from './components/calendarmodels/TaskModal.vue';
 
-
 export default {
   components: {
+    Loader,
     TaskModal,
     AppointmentModal,
     TaskDetailModal
   },
+
   setup() {
     const currentMonth = ref(new Date().getMonth());
     const currentYear = ref(new Date().getFullYear());
@@ -96,10 +100,31 @@ export default {
     const leads = ref([]);
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const selectedTask = ref(null);
+    const isLoadingLeads = ref(false);
+    const isLoadingAppointments = ref(false);
+
+    const showToastMessage = (title, icon = 'success') => {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: icon,
+          title: title,
+          didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+          },
+        });
+      }
+    };
 
     const openTaskDetail = (task) => {
       selectedTask.value = task;
     };
+
     const formattedMonth = computed(() => {
       const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -108,44 +133,43 @@ export default {
       return monthNames[currentMonth.value];
     });
 
-      const daysInMonth = computed(() => {
-        const days = [];
-        const firstDayOfMonth = new Date(currentYear.value, currentMonth.value, 1);
-        const startDay = firstDayOfMonth.getDay(); 
+    const daysInMonth = computed(() => {
+      const days = [];
+      const firstDayOfMonth = new Date(currentYear.value, currentMonth.value, 1);
+      const startDay = firstDayOfMonth.getDay(); 
 
-        for (let i = 0; i < startDay; i++) {
-          days.push({
-            date: null,
-            fullDate: null,
-            events: [],
-            isPadding: true
-          });
-        }
+      for (let i = 0; i < startDay; i++) {
+        days.push({
+          date: null,
+          fullDate: null,
+          events: [],
+          isPadding: true
+        });
+      }
 
-        const date = new Date(currentYear.value, currentMonth.value, 1);
-        const month = date.getMonth();
+      const date = new Date(currentYear.value, currentMonth.value, 1);
+      const month = date.getMonth();
 
-        while (date.getMonth() === month) {
-          const dayDate = new Date(date);
-          days.push({
-            date: dayDate.getDate(),
-            fullDate: new Date(dayDate),
-            events: events.value.filter(event => {
-              const eventDate = new Date(event.due_date || event.date);
-              return (
-                eventDate.getFullYear() === dayDate.getFullYear() &&
-                eventDate.getMonth() === dayDate.getMonth() &&
-                eventDate.getDate() === dayDate.getDate()
-              );
-            }),
-            isPadding: false
-          });
-          date.setDate(date.getDate() + 1);
-        }
+      while (date.getMonth() === month) {
+        const dayDate = new Date(date);
+        days.push({
+          date: dayDate.getDate(),
+          fullDate: new Date(dayDate),
+          events: events.value.filter(event => {
+            const eventDate = new Date(event.due_date || event.date);
+            return (
+              eventDate.getFullYear() === dayDate.getFullYear() &&
+              eventDate.getMonth() === dayDate.getMonth() &&
+              eventDate.getDate() === dayDate.getDate()
+            );
+          }),
+          isPadding: false
+        });
+        date.setDate(date.getDate() + 1);
+      }
 
-        return days;
-      });
-
+      return days;
+    });
 
     const prevMonth = () => {
       if (currentMonth.value === 0) {
@@ -179,17 +203,16 @@ export default {
     };
 
     const fetchLeads = async () => {
+      isLoadingLeads.value = true;
       try {
         const response = await fetch('/api/leads', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           }
         });
-
         const data = await response.json();
         leads.value = data;
 
-        // 🎯 Build event list from lead.tasks[]
         events.value = [];
         data.forEach(lead => {
           if (Array.isArray(lead.tasks)) {
@@ -206,7 +229,10 @@ export default {
           }
         });
       } catch (error) {
-        console.error('❌ Error fetching leads:', error);
+        // console.error('❌ Error fetching leads:', error);
+        // showToastMessage('Failed to fetch leads.', 'error');
+      } finally {
+        isLoadingLeads.value = false;
       }
     };
 
@@ -230,9 +256,7 @@ export default {
 
         const result = await response.json();
 
-        console.log("✅ Task response:", result);
-
-        if (result?.task) {
+        if (response.ok && result?.task) {
           const t = result.task;
           events.value.push({
             id: t.id,
@@ -241,22 +265,25 @@ export default {
             due_date: t.due_date, 
             lead_id: t.lead_id
           });
+          showToastMessage('Task added successfully!', 'success');
         } else {
           console.error('❌ Task creation failed:', result);
+          showToastMessage('Failed to add task.', 'error');
         }
       } catch (error) {
         console.error('❌ Error adding task:', error);
+        showToastMessage('Error adding task.', 'error');
       }
     };
 
     const fetchAppointments = async () => {
+      isLoadingAppointments.value = true;
       try {
         const response = await fetch('/api/appointments', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           }
         });
-
         const appointmentData = await response.json();
 
         appointmentData.forEach(appt => {
@@ -269,14 +296,16 @@ export default {
             lead_name: appt.lead_name
           });
         });
-
       } catch (error) {
         console.error('❌ Error fetching appointments:', error);
+      } finally {
+        isLoadingAppointments.value = false;
       }
     };
 
     const addAppointment = (appointment) => {
       events.value.push(appointment);
+      showToastMessage('Appointment added successfully!', 'success');
     };
 
     onMounted(() => {
@@ -285,6 +314,8 @@ export default {
     });
 
     return {
+      isLoadingLeads,
+      isLoadingAppointments,
       selectedTask,
       openTaskDetail,
       currentMonth,
@@ -306,7 +337,6 @@ export default {
   }
 };
 </script>
-
 
 
 <style scoped>

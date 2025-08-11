@@ -453,28 +453,22 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submit']);
 
-// Reactive state
 const actionPlanName = ref('');
 const pauseOnReply = ref(false);
 
-const actions = ref([]); // Initialize as empty, will be populated from props
+const actions = ref([]); 
 
-// Unique ID counter for new actions
-// Initialize with a high number or Date.now() to avoid collision with existing backend IDs
 let actionIdCounter = Date.now(); 
 
-// Reactive object to track validation errors by action id and field
 const formAttempted = ref(false);
 const errors = reactive({});
 
-// Dynamic options for dropdowns (simulate API fetch)
 const emailTemplates = ref([]);
 const textTemplates = ref([]);
 const stageOptions = ref([]);
 const tagOptions = ref([]);
 const allActionPlans = ref([]);
 
-// Axios default header for authorization
 axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('auth_token')}`;
 
 const fetchEmailTemplates = async () => {
@@ -515,7 +509,6 @@ const fetchTags = async () => {
 
 const fetchAllActionPlans = async () => {
   try {
-    // Fetch only id and name for dropdowns
     const response = await axios.get('/api/automation/action-plans'); 
     allActionPlans.value = response.data.data ?? response.data;
   } catch (error) {
@@ -523,20 +516,17 @@ const fetchAllActionPlans = async () => {
   }
 };
 
-// Function to populate modal fields from props
 const populateModal = () => {
   actionPlanName.value = props.actionPlan.name;
   pauseOnReply.value = props.actionPlan.pause_on_reply;
   
-  // Map backend actions to frontend structure, adding a unique ID for Vue's keying
-  // AND storing the original backend 'id' as 'backend_id' for updates/deletes
   actions.value = props.actionPlan.actions.map(action => {
     let delayValue = action.delay_days;
-    let delayUnit = 'Days'; // Assuming default display is days. If backend stores hours, you'd need conversion logic here.
+    let delayUnit = 'Days'; 
 
     return {
-      id: Date.now() + Math.random(), // Unique ID for frontend v-for keying
-      backend_id: action.id, // Store the actual backend ID for update/delete operations
+      id: Date.now() + Math.random(),
+      backend_id: action.id,
       type: action.type,
       delayValue: delayValue,
       delayUnit: delayUnit,
@@ -544,7 +534,7 @@ const populateModal = () => {
       taskType: action.task_type,
       emailTemplate: action.email_template_id,
       textTemplate: action.sms_template_id,
-      newStage: action.new_stage || [], // Ensure it's an array for checkboxes
+      newStage: action.new_stage || [],
       noteContent: action.note_content,
       addTags: action.add_tags || [],
       removeTags: action.remove_tags || [],
@@ -553,12 +543,10 @@ const populateModal = () => {
     };
   });
 
-  // Ensure actionIdCounter is higher than any generated `id` to prevent collisions for new actions
   actionIdCounter = actions.value.length > 0 ? Math.max(...actions.value.map((a) => a.id)) : Date.now();
 };
 
 
-// Clear error of a specific field (use on input/change)
 function clearFieldError(fieldKey, actionId = null) {
   if (actionId === null) {
     if (errors[fieldKey]) delete errors[fieldKey];
@@ -574,7 +562,6 @@ function clearFieldError(fieldKey, actionId = null) {
   }
 }
 
-// Validate individual field of a single action by id + fieldKey
 function validateField(actionId, fieldKey) {
     const action = actions.value.find((a) => a.id === actionId);
     if (!action) return true;
@@ -602,7 +589,6 @@ function validateField(actionId, fieldKey) {
             break;
 
         case 'newStage':
-            // No min:1 validation here as per previous discussion
             break;
 
         case 'noteContent':
@@ -610,11 +596,9 @@ function validateField(actionId, fieldKey) {
             break;
 
         case 'addTags':
-            // No min:1 validation here as per previous discussion
             break;
 
         case 'removeTags':
-            // No min:1 validation here as per previous discussion
             break;
 
         case 'pauseSpecificPlan':
@@ -643,7 +627,6 @@ function validateField(actionId, fieldKey) {
     }
 }
 
-// Validate entire action; return true if valid
 function validateAction(action) {
     const fieldsToValidate = ['type'];
 
@@ -658,16 +641,13 @@ function validateAction(action) {
             fieldsToValidate.push('textTemplate');
             break;
         case 'Change Stage':
-            // No specific field validation for Change Stage if newStage can be empty
             break; 
         case 'Add Note':
             fieldsToValidate.push('noteContent');
             break;
         case 'Add Tag(s)':
-            // No specific field validation for Add Tag(s) if addTags can be empty
             break;
         case 'Remove Tag(s)':
-            // No specific field validation for Remove Tag(s) if removeTags can be empty
             break;
         case 'Pause Specific Action plan':
             fieldsToValidate.push('pauseSpecificPlan');
@@ -793,7 +773,6 @@ const submitForm = async () => {
     }
 
     return {
-      // Include the backend_id if it exists (for existing actions)
       ...(action.backend_id && { id: action.backend_id }), 
       type: action.type,
       delay_days: delayInDays,
@@ -812,13 +791,13 @@ const submitForm = async () => {
   });
 
   const formData = {
-    id: props.actionPlan.id, // Include the ID of the action plan being updated
+    id: props.actionPlan.id,
     title: actionPlanName.value,
     pause_on_reply: pauseOnReply.value,
     actions: formattedActions,
   };
 
-  emit('submit', formData); // Emit to parent for API call
+  emit('submit', formData);
 };
 
 const closeModal = () => {
@@ -831,17 +810,15 @@ onMounted(() => {
   fetchSmsTemplates();
   fetchStages();
   fetchTags();
-  fetchAllActionPlans(); // Fetch all action plans for dropdowns
-  populateModal(); // Populate fields with existing data
+  fetchAllActionPlans();
+  populateModal();
 });
 
-// Watch for changes in actions to update actionIdCounter (for new actions)
 watch(
   actions,
   () => {
-    // Find the maximum ID among current actions to ensure new IDs are always unique and incrementing
     if (actions.value.length === 0) {
-      actionIdCounter = 0; // Reset if all actions are removed
+      actionIdCounter = 0; 
     } else {
       actionIdCounter = Math.max(...actions.value.map((a) => a.id), actionIdCounter);
     }
@@ -873,7 +850,7 @@ watch(
   box-shadow: 0 4px 12px rgba(0, 0, 0, 15%);
   font-family: Inter, sans-serif;
   inline-size: 90%;
-  max-inline-size: 700px; /* Slightly wider for more content */
+  max-inline-size: 700px;
 }
 
 .modal-header-custom {
@@ -902,9 +879,9 @@ watch(
 }
 
 .modal-body-custom {
-  max-block-size: 70vh; /* Limit height for scrollability */
-  overflow-y: auto; /* Enable scrolling for long forms */
-  padding-inline-end: 15px; /* Space for scrollbar */
+  max-block-size: 70vh;
+  overflow-y: auto;
+  padding-inline-end: 15px;
 }
 
 .modal-footer-custom {

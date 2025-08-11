@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div class="table-responsive">
     <table class="table table-bordered">
       <thead>
@@ -50,4 +50,4 @@ watch(selectedIds, (newVal) => {
   const selected = allLeads.value.filter(item => newVal.includes(item.id))
   emit('update:selectedLeads', selected)
 })
-</script>
+</script> -->

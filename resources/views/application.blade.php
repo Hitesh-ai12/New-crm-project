@@ -1,29 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="csrf-token" content="{{ csrf_token() }}" />
-  <title>Crm Dashboard</title>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>Crm Dashboard</title>
 
-  <link rel="icon" href="{{ asset('favicon.ico') }}" />
+    <link rel="icon" href="{{ asset('favicon.ico') }}" />
 
-  <link rel="stylesheet" type="text/css" href="{{ asset('loader.css') }}" />
+    <!-- <link rel="stylesheet" type="text/css" href="{{ asset('loader.css') }}" /> -->
 
-  <!-- FontAwesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-     @vite(['resources/js/main.js'])
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+      @vite(['resources/js/main.js'])
+  <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"> -->
 
-  <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-</head>
+    <script src="https://cdn.tiny.cloud/1/7r45t0c3sy6yuq7ikvrggo0mn2baow0j4umbcc1r42u6qoe6/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+  </head>
 
 <body>
   <div id="app">
     <div id="loading-bg">
       <div class="loading-logo">
-        <!-- SVG Logo -->
         <svg width="86" height="48" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg">
           <g fill="none" fill-rule="evenodd">
             <path d="M30 21.392a2 2 0 0 1-3.027 1.716l-3.258-1.95a2 2 0 0 1-.973-1.716l-.001-6.7L15
@@ -40,24 +38,9 @@
           </g>
         </svg>
       </div>
-      <div class="loading">
-        <div class="effect-1 effects"></div>
-        <div class="effect-2 effects"></div>
-        <div class="effect-3 effects"></div>
-      </div>
+
     </div>
   </div>
-  
-  <script>
-    const loaderColor = localStorage.getItem('materio-initial-loader-bg') || '#FFFFFF'
-    const primaryColor = localStorage.getItem('materio-initial-loader-color') || '#9155FD'
-
-    if (loaderColor)
-      document.documentElement.style.setProperty('--initial-loader-bg', loaderColor)
-
-    if (primaryColor)
-      document.documentElement.style.setProperty('--initial-loader-color', primaryColor)
-  </script>
 
 </body>
 

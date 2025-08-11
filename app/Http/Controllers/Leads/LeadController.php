@@ -21,9 +21,19 @@ use Illuminate\Support\Facades\DB;
 class LeadController extends Controller
 {
 
-        public function index()
+        public function index(Request $request)
         {
-            return Lead::all();
+            $query = Lead::query();
+
+            if ($request->has('search')) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%$search%")
+                    ->orWhere('last_name', 'like', "%$search%");
+                });
+            }
+
+            return $query->orderBy('id', 'desc')->paginate(20);
         }
 
         public function store(Request $request)

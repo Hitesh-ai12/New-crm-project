@@ -77,8 +77,11 @@
       />
     </div>
 
+    <!-- Loader added to the main content area -->
+    <Loader v-if="loading" />
+
     <!-- Data Table -->
-    <div class="table-responsive">
+    <div class="table-responsive" v-if="!loading">
       <table class="table table-bordered table-hover align-middle">
         <thead class="table-light">
           <tr>
@@ -97,10 +100,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading">
-            <td colspan="12" class="text-center py-4">Loading action plans...</td>
-          </tr>
-          <tr v-else-if="actionPlans.length === 0">
+          <tr v-if="actionPlans.length === 0">
             <td colspan="12" class="text-center py-4">No action plans found matching your criteria.</td>
           </tr>
           <tr v-else v-for="item in actionPlans" :key="item.id">
@@ -135,7 +135,7 @@
     </div>
 
     <!-- Pagination Controls -->
-    <nav v-if="totalPages > 1" aria-label="Page navigation">
+    <nav v-if="totalPages > 1 && !loading" aria-label="Page navigation">
       <ul class="pagination justify-content-center">
         <li class="page-item" :class="{ disabled: currentPage === 1 }">
           <a class="page-link" href="#" @click.prevent="currentPage--" :disabled="currentPage === 1">Previous</a>
@@ -193,7 +193,7 @@ import axios from 'axios';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Swal from 'sweetalert2';
-import { computed, onMounted, ref, watch } from 'vue'; // Import watch
+import { computed, onMounted, ref, watch } from 'vue';
 
 const token = localStorage.getItem('auth_token');
 if (token) {
@@ -203,12 +203,11 @@ if (token) {
 const actionPlans = ref([]);
 const loading = ref(true);
 
-// Pagination and Search state
 const currentPage = ref(1);
-const itemsPerPage = ref(10); // Default items per page
-const totalPages = ref(1); // Will be updated from backend
+const itemsPerPage = ref(10);
+const totalPages = ref(1);
 const searchQuery = ref('');
-let searchTimeout = null; // For debouncing
+let searchTimeout = null;
 
 const selectedActionPlanIds = ref([]);
 const allSelected = computed(() => selectedActionPlanIds.value.length === actionPlans.value.length && actionPlans.value.length > 0);
@@ -230,6 +229,7 @@ const idsToDelete = ref([]);
 
 const isDisabled = computed(() => selectedActionPlanIds.value.length === 0);
 
+import Loader from '@/pages/loader/loader.vue';
 import ActionPlanFormModal from './models/ActionPlanFormModal.vue';
 import AssignSourceModal from './models/AssignSourceModal.vue';
 import AssignStageModal from './models/AssignStageModal.vue';
@@ -263,16 +263,16 @@ const fetchActionPlans = async () => {
   loading.value = true;
   try {
     const response = await axios.get('/api/automation/action-plans', {
-      params: { // Send pagination and search parameters
+      params: { 
         page: currentPage.value,
         per_page: itemsPerPage.value,
         search: searchQuery.value,
-        include: 'actions,creator' // Still include actions and creator
+        include: 'actions,creator'
       },
       headers: { Authorization: `Bearer ${token}` }
     });
     actionPlans.value = response.data.data || [];
-    totalPages.value = response.data.last_page || 1; // Update total pages from backend
+    totalPages.value = response.data.last_page || 1;
   } catch (error) {
     console.error('Failed to load action plans:', error);
     showToastMessage('Failed to load action plans.', 'error');
@@ -317,12 +317,11 @@ const debouncedSearch = () => {
     clearTimeout(searchTimeout);
   }
   searchTimeout = setTimeout(() => {
-    currentPage.value = 1; // Reset to first page on new search
-    fetchActionPlans(); // Fetch data with new search query
-  }, 300); // 300ms delay
+    currentPage.value = 1;
+    fetchActionPlans();
+  }, 300);
 };
 
-// Watch currentPage to refetch data when page changes
 watch(currentPage, () => {
   fetchActionPlans();
 });
@@ -355,7 +354,7 @@ const handleFormSubmit = async (formData) => {
       showToastMessage('Action Plan added successfully!');
     }
     closeFormModal();
-    await fetchActionPlans(); // Refresh the list after add/edit
+    await fetchActionPlans();
   } catch (error) {
     console.error('Failed to save action plan:', error);
     const message = error.response?.data?.message || 'Something went wrong.';
@@ -406,7 +405,7 @@ const confirmDeleteSelected = () => {
 
 const executeDelete = async (ids) => {
   try {
-    const response = await axios.post('/api/automation/action-plans/batch-delete', { ids });
+    await axios.post('/api/automation/action-plans/batch-delete', { ids });
     await fetchActionPlans();
     selectedActionPlanIds.value = [];
     showToastMessage(response.data.message || 'Action Plan(s) deleted successfully!', 'success');
@@ -490,11 +489,11 @@ const getTagsForDisplay = (item) => {
   
   const tagIds = item.actions
     .filter(action => action.type === 'Add Tag(s)' && action.add_tags && action.add_tags.length > 0)
-    .flatMap(action => action.add_tags); // Flatten array of arrays
+    .flatMap(action => action.add_tags);
 
   if (tagIds.length === 0) return 'N/A';
 
-  const tagNames = tagIds.map(id => allTagsLookup.value[id]).filter(name => name); // Map IDs to names, filter out undefined
+  const tagNames = tagIds.map(id => allTagsLookup.value[id]).filter(name => name);
   return tagNames.length > 0 ? tagNames.join(', ') : 'N/A';
 };
 
@@ -503,73 +502,66 @@ const getStagesForDisplay = (item) => {
   
   const stageIds = item.actions
     .filter(action => action.type === 'Change Stage' && action.new_stage && action.new_stage.length > 0)
-    .flatMap(action => action.new_stage); // Flatten array of arrays
+    .flatMap(action => action.new_stage);
 
   if (stageIds.length === 0) return 'N/A';
 
-  const stageNames = stageIds.map(id => allStagesLookup.value[id]).filter(name => name); // Map IDs to names, filter out undefined
+  const stageNames = stageIds.map(id => allStagesLookup.value[id]).filter(name => name);
   return stageNames.length > 0 ? stageNames.join(', ') : 'N/A';
 };
 
 const getSourcesForDisplay = (item) => {
   if (!item.actions || item.actions.length === 0) return 'N/A';
   
-  // 'Assign Source' action में assign_action_plan field में source ID होती है (string के रूप में)
   const sourceIds = item.actions
     .filter(action => action.type === 'Assign Source' && action.assign_action_plan)
-    .map(action => parseInt(action.assign_action_plan)); // Parse to integer if it's a string ID
+    .map(action => parseInt(action.assign_action_plan));
 
   if (sourceIds.length === 0) return 'N/A';
 
-  const sourceNames = sourceIds.map(id => allSourcesLookup.value[id]).filter(name => name); // Map IDs to names, filter out undefined
+  const sourceNames = sourceIds.map(id => allSourcesLookup.value[id]).filter(name => name);
   return sourceNames.length > 0 ? sourceNames.join(', ') : 'N/A';
 };
 
-
 onMounted(() => {
-  fetchItemsLookup(); // Fetch lookup data on mount
+  fetchItemsLookup();
   fetchActionPlans();
 });
 </script>
 
-<style scoped>
-/* Modal Styles... */
 
-/* Add custom styles for scrollable cells */
+<style scoped>
 .scrollable-cell {
-  max-inline-size: 150px; /* Adjust as needed */
+  max-inline-size: 150px;
   overflow-x: auto;
-  padding-block-end: 5px; /* Add some padding for scrollbar */
+  padding-block-end: 5px;
   white-space: nowrap;
 }
 
-/* For Webkit browsers (Chrome, Safari) */
 .scrollable-cell::-webkit-scrollbar {
-  block-size: 5px; /* Height of horizontal scrollbar */
+  block-size: 5px;
 }
 
 .scrollable-cell::-webkit-scrollbar-track {
   border-radius: 10px;
-  background: #f1f1f1; /* Color of the tracking area */
+  background: #f1f1f1;
 }
 
 .scrollable-cell::-webkit-scrollbar-thumb {
   border-radius: 10px;
-  background: #888; /* Color of the scroll thumb */
+  background: #888;
 }
 
 .scrollable-cell::-webkit-scrollbar-thumb:hover {
-  background: #555; /* Color of the scroll thumb on hover */
+  background: #555;
 }
 
-/* Your existing CSS styles go here. */
 .table th,
 .table td {
   text-align: center;
   vertical-align: middle;
 }
 
-/* Add custom styles for new button */
 .btn-info {
   border: none;
   background-color: #17a2b8;

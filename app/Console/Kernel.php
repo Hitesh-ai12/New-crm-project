@@ -12,8 +12,6 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // यहाँ से `schedule:run` कमांड को चलाने के लिए लॉजिक है।
-        // अगर आपके पास एक अलग कमांड है, तो उसका उपयोग करें।
         $schedule->command('process:lead-actions')->everyMinute();
     }
 

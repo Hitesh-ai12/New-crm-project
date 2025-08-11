@@ -623,8 +623,7 @@
       <select v-model="pageSize" @change="setPageSize(Number($event.target.value))">
         <option value="5">5</option>
         <option value="10">10</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
+        <option value="20">20</option>
       </select>
     </div>
 
@@ -737,7 +736,6 @@
 </template>
 
 <script lang="js">
-import '@/assets/leads.css';
 import WhatsappChatModal from '@/pages/api/leadmodels/WhatsappChatModal.vue';
 import Loader from '@/pages/loader/loader.vue';
 import axios from 'axios';
@@ -824,7 +822,7 @@ export default {
     const loadingLeads = ref(false);
     const loadingColumns = ref(false);
 
-const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value);
+    const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value);
 
     const authToken = localStorage.getItem('auth_token');
     // Modal methods
@@ -1026,14 +1024,7 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
 
 
     const openEmailModal = () => {
-      // if (selectedLeads.value.length === 0) {
-      //   Swal.fire({
-      //     icon: "warning",
-      //     title: "No Leads Selected",
-      //     text: "Please select at least one lead before sending an email.",
-      //   });
-      //   return;
-      // }
+
       showEmailModal.value = true;
       nextTick(() => {
         destroyTinyMCE();
@@ -1500,24 +1491,51 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
 
 
       const getAllLeads = async (token) => {
+        isTableLoading.value = true;
         try {
           const response = await axios.get("/api/leads", {
             headers: { Authorization: `Bearer ${token}` },
+            params: {
+              page: currentPage.value,
+              per_page: pageSize.value,
+            },
           });
-          leads.value = Array.isArray(response.data) ? response.data : [];
+
+          const responseData = response.data;
+          
+          // If using Laravel's built-in pagination structure
+          leads.value = responseData.data || [];
+          totalPages.value = responseData.last_page || 1;
+
         } catch (err) {
-          console.error("Error loading leads", err);
+          console.error("❌ Error loading leads", err);
+        } finally {
+          isTableLoading.value = false;
         }
       };
 
+
       const getMyLeads = async (token) => {
+        isTableLoading.value = true;
         try {
-          const response = await axios.get("/api/leads?type=my", {
+          const response = await axios.get("/api/leads", {
             headers: { Authorization: `Bearer ${token}` },
+            params: {
+              page: currentPage.value,
+              per_page: pageSize.value,
+            },
           });
-          leads.value = Array.isArray(response.data) ? response.data : [];
+
+          const responseData = response.data;
+          
+          // If using Laravel's built-in pagination structure
+          leads.value = responseData.data || [];
+          totalPages.value = responseData.last_page || 1;
+
         } catch (err) {
-          console.error("Error loading my leads", err);
+          console.error("❌ Error loading leads", err);
+        } finally {
+          isTableLoading.value = false;
         }
       };
 
@@ -1589,6 +1607,7 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
         lead.first_name && lead.first_name.toLowerCase().includes(searchQuery.value.toLowerCase())
       );
     });
+
     
     const getTagValue = (id) => {
       const tag = tags.value.find(t => t.id === id);
@@ -2034,6 +2053,7 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
 
 
     onMounted(async () => {
+
       await fetchLeads(activeLeadType.value);
       await fetchItems();
        fetchSmsTemplates();
@@ -2050,9 +2070,9 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
     });
 
     return {
-          loadingLeads,
-    loadingColumns,
-    isTableLoading,
+      loadingLeads,
+      loadingColumns,
+      isTableLoading,
       showWhatsappModal,
       isFullscreen,
       countries,
@@ -2189,7 +2209,7 @@ const isTableLoading = computed(() => loadingLeads.value || loadingColumns.value
 };
 </script>
 
-<style>
+<style scoped>
 .lead_Table th,
 .lead_Table td {
   padding: 12px;
@@ -2725,6 +2745,1153 @@ button:hover {
   color: #333;
   font-weight: 500;
   margin-block-start: 8px;
+}
+
+.create-new-button {
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  background-color: #8c57ff;
+  color: #fff;
+  padding-block: 8px;
+  padding-inline: 16px;
+  transition: 0.4s ease;
+}
+
+/* .leads-container {
+  padding: 20px;
+} */
+
+.loading,
+.error {
+  color: red;
+}
+
+.search-bar {
+  padding: 8px;
+  inline-size: 50%;
+}
+
+.header .search-bar:focus-visible {
+  border: 1px solid #8c57ff !Important;
+}
+
+.form-overlay {
+  position: fixed;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 50%);
+  inset: 0;
+  transition: 0.5s ease;
+}
+
+.import-button,
+.submit-button,
+.add-button {
+  border: bisque;
+  border-radius: 5px;
+  background: #a17de1;
+  color: #0e0d0d;
+  cursor: pointer;
+  margin-block: 7px;
+  margin-inline: 0;
+  padding-block: 7px;
+  padding-inline: 25px;
+}
+
+.stage-modal-container button.submit-button {
+  color: #fff;
+  margin-block: 10px;
+  margin-inline: auto;
+  padding-block: 10px;
+  text-align: center;
+}
+
+.form-container {
+  position: relative;
+  padding: 40px;
+  border-radius: 5px;
+  background: white;
+  inline-size: 520px;
+}
+
+.form-container h2 {
+  margin-block: 0 20px;
+  margin-block-start: 0;
+  text-align: center;
+}
+
+.form-container input {
+  padding: 8px;
+  inline-size: 100%;
+}
+
+.leads-table {
+  border-collapse: collapse;
+  inline-size: 100%;
+}
+
+.leads-table th,
+.leads-table td {
+  padding: 15px;
+  border: 1px solid #ddd;
+}
+
+.leads-table th {
+  background-color: #f4f4f4;
+}
+
+input:focus-visible {
+  border: 0 !important;
+  outline: none !important;
+}
+
+.create-new-button:hover {
+  background-color: transparent;
+  color: #8c57ff;
+}
+
+.form-container button#submit_button {
+  display: inline-block;
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  background-color: #8c57ff;
+  block-size: auto;
+  color: #fff;
+  inline-size: auto;
+  margin-block-start: 15px;
+  padding-block: 8px;
+  padding-inline: 35px;
+  transition: 0.4s ease;
+}
+
+.form-container button#submit_button:hover {
+  background-color: transparent;
+  color: #8c57ff;
+}
+
+.leads-table tbody td {
+  padding: 15px;
+}
+
+.total-leads {
+  position: relative;
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  color: #8c57ff;
+  cursor: pointer;
+  inline-size: max-content;
+  padding-block: 8px;
+  padding-inline: 8px;
+  transition: 0.4s ease;
+}
+
+.leads-header ul li:hover span {
+  inset-block-start: -45px;
+  opacity: 1;
+}
+
+.leads-header ul li span {
+  position: absolute;
+  z-index: 99;
+  border-radius: 5px;
+  background: #202020;
+  color: #fff;
+  font-size: 12px;
+  inline-size: max-content;
+  inset-block-start: -47px;
+  inset-inline-start: 50%;
+  max-block-size: 42px;
+  opacity: 0;
+  padding-block: 6px;
+  padding-inline: 12px;
+  pointer-events: none;
+  text-align: center;
+  transform: translateX(-50%);
+  transition: 0.4s ease;
+}
+
+.leads-header ul li span::before {
+  position: absolute;
+  background: #202020;
+  block-size: 9px;
+  clip-path: polygon(100% 0, 0 0, 50% 100%);
+  content: "";
+  inline-size: 17px;
+  inset-block-end: -5px;
+  inset-inline: 0;
+  margin-block: 0;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.total-leads:hover {
+  background-color: #8c57ff;
+  color: #fff;
+}
+
+.leads-header {
+  display: flex;
+  justify-content: space-between;
+  margin-block-end: 20px;
+}
+
+.leads-header ul {
+  display: flex;
+  align-items: center;
+  list-style: none;
+}
+
+#leadsTable_wrapper .dt-search {
+  display: none;
+}
+
+#leadsTable_wrapper.dt-container .dt-length select {
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  padding-block: 10px;
+  padding-inline: 20px;
+}
+
+#leadsTable_wrapper .dt-container .dt-length select:focus-visible {
+  outline: none;
+}
+
+#leadsTable_wrapper .dt-length {
+  margin-block-end: 10px;
+}
+
+#leadsTable_wrapper ul.pagination {
+  display: flex;
+  justify-content: flex-end;
+  list-style: none;
+}
+
+#leadsTable_wrapper ul.pagination li {
+  padding: 10px;
+  background: #fff;
+}
+
+.layout-nav-type-vertical .layout-vertical-nav {
+  background-color: #fff;
+  border-inline-end: 1px solid #e1e1e1;
+}
+
+/* -----------------03-010-2024---------------------- */
+.toast {
+  position: fixed;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: bold;
+  inset-block-start: 20px;
+  inset-inline-end: 20px;
+  padding-block: 10px;
+  padding-inline: 20px;
+}
+
+.toast.success {
+  background-color: #4caf50;
+}
+
+.toast.error {
+  background-color: #f44336;
+}
+
+.error {
+  color: red;
+}
+
+.no-leads {
+  color: gray;
+  text-align: center;
+}
+
+.dataTables_wrapper .dataTables_length {
+  float: inline-start;
+}
+
+.dataTables_wrapper .dataTables_filter {
+  float: inline-end;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+  float: inline-end;
+}
+
+.dataTables_wrapper .dataTables_info {
+  float: inline-start;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+
+  /* Button color */
+
+  color: white;
+  margin-inline-start: 0.5em;
+  padding-block: 0.5em;
+  padding-inline: 1em;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background-color: #0056b3;
+
+  /* Active page button color */
+}
+
+.custom-checkbox {
+  display: none;
+}
+
+.custom-checkbox-label {
+  position: relative;
+  cursor: pointer;
+}
+
+.custom-checkbox-span {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  background-color: #fff;
+  block-size: 15px;
+  inline-size: 15px;
+  transform: translateY(-50%);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.custom-checkbox:checked + .custom-checkbox-span {
+  border-color: #8c57ff;
+  background-color: #8c57ff;
+}
+
+.custom-checkbox-span::after {
+  position: absolute;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  block-size: 9px;
+  content: "";
+  inline-size: 5px;
+  inset-block-start: 2px;
+  inset-inline-start: 1px;
+  transform: translateY(-50%) rotate(45deg) scale(0);
+  transform-origin: bottom left;
+  transition: transform 0.3s ease;
+}
+
+.custom-checkbox:checked + .custom-checkbox-span::after {
+  transform: translateY(-50%) rotate(45deg) scale(1);
+}
+
+/* ---------05/09/2024-------- */
+
+.modal-overlay {
+  position: fixed;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 50%);
+  block-size: 100vh;
+  inline-size: 100vw;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+}
+
+.close-button {
+  position: absolute;
+  cursor: pointer;
+  inset-block-start: 10px;
+  inset-inline-end: 10px;
+}
+
+.import-options {
+  display: flex;
+  justify-content: space-around;
+  margin-block-start: 20px;
+}
+
+.import-button {
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  padding-block: 10px;
+  padding-inline: 20px;
+}
+
+.import-button:hover {
+  background-color: #0056b3;
+}
+
+.file-upload-container {
+  margin-block-start: 20px;
+}
+
+.submit-button {
+  border: none;
+  border-radius: 4px;
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+  margin-block-start: 10px;
+  padding-block: 10px;
+  padding-inline: 20px;
+}
+
+.error-message {
+  color: red;
+  margin-block-start: 10px;
+}
+
+.total-leads.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.total-leads.disabled:hover {
+  background-color: initial;
+}
+
+.modal-content {
+  padding: 39px;
+  border: 5px solid #87b;
+  background-color: #f5eded;
+  block-size: 400px;
+  inline-size: 65%;
+}
+
+.close {
+  color: #aaa;
+  float: inline-end;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* ---------15/09/2024------------- */
+
+/* Common Modal Overlay */
+.modal-overlay,
+.import-modal-overlay,
+.sms-modal-overlay,
+.tag-modal-overlay,
+.stage-modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 50%);
+  block-size: 100%;
+  inline-size: 100%;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+}
+
+/* Common Modal Container */
+.modal-container,
+.import-modal-container,
+.sms-modal-container,
+.tag-modal-container,
+.stage-modal-container {
+  position: relative;
+  padding: 20px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 20%);
+  inline-size: 400px;
+  max-inline-size: 90%;
+}
+
+/* Close Button */
+
+/* Modal Content */
+.import-options,
+.file-upload-container,
+.sms-modal-container,
+.tag-modal-container,
+.stage-modal-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Specific Styles for Modal Content */
+.sms-modal-container textarea {
+  block-size: 100px;
+  inline-size: 100%;
+  margin-block: 10px;
+  margin-inline: 0;
+}
+
+/* Modal Content */
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.submit-button,
+.cancel-button {
+  border: none;
+  border-radius: 5px;
+  background: #9268dd;
+  color: #0c0c0c;
+  cursor: pointer;
+  inline-size: fit-content;
+  padding-block: 4px;
+  padding-inline: 18px;
+}
+
+.cancel-button {
+  margin: 7px;
+  block-size: fit-content;
+}
+
+select.open_modal_drop-box {
+  background-color: rgb(39, 128, 206);
+  block-size: fit-content;
+  inline-size: 136px;
+}
+
+.modal_tags {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+
+  .modal_tag {
+    display: flex;
+    align-items: center;
+  }
+
+  .modal_tag input {
+    margin-inline-end: 5px;
+  }
+}
+
+.btn.active {
+  background-color: #8c57ff;
+  color: white;
+}
+
+.btn:hover {
+  background-color: #8c57ff;
+  color: white;
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.lead-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* -----------09---04----2025 manindar sir adding new css here-------------- */
+
+.v-card .v-card-text {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 20px !important;
+  inline-size: 100% !important;
+  margin-block-end: 0 !important;
+  text-align: center !important;
+}
+
+.text-h5 {
+  font-family: Inter, sans-serif, -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 1.125rem !important;
+  font-weight: 500;
+  letter-spacing: normal !important;
+  line-height: 1.75rem;
+  text-align: start;
+  text-transform: none !important;
+}
+
+.services-card .v-row .v-col-sm-6:nth-child(3) .service-cards {
+  background-image: linear-gradient(135deg, #fff6b7 10%, #f6416c);
+  inline-size: 100%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-block-end: 0;
+}
+
+.form-container label {
+  display: block;
+  margin-block: 0;
+}
+
+button.submit-btn[data-v-ad0b681c] {
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #a16efd;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  inline-size: 100%;
+}
+
+.swal2-styled.swal2-confirm {
+  border: 0;
+  border-radius: 0.25em;
+  background: initial;
+  background-color: #7066e0;
+  color: #fff;
+  font-size: 1em;
+  inline-size: auto;
+}
+
+.signature-list[data-v-7a0ebd6b] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 5px #0000001a;
+  inline-size: 30%;
+}
+
+.singnature_heading button[data-v-7a0ebd6b] {
+  border: none;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+  padding-block: 5px;
+  padding-inline: 10px;
+}
+
+.singnature_heading button[data-v-7a0ebd6b]:hover {
+  color: #fff;
+}
+
+.submit {
+  color: #fff;
+}
+
+.signature-container .dropdown_signature {
+  margin-block-start: 20px;
+}
+
+select[data-v-7a0ebd6b]:focus-visible {
+  border: 1px solid #9155fd;
+  outline: 0;
+}
+
+.signature-editor label[data-v-7a0ebd6b] {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.signature-editor label[data-v-7a0ebd6b] {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.signature-editor label[data-v-7a0ebd6b] input[data-v-7a0ebd6b] {
+  padding: 0;
+  margin: 0;
+  block-size: 15px;
+  inline-size: 20px;
+  line-height: 0;
+}
+
+.signature-editor button {
+  inline-size: auto;
+  margin-block-start: 10px;
+}
+
+label[data-v-ab54f3b8] {
+  display: flex;
+  flex-direction: row;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+label[data-v-ab54f3b8] input {
+  inline-size: 15px;
+  margin-inline-end: 10px;
+}
+
+button[data-v-ab54f3b8],
+button[data-v-ab54f3b8]:hover {
+  background-color: #a16efd !important;
+}
+
+button[data-v-ab54f3b8]:hover {
+  background-color: #8156d1 !important;
+}
+
+/*  10/04/2025 css */
+
+.btn.active,
+.btn:hover {
+  margin: 0;
+  background-color: #8c57ff;
+  color: #fff;
+}
+
+.btn {
+  border: 1px solid #8c57ff;
+  border-radius: 4px;
+  margin: 0;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  inline-size: max-content;
+  padding-block: 8px;
+  padding-inline: 16px;
+  transition: background-color 0.3s;
+}
+
+.leads-header ul li {
+  position: relative;
+  margin-inline-end: 0;
+  margin-inline-end: 10px;
+}
+
+.leads-header ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  list-style: none;
+}
+
+.leads-header {
+  display: flex;
+  justify-content: space-between;
+  column-gap: 200px;
+  margin-block-end: 20px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-block-end: 20px;
+}
+
+.header .total-leads {
+  padding-inline: 10px;
+}
+
+.table-container .lead_Table tbody {
+  overflow: auto;
+  inline-size: 100%;
+}
+
+.table-container .lead_Table tbody tr {
+  display: flex;
+  inline-size: 100%;
+}
+
+/* .table-container .lead_Table tbody td input {
+  inline-size: 250px;
+} */
+
+.leads-container [disabled] {
+  border: 1px solid #8c57ff;
+  cursor: default;
+}
+
+.modal {
+  position: fixed;
+  z-index: 1000;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #fff;
+  block-size: 500px;
+  box-shadow: 0 4px 6px #0000001a;
+  inline-size: 600px;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  overflow-y: scroll;
+  transform: translate(-50%, -50%);
+}
+
+.modal-body .form-group input:focus-visible {
+  border: 1px solid #ccc;
+}
+
+.email-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 4px;
+  background-color: #e0e0e0;
+  inline-size: 100%;
+  padding-block: 5px;
+  padding-inline: 10px;
+}
+
+.remove-email {
+  border: none;
+  background: none !important;
+  color: red;
+  cursor: pointer;
+  font-weight: 700;
+  margin-inline-start: 5px;
+}
+
+.form-actions button {
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  background-color: #8c57ff;
+  color: #fff;
+  transition: 0.4s ease;
+}
+
+.form-actions button:hover {
+  border: 1px solid #8c57ff;
+  border-radius: 5px;
+  background-color: #fff;
+  color: #8c57ff;
+  transition: 0.4s ease;
+}
+
+.selected-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: #fff;
+  color: #6e7881;
+  inline-size: 100%;
+  padding-block: 5px;
+  padding-inline: 10px;
+}
+
+.selected-leads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  inline-size: 100%;
+}
+
+.selected-tag button {
+  border: none;
+  background: none;
+  color: #f00;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.selected-tag button:hover {
+  color: #f00;
+}
+
+.modal_tags .modal_tag {
+  display: flex;
+  align-items: center;
+  inline-size: auto;
+  padding-inline: 0;
+}
+
+.modal_tags .modal_tag input {
+  inline-size: auto;
+  margin-inline-end: 0;
+}
+
+.email-input-container > button {
+  border: 1px solid #8c57ff;
+  color: #8c57ff;
+  margin-block-start: 10px;
+}
+
+.email-input-container > button:hover {
+  border: 1px solid #8c57ff;
+  color: #fff;
+}
+
+.tag-modal-container > div {
+  display: flex;
+  gap: 10px;
+  row-gap: 0;
+}
+
+.tag-modal-container > div button.submit-button {
+  margin: 0;
+  color: #fff;
+  padding-inline: 40px;
+}
+
+.tag-modal-container button.submit-button {
+  color: #fff;
+  margin-block: 10px;
+  margin-inline: auto;
+  padding-block: 10px;
+  padding-inline: 40px;
+  text-align: center;
+}
+
+.modal_stage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-block: 0;
+}
+
+.modal_stages .modal_stage {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  inline-size: auto;
+  padding-inline: 0;
+}
+
+.modal_stages .modal_stage input {
+  inline-size: auto;
+  margin-inline-end: 0;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.submit-button,
+.cancel-button {
+  background: #9268dd;
+  inline-size: 100px;
+}
+
+.import-options {
+  display: flex;
+  flex-direction: row !important;
+  justify-content: space-between;
+  margin-block-start: 20px;
+}
+
+.columns-modal-list {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  gap: 10px;
+  margin-block-start: 15px;
+  text-align: start;
+}
+
+.columns-modal-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  inline-size: calc(33% - 10px);
+}
+
+.columns-modal-update-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background: #8c57ff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  inline-size: 120px;
+  margin-block-start: 15px;
+}
+
+.columns-modal-update-btn:hover {
+  background: #9155fd;
+}
+
+.cancel-btn {
+  background: #e31521;
+  margin-inline-start: 20px;
+}
+
+.cancel-btn:hover {
+  background: #dd3e47;
+}
+
+.card h3 {
+  border-block-end: 1px solid #d9d9d9;
+  padding-block-end: 20px;
+  text-align: start;
+}
+
+.card .tag-icons {
+  position: absolute;
+  display: flex;
+  background: transparent;
+  gap: 5px;
+  inline-size: fit-content;
+  inset-block-start: -25px;
+  inset-inline-start: 10px;
+  transition: 0.4s ease;
+}
+
+.tag-icon {
+  cursor: pointer;
+}
+
+/* =============New-CSS=================
+
+============Icon-modal-CSS================== */
+
+.stage-modal-container > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  row-gap: 0;
+}
+
+.stage-modal-container > div button.submit-button {
+  margin: 0;
+  color: #fff;
+}
+
+.modal-container h2 {
+  font-size: 17.5px;
+  text-align: center;
+}
+
+select.open_modal_drop-box {
+  padding: 10px;
+  border: 1px solid #8c57ff;
+  border-radius: 6px;
+  background-color: #fff;
+  block-size: 100%;
+  inline-size: 100%;
+  margin-block-start: 10px;
+}
+
+select.open_modal_drop-box:focus-visible {
+  border: 1px solid #8c57ff;
+}
+
+.modal-buttons .cancel-button {
+  border: #fff;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  margin-block: 7px;
+  margin-inline: 0;
+  padding-block: 10px;
+  padding-inline: 25px;
+}
+
+.modal-actions button {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background: #8c57ff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  inline-size: 150px;
+}
+
+.leads-container input {
+  border: 1px solid #8c57ff !important;
+  border-radius: 5px;
+  margin: 0;
+  padding-inline: 10px;
+}
+
+td.checkbox-col:first-child {
+  min-inline-size: 40px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  column-gap: 25px;
+  margin-block: 20px;
+}
+
+.pagination button {
+  color: #8c57ff;
+}
+
+.pagination button:hover {
+  color: #fff;
+}
+
+button.import-button {
+  color: #fff;
+}
+
+/* =============tag-modal-container==================== */
+
+.tag-modal-container > div {
+  justify-content: space-between;
+  row-gap: 0;
+}
+
+.modal_tag.selected {
+  background: transparent;
+}
+
+.tag-modal-container > div input {
+  inline-size: 100%;
+}
+
+.tag-modal-container .add-button {
+  color: #fff;
+  padding-block: 10px;
+}
+
+.tag-modal-container button:hover {
+  background-color: #8c57ff;
+  color: #fff;
+}
+
+/* =============stage-modal-container==================== */
+
+.modal_stage.selected {
+  background: transparent !important;
+}
+
+/* =========add-this-HTML================= */
+
+.stage-modal-container > .new-stage-input {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.stage-modal-container > .new-stage-input input {
+  inline-size: 100%;
+}
+
+.stage-modal-container .add-button {
+  color: #fff;
+  padding-block: 10px;
+}
+
+.stage-modal-container button:hover {
+  background-color: #8c57ff;
+  color: #fff;
 }
 
 </style>
