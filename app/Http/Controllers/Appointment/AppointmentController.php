@@ -30,15 +30,12 @@ class AppointmentController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        // Optional: Get lead info for response
         $lead = Lead::findOrFail($request->lead);
 
-        // ✅ Sync to Google Calendar
         try {
             GoogleCalendarService::createEvent($request->all(), $lead->id, Auth::id());
         } catch (\Exception $e) {
             \Log::error('Google Calendar Sync Failed: ' . $e->getMessage());
-            // You may return a partial success message or ignore based on UX preference
         }
 
         return response()->json([

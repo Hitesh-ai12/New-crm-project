@@ -1,13 +1,13 @@
 // vite.config.js
-import laravel from "file:///C:/xampp/htdocs/crm/node_modules/laravel-vite-plugin/dist/index.js";
-import { fileURLToPath } from "node:url";
-import vue from "file:///C:/xampp/htdocs/crm/node_modules/@vitejs/plugin-vue/dist/index.mjs";
 import vueJsx from "file:///C:/xampp/htdocs/crm/node_modules/@vitejs/plugin-vue-jsx/dist/index.mjs";
+import vue from "file:///C:/xampp/htdocs/crm/node_modules/@vitejs/plugin-vue/dist/index.mjs";
+import laravel from "file:///C:/xampp/htdocs/crm/node_modules/laravel-vite-plugin/dist/index.js";
 import AutoImport from "file:///C:/xampp/htdocs/crm/node_modules/unplugin-auto-import/dist/vite.js";
 import Components from "file:///C:/xampp/htdocs/crm/node_modules/unplugin-vue-components/dist/vite.js";
-import { defineConfig } from "file:///C:/xampp/htdocs/crm/node_modules/vite/dist/node/index.js";
 import vuetify from "file:///C:/xampp/htdocs/crm/node_modules/vite-plugin-vuetify/dist/index.mjs";
 import svgLoader from "file:///C:/xampp/htdocs/crm/node_modules/vite-svg-loader/index.js";
+import { defineConfig } from "file:///C:/xampp/htdocs/crm/node_modules/vite/dist/node/index.js";
+import { fileURLToPath } from "node:url";
 var __vite_injected_original_import_meta_url = "file:///C:/xampp/htdocs/crm/vite.config.js";
 var vite_config_default = defineConfig({
   plugins: [

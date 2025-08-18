@@ -11,20 +11,20 @@ use App\Models\SignatureTemplate;
 
 class SignatureFolderController extends Controller
 {
-      public function index()
+    public function index()
     {
-        return SignatureFolder::withCount('templates')
-            ->with('user:id,name')
-            ->where('user_id', Auth::id())
-            ->get()
-            ->map(function ($folder) {
-                return [
-                    'id' => $folder->id,
-                    'name' => $folder->name,
-                    'template_count' => $folder->templates_count,
-                    'created_by_name' => $folder->user->name ?? 'Unknown'
-                ];
-            });
+    return SignatureFolder::withCount('templates')
+        ->with('user:id,name')
+        ->where('user_id', Auth::id())
+        ->get()
+        ->map(function ($folder) {
+            return [
+                'id' => $folder->id,
+                'name' => $folder->name,
+                'template_count' => $folder->templates_count,
+                'created_by_name' => $folder->user->name ?? 'Unknown'
+            ];
+        });
     }
 
     public function store(Request $request)

@@ -38,10 +38,10 @@ class AuthController extends Controller
             return response()->json([
                 'token' => $token,
                 'user' => [
-                    'id' => $user->id, // ✅ Include user ID here
+                    'id' => $user->id, 
                     'name' => $user->name,
                     'email' => $user->email,
-                    // Add other user fields if needed
+               
                 ],
                 'message' => 'Login successful',
             ], 200);
@@ -101,10 +101,8 @@ class AuthController extends Controller
                 return response()->json(['error' => 'No permissions selected.'], 400);
             }
     
-            // Generate a unique API key (you can use any method to generate the key)
             $apiKey = Str::random(32);
     
-            // Construct the endpoint based on selected permissions
             $endpoints = [];
             foreach ($permissions as $permission) {
                 switch ($permission) {
@@ -114,11 +112,9 @@ class AuthController extends Controller
                     case 'read':
                         $endpoints[] = url('/api/read');
                         break;
-                    // Add more cases for 'update', 'delete', etc.
                 }
             }
     
-            // Check if an API key already exists for the user
             $apiKeyRecord = ApiKey::where('user_id', $user->id)->first();
     
             if ($apiKeyRecord) {

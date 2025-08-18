@@ -65,15 +65,12 @@ Route::post('/whatsapp/webhook', [TwilioWhatsappController::class, 'incoming']);
 // Route::get('/whatsapp/messages/{lead}', [TwilioWhatsappController::class, 'getLeadMessages']);
 // --- Automation Action Plan Routes ---
 Route::prefix('automation')->group(function () {
-    Route::middleware('auth:sanctum')->group(function () { // <-- आपका auth middleware यहाँ है
+    Route::middleware('auth:sanctum')->group(function () { 
         Route::post('/action-plans/batch-delete', [AutomationController::class, 'batchDeleteActionPlans']);
         Route::get('/action-plans/{actionPlan}', [AutomationController::class, 'showActionPlan']);
         Route::put('/action-plans/{actionPlan}', [AutomationController::class, 'updateActionPlan']);
-        
-    
-        // 'automation/' prefix को हटा दें क्योंकि यह पहले से ही group में डिफाइन है
-        Route::get('/action-plans', [AutomationController::class, 'indexActionPlans']); // <--- Corrected
-        Route::post('/action-plan', [AutomationController::class, 'storeActionPlan']); // <--- Corrected
+        Route::get('/action-plans', [AutomationController::class, 'indexActionPlans']); 
+        Route::post('/action-plan', [AutomationController::class, 'storeActionPlan']); 
         Route::post('/action-plans/add-tag-action', [AutomationController::class, 'addTagActionToActionPlans']);
         Route::post('/action-plans/change-stage-action', [AutomationController::class, 'addChangeStageActionToActionPlans']);
         Route::post('/action-plans/assign-source-action', [AutomationController::class, 'addAssignSourceActionToActionPlans']);
@@ -83,22 +80,13 @@ Route::prefix('automation')->group(function () {
 });
 Route::middleware('auth:sanctum')->group(function () {
 
-       // सभी असाइनमेंट्स को देखने के लिए
     Route::get('/lead-action-plan-assignments', [LeadActionPlanAssignmentController::class, 'index']);
-    // असाइनमेंट का स्टेटस अपडेट करने के लिए (पॉज़/रिज़्यूम)
     Route::post('/lead-action-plan-assignments/{assignment}/status', [LeadActionPlanAssignmentController::class, 'updateStatus']);
-
-    // Action Plans को Leads पर Assign करने के लिए (नया रूट)
     Route::post('/assign-action-plans', [LeadController::class, 'assignActionPlans']);
-
     Route::post('/leads/import', [LeadController::class, 'import']);
     Route::get('/columns-settings', [ColumnSettingController::class, 'getColumnSettings']);
-
-
     Route::get('/dashboard/message-counts', [EventCountController::class, 'index']);
-
     Route::get('/events/today-counts', [EventCountController::class, 'getTodayCounts']);
-
     Route::post('/appointments', [AppointmentController::class, 'store']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
 
@@ -160,12 +148,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/signature-templates', [SignatureTemplateController::class, 'store']); 
     Route::put('/signature-templates/{id}', [SignatureTemplateController::class, 'update']); 
     Route::delete('/signature-templates/{id}', [SignatureTemplateController::class, 'destroy']); 
-    Route::get('/signature-templates/{id}', [SignatureTemplateController::class, 'show']);   
+
 
     // Featch signature by type
     Route::get('/signature-templates-email/email', [SignatureTemplateController::class, 'getEmailTemplates']);
     Route::get('/signature-templates/whatsapp', [SignatureTemplateController::class, 'getWhatsappTemplates']);
     Route::get('/signature-templates-sms/sms', [SignatureTemplateController::class, 'getSmsTemplates']);
+    // Route::get('/signature-templates/{id}', [SignatureTemplateController::class, 'show']);   
 
     Route::get('/emails/replies/{leadEmail}', [EmailController::class, 'getReplies']);
     Route::get('/leads/{email}/emails', [EmailController::class, 'getEmailTimeline']);
