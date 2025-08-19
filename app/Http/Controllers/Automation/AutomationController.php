@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 use App\Models\Template;
 use App\Models\Item;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth; // <-- Auth facade को इंपोर्ट करें
+use Illuminate\Support\Facades\Auth;
 
 class AutomationController extends Controller
 {
@@ -236,10 +236,6 @@ class AutomationController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Display a listing of the automation action plans.
-     */
 
    /**
      * Display a listing of the automation action plans.

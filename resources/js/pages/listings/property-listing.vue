@@ -15,17 +15,33 @@
                 <button class="btn clear-btn text-danger fw-bold">
                   <i class="fa-solid fa-xmark"></i> Clear All
                 </button>
-                <button class="btn btn-action">
-                  <i class="fa-solid fa-envelope"></i> Email
-                </button>
-                <button class="btn btn-action d-none d-md-inline-block">
-                  <i class="fa-solid fa-tags"></i> Email Tags
-                </button>
-                <button class="btn btn-action">
-                  <i class="fa-solid fa-comment-sms"></i> Send SMS
-                </button>
-                <button class="btn btn-action d-none d-md-inline-block">
-                  <i class="fa-solid fa-tags"></i> SMS Tags
+
+                <div class="dropdown">
+                  <button class="btn btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa-solid fa-envelope me-1"></i> Email to
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-user me-2"></i> Email to Lead</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-tags me-2"></i> Email to Tag</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-calendar-alt me-2"></i> Email to Stage</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-globe me-2"></i> Email to Source</a></li>
+                  </ul>
+                </div>
+
+                <div class="dropdown">
+                  <button class="btn btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa-solid fa-comment-sms me-1"></i> SMS to
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-user me-2"></i> SMS to Lead</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-tags me-2"></i> SMS to Tag</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-calendar-alt me-2"></i> SMS to Stage</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fa-solid fa-globe me-2"></i> SMS to Source</a></li>
+                  </ul>
+                </div>
+
+                <button class="btn btn-danger selected-properties-btn">
+                  Selected properties
                 </button>
               </div>
             </div>
@@ -47,11 +63,11 @@
                 </div>
               </div>
               <div class="filter-sort-group d-flex align-items-center gap-2">
-                <button class="btn btn-light-blue" @click="showFilterModal">
+                <button class="btn btn-light-blue filter-btn" @click="showFilterModal">
                   <i class="fa-solid fa-sliders me-1"></i> Filters
                 </button>
                 <div class="dropdown">
-                  <button class="btn btn-light-blue dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button class="btn btn-light-blue dropdown-toggle short-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fa-solid fa-arrow-down-short-wide me-1"></i> Short
                   </button>
                   <ul class="dropdown-menu">
@@ -72,6 +88,13 @@
           <div v-else-if="propertyStore.error" class="alert alert-danger text-center my-4">
             {{ propertyStore.error }}
           </div>
+
+          <div v-if="propertyStore.loadingInitial" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+
           <div v-else class="row property-cards-area g-3 mt-3">
             <div v-for="(property, index) in propertyStore.properties" :key="property.ar_uid || index" class="col-xl-4 col-lg-6 col-md-6 col-sm-6">
               <div class="property-list-card" @click="showPropertyDetails(property)">
@@ -84,7 +107,9 @@
                   </div>
                   <div class="property-details">
                     <h4>{{ property.title }}</h4>
-                    <h6 class="text-muted"><i class="fa-solid fa-location-dot"></i> {{ property.address }}</h6>
+                    <h6 class="text-muted">
+                      <i class="fa-solid fa-location-dot"></i> {{ property.address }}
+                    </h6>
                     <h5>From <em>{{ property.price }}</em></h5>
                   </div>
                 </div>
@@ -96,14 +121,17 @@
                 </ul>
               </div>
             </div>
+
             <div v-if="propertyStore.properties.length === 0 && !propertyStore.loading" class="col-12 text-center text-muted my-5">
               No properties found matching your criteria.
             </div>
-          </div>
 
-          <footer class="footer-area text-center py-4 text-muted">
-            2025 © Agentroof - <a href="http://www.agentroof.com" class="text-decoration-none">agentroof.com</a>
-          </footer>
+            <div v-if="propertyStore.loadingMore" class="col-12 text-center my-4">
+              <div class="spinner-border text-secondary" role="status">
+                <span class="visually-hidden">Loading more...</span>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
@@ -169,6 +197,18 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Filters button hover – Blue */
+.filter-btn:hover {
+  background-color: blue;
+  color: white; /* optional for better contrast */
+}
+
+/* Short button hover – Red */
+.short-btn:hover {
+  background-color: red;
+  color: white; /* optional for better contrast */
+}
+
 /* Base Styles */
 body {
   background-color: #f8f9fa;
@@ -208,6 +248,23 @@ body {
   border: 1px solid #dcdfe6;
   background-color: #f1f4f9;
   color: #495057;
+}
+
+/* New style for the "Email to" and "SMS to" buttons to match the image */
+.dropdown-toggle.btn-action {
+  display: flex;
+  align-items: center;
+  border: 1px solid #dcdfe6;
+  background-color: #f1f4f9;
+  color: #495057;
+  gap: 5px;
+}
+
+/* New style for the red "Selected properties" button */
+.selected-properties-btn {
+  border-color: #dc3545;
+  background-color: #dc3545; /* Red color */
+  color: white;
 }
 
 .clear-btn {
